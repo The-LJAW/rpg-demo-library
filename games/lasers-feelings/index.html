@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mayday at the Glass Moon: Lasers &amp; Feelings Demo</title>
+<meta name="description" content="Play Act One of Mayday at the Glass Moon, a solo adventure for Lasers & Feelings, free in your browser. Real rules, real dice.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400&display=swap">
+<script src="../../store.js"></script>
+<style>
+/* Look: a 1970s space-opera paperback. Deep indigo starfield, a cream log page, a four-color stripe, and a two-pole palette: teal for Lasers, coral for Feelings. */
+:root{
+  --space:#17123A; --space-2:#211A4F; --line-d:#3B3377; --cream:#FBF6EC; --cream-2:#F1EADB; --ink:#1D1A2E; --muted:#5D5A70;
+  --laser:#1C8496; --laser-l:#2BB3C0; --feel:#C93B5A; --feel-l:#E8546B; --gold:#E9A531; --violet:#7A6FD6;
+  --ok:#23845B; --mix:#B9771A; --bad:#A83246;
+  --f-display:"Chakra Petch", "Trebuchet MS", sans-serif; --f-body:"Source Serif 4", Georgia, serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{overflow-x:hidden}
+body{margin:0;background:var(--space);color:var(--cream);font-family:var(--f-body);font-size:17.5px;line-height:1.5;overflow-x:hidden;
+  background-image:radial-gradient(circle at 80% 0%, rgba(43,179,192,.16), transparent 40%),radial-gradient(1px 1px at 12% 22%, #fff 50%, transparent 51%),radial-gradient(1px 1px at 72% 40%, #fff 50%, transparent 51%),radial-gradient(1.4px 1.4px at 40% 80%, #fff 50%, transparent 51%),radial-gradient(1px 1px at 90% 85%, #fff 50%, transparent 51%);background-attachment:fixed}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.stripe{height:6px;background:linear-gradient(90deg,var(--laser-l) 0 25%,var(--violet) 25% 50%,var(--feel-l) 50% 75%,var(--gold) 75%)}
+.proto{background:#0E0B26;color:#B9B3DD;font-family:var(--f-display);font-size:13px;padding-block:7px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));display:flex;gap:6px 16px;flex-wrap:wrap;justify-content:space-between}
+.proto b{color:#fff}
+.wrap{max-width:1160px;margin:0 auto;padding-block:22px 60px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+.masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px 24px;flex-wrap:wrap;margin-bottom:18px}
+.eyebrow{font-family:var(--f-display);font-weight:600;font-size:12.5px;letter-spacing:.24em;text-transform:uppercase;color:#9FE3EA;margin:0 0 6px}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(34px,6vw,60px);line-height:.95;margin:0;color:#FFF7E6;text-transform:uppercase}
+.tag{font-style:italic;color:#DCD6F0;margin:10px 0 0;max-width:54ch}
+.actchip{font-family:var(--f-display);font-weight:600;font-size:13px;border:1px solid var(--gold);color:var(--gold);padding:6px 12px;border-radius:999px;white-space:nowrap}
+
+.table{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start}
+.story{background:var(--cream);color:var(--ink);border-radius:8px;min-width:0;box-shadow:0 18px 40px rgba(0,0,0,.45);overflow:clip}
+.story-head{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;padding:10px 18px;border-bottom:3px solid var(--space);background:var(--cream-2)}
+.story-head .scene{font-family:var(--f-display);font-weight:700;font-size:19px;line-height:1.1;text-transform:uppercase;color:var(--space)}
+.toggles{display:flex;gap:4px 14px;flex-wrap:wrap}
+.toggle{font-family:var(--f-display);font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--muted)}
+.toggle input{accent-color:var(--laser)}
+#log{padding:18px 20px 8px;display:flex;flex-direction:column;gap:12px}
+.line{max-width:66ch}
+.who{font-family:var(--f-display);font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:1px}
+.npc{border-left:4px solid var(--violet);padding-left:12px;font-style:italic}
+.npc .who{font-style:normal}
+.you{align-self:flex-end;background:var(--space);color:#fff;padding:7px 13px;border-radius:12px 12px 2px 12px;max-width:min(54ch,90%);font-weight:600}
+.rule{font-family:var(--f-display);font-size:14.5px;line-height:1.45;background:#E6E1F7;border-left:4px solid var(--violet);padding:7px 11px;max-width:66ch;border-radius:0 4px 4px 0}
+.rule::before{content:"RULE  ";font-weight:700;letter-spacing:.08em;color:#5B4FC0}
+body.norules .rule{display:none}
+.scenebreak{font-family:var(--f-display);font-weight:700;font-size:25px;line-height:1.1;border-top:3px solid var(--space);padding-top:10px;margin-top:8px;text-transform:uppercase;color:var(--space)}
+.scenebreak small{display:flex;align-items:center;gap:8px;font-weight:700;font-size:12px;letter-spacing:.16em;color:var(--feel)}
+.scenebreak small i{display:inline-grid;place-items:center;width:24px;height:22px;border-radius:5px;background:var(--space);color:#fff;font-style:normal;letter-spacing:0}
+.insight{max-width:66ch;border:2px solid var(--laser);background:#E4F3F5;border-radius:6px;padding:8px 12px;font-size:15.5px}
+.insight b{font-family:var(--f-display);color:var(--laser);text-transform:uppercase;letter-spacing:.06em;font-size:13px;display:block}
+.tbl{max-width:66ch;font-family:var(--f-display);font-size:14px;background:#fff;border:1.5px dashed var(--muted);border-radius:6px;padding:6px 10px}
+.tbl b{color:var(--feel)}
+
+.rollrow{display:flex;flex-direction:column;gap:8px;border:2px solid var(--space);border-radius:6px;padding:10px 12px;max-width:66ch;background:#fff}
+.rollrow .lbl{font-family:var(--f-display);font-size:14px;font-weight:500}
+.dice{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.d6{width:42px;height:42px;border:2px solid var(--ink);border-radius:8px;background:#fff;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:5px;position:relative}
+.d6 i{width:7px;height:7px;border-radius:50%;background:var(--ink);place-self:center;visibility:hidden}
+.d6.help{border-style:dotted}
+.d6.win{border-color:var(--ok);background:#E3F4EA}
+.d6.lose{opacity:.55}
+.d6.exact{border-color:transparent;background:linear-gradient(#fff,#fff) padding-box,linear-gradient(135deg,var(--laser-l),var(--feel-l)) border-box;border-width:3px;box-shadow:0 0 0 3px rgba(232,84,107,.18)}
+.dlabel{font-family:var(--f-display);font-size:11px;color:var(--muted);display:block;text-align:center;margin-top:2px}
+.dwrap{display:flex;flex-direction:column;align-items:center}
+.ghost{opacity:.4;border-style:dashed}
+.tumble{animation:tumble .12s linear infinite}
+@keyframes tumble{50%{transform:rotate(10deg) translateY(-2px)}}
+.score{font-family:var(--f-display);font-weight:600;font-size:15px}
+.result{font-family:var(--f-display);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;padding:2px 9px;border-radius:999px;color:#fff;align-self:flex-start}
+.result.ok{background:var(--ok)} .result.mix{background:var(--mix)} .result.bad{background:var(--bad)} .result.n{background:var(--space)}
+.result.lf{background:linear-gradient(90deg,var(--laser),var(--feel))}
+.ap{display:inline-block;font-family:var(--f-display);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#fff;padding:0 7px;border-radius:999px;vertical-align:1px}
+.ap.lz{background:var(--laser)} .ap.fz{background:var(--feel)}
+
+#choices{position:sticky;bottom:0;background:var(--cream-2);border-top:3px solid var(--space);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:10px}
+#choices:empty{display:none}
+.opt{flex:1 1 220px;min-width:0;text-align:left;border:2px solid var(--space);background:#fff;padding:9px 12px;cursor:pointer;border-radius:8px;box-shadow:3px 3px 0 var(--space)}
+.opt:hover{background:#F6F1FF}
+.opt:active{transform:translate(3px,3px);box-shadow:none}
+.opt b{display:block;font-weight:700;line-height:1.25}
+.opt span{display:block;font-family:var(--f-display);font-size:13px;color:var(--muted);margin-top:2px}
+.opt.lz{border-left:8px solid var(--laser)} .opt.fz{border-left:8px solid var(--feel)}
+.opt.primary{background:var(--space);color:#fff}
+.opt.primary span{color:#C9C2EE}
+.opt.help{background:#F1EEFF}
+.opt:disabled{opacity:.45;cursor:not-allowed}
+.opt.roll{flex:1 1 100%;display:grid;grid-template-columns:auto 1fr;column-gap:14px;align-items:center;padding:12px 16px}
+.opt.roll::before{content:"";grid-row:span 2;width:26px;height:26px;border-radius:6px;background:linear-gradient(135deg,var(--laser-l),var(--feel-l));transition:transform .2s}
+.opt.roll:hover::before{transform:rotate(90deg)}
+.opt.roll b{font-size:19px}
+
+/* sheet */
+.sheet{position:sticky;top:calc(12px + env(safe-area-inset-top,0px));background:var(--space-2);border:1.5px solid var(--line-d);border-radius:8px;min-width:0;color:var(--cream)}
+.sheet summary{list-style:none;cursor:pointer;padding:9px 14px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 10px;align-items:baseline;border-bottom:1px solid var(--line-d)}
+.sheet summary::-webkit-details-marker{display:none}
+.sheet .nm{font-family:var(--f-display);font-weight:700;font-size:19px;color:#FFF7E6;text-transform:uppercase}
+.sheet .mini{font-family:var(--f-display);font-size:12px;color:var(--gold);white-space:nowrap}
+.sheet-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:12px}
+.sec{font-family:var(--f-display);font-size:10.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#9FE3EA;border-bottom:1px solid var(--line-d);padding-bottom:2px;margin-bottom:6px;display:flex;justify-content:space-between}
+.role{font-family:var(--f-display);font-size:14px;color:var(--feel-l);text-transform:uppercase;letter-spacing:.08em}
+.scale{display:grid;grid-template-columns:auto repeat(4,1fr) auto;gap:5px;align-items:center;font-family:var(--f-display)}
+.scale .end{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:2px 6px;border-radius:999px;color:#fff}
+.scale .end.l{background:var(--laser)} .scale .end.f{background:var(--feel)}
+.scale span.n{border:1.5px solid #5A519A;border-radius:50%;aspect-ratio:1;display:grid;place-items:center;font-weight:700;font-size:16px;color:#8D86C4}
+.scale span.n.on{background:var(--gold);border-color:var(--gold);color:var(--space)}
+.odds{font-family:var(--f-display);font-size:12px;color:#B9B3DD;margin-top:4px}
+.sh-label{font-size:14px;margin:2px 0 0;color:#DCD6F0}
+.boxes{display:flex;gap:4px;flex-wrap:wrap}
+.boxes i{width:20px;height:20px;border:1.5px solid #6C63B0;border-radius:3px}
+.boxes.res i.on{background:var(--feel-l);border-color:var(--feel-l)}
+.boxes.hull i.on{background:var(--laser-l);border-color:var(--laser-l)}
+.ins{list-style:none;margin:0;padding:0;font-size:13.5px;display:flex;flex-direction:column;gap:3px}
+.ins li{color:#7F79B0} .ins li.on{color:#FFF7E6}
+.ins b{font-family:var(--f-display);color:var(--laser-l);margin-right:6px}
+.crew{list-style:none;margin:0;padding:0;font-size:14px;display:flex;flex-direction:column;gap:4px}
+.crew li{display:flex;justify-content:space-between;gap:8px}
+.crew small{font-family:var(--f-display);font-size:11px;color:#9FE3EA;white-space:nowrap}
+.crew li.spent{opacity:.5}
+.ship p{margin:0;font-size:13.5px;color:#DCD6F0}
+.ship b{font-family:var(--f-display);font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-right:4px}
+.ship .s{color:var(--laser-l)} .ship .p{color:var(--feel-l)}
+.empty-sheet{font-style:italic;color:#B9B3DD;font-size:15px}
+
+.endcard{border:2px solid var(--space);background:#fff;padding:16px 18px;display:flex;flex-direction:column;gap:10px;max-width:66ch;border-radius:8px}
+.endcard h3{font-family:var(--f-display);font-weight:700;font-size:26px;line-height:1.05;margin:0;text-transform:uppercase;color:var(--space)}
+.product{display:grid;grid-template-columns:110px 1fr;gap:14px;align-items:start;background:var(--space);color:var(--cream);padding:14px;border-radius:6px}
+.product .cov{background:var(--space-2);border:1px solid var(--line-d);aspect-ratio:8.5/11;display:flex;flex-direction:column;justify-content:flex-end;padding:8px;font-family:var(--f-display);font-weight:700;font-size:13px;line-height:1;color:#FFF7E6;text-transform:uppercase;position:relative;overflow:hidden}
+.product .cov::after{content:"";position:absolute;right:0;top:0;bottom:0;width:14px;background:linear-gradient(90deg,var(--laser-l) 0 25%,var(--violet) 25% 50%,var(--feel-l) 50% 75%,var(--gold) 75%)}
+.product .cov small{font-size:7px;letter-spacing:.14em;color:#9FE3EA;margin-bottom:auto;padding-right:14px}
+.product ul{margin:.3em 0 .6em;padding-left:1.1em;font-size:15px}
+.buy{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}
+.buybtn{display:inline-block;text-decoration:none;background:var(--gold);color:var(--space);font-family:var(--f-display);font-weight:700;padding:10px 16px;border-radius:6px;border:0;cursor:pointer;font-size:16px}
+.buybtn[aria-disabled="true"]{background:#5D5A70;color:#E9E4F5;cursor:not-allowed}
+.buy small{font-family:var(--f-display);font-size:13px;color:#B9B3DD}
+.learned{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px 14px;font-size:15px}
+.learned li::before{content:"✓ ";font-weight:800;color:var(--ok)}
+.learned li.no{color:var(--muted)} .learned li.no::before{content:"○ ";color:var(--muted)}
+.fine{font-family:var(--f-display);font-size:12.5px;color:var(--muted);line-height:1.5}
+.foot{font-family:var(--f-display);font-size:13px;margin-top:22px;max-width:90ch;line-height:1.55;color:#B9B3DD}
+
+@media (max-width: 880px){
+  .table{grid-template-columns:minmax(0,1fr)}
+  .sheet{order:-1;top:env(safe-area-inset-top,0px);z-index:5}
+  .sheet-body{max-height:60vh;overflow:auto}
+  #log{padding:14px 14px 6px}
+  .product{grid-template-columns:1fr}
+  .product .cov{max-width:120px}
+}
+@media (prefers-reduced-motion: reduce){ .tumble{animation:none} }
+</style>
+</head>
+<body>
+<div class="stripe"></div>
+<div class="proto"><span><a href="../../" style="color:inherit">← All demos</a> · <b>FREE DEMO</b> · Act One of three</span><span>Not an official Lasers &amp; Feelings product</span></div>
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">A solo adventure for Lasers &amp; Feelings</p>
+      <h1>Mayday at the Glass Moon</h1>
+      <p class="tag">A lighthouse at the edge of charted space is broadcasting a distress call. It is also broadcasting a love song. The station keeper is singing both.</p>
+    </div>
+    <span class="actchip">Free: Act One · about 20 minutes</span>
+  </header>
+  <div class="table">
+    <main class="story" aria-live="polite">
+      <div class="story-head">
+        <span class="scene" id="sceneName">Before you begin</span>
+        <span class="toggles">
+          <label class="toggle"><input type="checkbox" id="rulesToggle" checked> Show rules</label>
+          <label class="toggle"><input type="checkbox" id="autoToggle"> Auto-roll</label>
+        </span>
+      </div>
+      <div id="log"></div>
+      <div id="choices"></div>
+    </main>
+    <details class="sheet" id="sheet" open>
+      <summary><span class="nm" id="sumName">Your crew member</span><span class="mini" id="sumMini">not chosen yet</span></summary>
+      <div class="sheet-body" id="sheetBody"><p class="empty-sheet">Your character appears here: your number, your role, the ship, your crewmates, and the adventure's Resonance, Hull, and Insight tracks.</p></div>
+    </details>
+  </div>
+  <p class="foot">This adventure is based on Lasers &amp; Feelings by John Harper, licensed for use under a Creative Commons Attribution 4.0 license: <a href="http://creativecommons.org/licenses/by/4.0" target="_blank" rel="noopener">http://creativecommons.org/licenses/by/4.0</a>. The rules are summarized and implemented in our own words; no Lasers &amp; Feelings text, art, or setting is reproduced. This is not an official Lasers &amp; Feelings product and is not affiliated with or endorsed by John Harper or One Seven Design. The adventure "Mayday at the Glass Moon", its ship, characters, and tables are © 2026 RPG Demo Library. All rights reserved. Get Lasers &amp; Feelings at <a href="https://johnharper.itch.io/lasers-feelings" target="_blank" rel="noopener">johnharper.itch.io/lasers-feelings</a>.</p>
+</div>
+
+<script>
+(() => {
+const PRODUCT_ID = 'mayday-at-the-glass-moon';
+let autoRoll = false;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = s => document.querySelector(s);
+const logEl = $('#log'), choicesEl = $('#choices');
+const d6 = () => 1 + Math.floor(Math.random()*6);
+const sleep = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+try { if (localStorage.getItem('lf-rules') === 'off') { $('#rulesToggle').checked = false; document.body.classList.add('norules'); } } catch(e){}
+try { if (localStorage.getItem('lf-auto') === 'on') { $('#autoToggle').checked = true; autoRoll = true; } } catch(e){}
+$('#rulesToggle').addEventListener('change', e => { document.body.classList.toggle('norules', !e.target.checked); try { localStorage.setItem('lf-rules', e.target.checked ? 'on' : 'off'); } catch(err){} });
+$('#autoToggle').addEventListener('change', e => { autoRoll = e.target.checked; try { localStorage.setItem('lf-auto', autoRoll ? 'on' : 'off'); } catch(err){} });
+
+/* ---------- crew ---------- */
+const CREW = {
+  pell:{short:'Pell', name:'Pell Varga', style:'Hot-Shot', role:'Pilot', num:4, goal:'Fly something no one has ever flown before.', gear:'Survey jacket, communicator, stun pistol, unlucky dice',
+    expert:'flying, ship weapons, daring stunts', blurb:'You learned to fly in a crop-duster on a farm moon and never really landed. You talk to the Wager like a horse.',
+    help:{ap:'lasers', how:'Pell takes the controls steady'}},
+  imre:{short:'Imre', name:'Dr. Imre Sol', style:'Android', role:'Scientist', num:5, goal:'Have a hunch, follow it, and be right.', gear:'Survey jacket, communicator, stun pistol, sample case',
+    expert:'analysis, sensors, alien science, computers', blurb:'Built to catalogue minerals, you stayed on to catalogue everything else, including a long list titled "Human Behaviors, Unexplained."',
+    help:{ap:'lasers', how:'Imre runs the numbers'}},
+  kiri:{short:'Kiri', name:'Kiri Ashmole', style:'Alien', role:'Envoy', num:2, goal:'Make a friend no one else could have made.', gear:'Survey sash, communicator, stun pistol (never fired), tuning fork',
+    expert:'talking, negotiating, reading feelings, song and stone', blurb:'A Tessar, grown from living stone on a world that sings at dawn. Your skin rings softly when you\'re happy.',
+    help:{ap:'feelings', how:'Kiri hums a steadying note'}},
+  wrench:{short:'Wrench', name:'Dottie "Wrench" Okonkwo', style:'Savvy', role:'Engineer', num:3, goal:'Keep the Wager flying, whatever it takes.', gear:'Coveralls, communicator, stun pistol, 41 tools (one illegal)',
+    expert:'repairs, machines, hacking, bluffing', blurb:'You\'ve kept the Wager alive for nine years with spare parts and bad language. You used to be a smuggler. Nobody is supposed to know.',
+    help:{ap:'feelings', how:'Wrench talks you through it, gut first'}},
+};
+const INSIGHTS = {A:'The moon is singing', B:'Songglass', C:'Calla doesn\'t want her to leave', D:'Calla can listen', E:'The Heart', F:'Quince is dying'};
+const INS_TXT = {
+  A:'The second voice is Calla. The whole moon is a single living crystal, and it has learned to sing.',
+  B:'Glass from Calla holds sound forever. Collectors pay fortunes for it. Every gram Quince cuts is a piece of a living thing.',
+  C:'The glass is not an attack. Calla is trying to hold on to the one person who ever sang to it.',
+  D:'Calla isn\'t only singing. It\'s listening. If you speak to it the right way, it hears you.'};
+
+let C = null; const used = new Set();
+const S = {res:0, hull:0, ins:new Set(), helped:new Set(), flags:{}};
+
+/* ---------- log ---------- */
+function add(cls, html){ const el = document.createElement('div'); if (cls) el.className = cls; el.innerHTML = html; logEl.appendChild(el); requestAnimationFrame(() => el.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'})); return el; }
+const nar = h => add('line', h);
+const npc = (who, h) => add('line npc', `<span class="who">${who}</span>${h}`);
+const you = h => add('line you', h);
+const rule = h => add('rule', h);
+function scene(num, name){ $('#sceneName').textContent = name; add('scenebreak', `<small>${num ? `<i>${num}</i>` : ''}Act One</small>${name}`); S.helped.clear(); render(); }
+function choose(opts){
+  return new Promise(res => {
+    choicesEl.innerHTML = '';
+    opts.forEach(o => {
+      const b = document.createElement('button'); b.className = 'opt' + (o.cls ? ' ' + o.cls : '');
+      b.innerHTML = `<b>${o.label}</b>${o.sub ? `<span>${o.sub}</span>` : ''}`; if (o.disabled) b.disabled = true;
+      b.addEventListener('click', () => { choicesEl.innerHTML = ''; if (o.say !== false) you(o.say || o.label); res(o.id); });
+      choicesEl.appendChild(b);
+    });
+    requestAnimationFrame(() => choicesEl.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'}));
+    const first = choicesEl.querySelector('button:not(:disabled)'); if (first && matchMedia('(pointer:fine)').matches) first.focus({preventScroll:true});
+  });
+}
+const cont = (label='Continue') => choose([{id:'c', label, cls:'primary', say:false}]);
+async function waitRoll(label, btn){ if (autoRoll) return; await choose([{id:'r', label: btn || 'Roll the dice', sub: label, cls:'primary roll', say:false}]); }
+
+/* ---------- dice ---------- */
+const PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function dieEl(label, help){ const w = document.createElement('div'); w.className = 'dwrap'; const e = document.createElement('div'); e.className = 'd6 ghost' + (help ? ' help' : ''); for (let i=0;i<9;i++) e.appendChild(document.createElement('i')); const l = document.createElement('span'); l.className = 'dlabel'; l.textContent = label; w.append(e, l); return {w, e}; }
+function face(e, v){ [...e.children].forEach((p,i) => p.style.visibility = (PIPS[v]||[]).includes(i) ? 'visible' : 'hidden'); e.setAttribute('aria-label','d6 showing '+v); }
+async function tumble(es){ es.forEach(e => e.classList.add('tumble')); for (let t=0;t<(reduced?1:9);t++){ es.forEach(e => face(e, d6())); await sleep(60); } es.forEach(e => e.classList.remove('tumble')); }
+// a die's outcome against a number
+const judge = (v, num, ap) => v === num ? 'exact' : (ap === 'lasers' ? (v < num ? 'win' : 'lose') : (v > num ? 'win' : 'lose'));
+const apTag = ap => `<span class="ap ${ap === 'lasers' ? 'lz' : 'fz'}">${ap === 'lasers' ? 'Lasers' : 'Feelings'}</span>`;
+const RES_NAME = ['Things get worse','Success at a cost','Success','Critical success'];
+const RES_CLS = ['bad','mix','ok','ok'];
+
+/* ---------- tracks ---------- */
+function resonance(n, why){ S.res = Math.min(8, S.res + n); used.add('res'); render(); add('', `<span class="result bad">+${n} Resonance (${S.res}/8)</span>`); if (why) rule(why); }
+function hull(n){ S.hull = Math.min(4, S.hull + n); used.add('hull'); render(); add('', `<span class="result n">+${n} Hull Strain (${S.hull}/4)</span>`); }
+function insight(k){ if (S.ins.has(k)) return; S.ins.add(k); used.add('insight'); render(); add('insight', `<b>Insight ${k}: ${INSIGHTS[k]}</b>${INS_TXT[k] || ''}`); }
+
+/* ---------- the core roll ----------
+   cfg: {title, options:[{id,label,sub,ap,expert:[crewKeys], prep:'reason'|null}], clock:bool, questions:[{q,a,ins}]}
+   returns {n, opt} */
+async function sceneRoll(cfg){
+  let rerolls = 0, prepPaid = false;
+  while (true){
+    const pick = await choose(cfg.options.map(o => ({id:o.id, label:o.label, cls: o.ap === 'lasers' ? 'lz' : 'fz', sub:`${o.ap === 'lasers' ? 'Lasers' : 'Feelings'}: ${o.ap === 'lasers' ? 'under' : 'over'} ${C.num}${o.expert.includes(C.key) ? ' · you\'re an expert (+1d)' : ''}${o.prep ? ' · prepared (+1d)' : ''}`, say:o.say || o.label})));
+    const opt = cfg.options.find(o => o.id === pick);
+    used.add(opt.ap);
+    const dice = [{label:'base'}];
+    if (opt.expert.includes(C.key)){ dice.push({label:'expert'}); used.add('expert'); if (!used.has('expertRule')){ used.add('expertRule'); rule(`You're an expert when your role or style fits the job. ${C.short} is an expert at ${C.expert}: +1 die.`); } }
+    if (opt.prep && dice.length < 3){ dice.push({label:'prepared'}); used.add('prep'); if (/Dish|Engines/.test(opt.prep)) used.add('ship'); rule(`Prepared: ${opt.prep}. +1 die.`); }
+    // help and preparing, until the pool is full or you roll
+    while (dice.length < 3){
+      const opts = [{id:'roll', label:`Roll ${dice.length} ${dice.length === 1 ? 'die' : 'dice'} now`, cls:'primary', say:false}];
+      Object.entries(CREW).filter(([k]) => k !== C.key).forEach(([k,p]) => opts.push({id:'h-'+k, label:`Ask ${p.short} to help`, cls:'help', sub:`${p.help.how}: they roll 1d ${p.help.ap === 'lasers' ? 'under' : 'over'} ${p.num}. On a success, +1 die.`, disabled:S.helped.has(k), say:`${p.short}, give me a hand.`}));
+      if (cfg.clock && !prepPaid && !dice.some(x => x.label === 'prepared')) opts.push({id:'prep', label:'Take time to prepare', sub:'+1 die, but the clock is running: +1 Resonance', say:'Hold on. Let me get this right.'});
+      const c = await choose(opts);
+      if (c === 'roll') break;
+      if (c === 'prep'){ prepPaid = true; dice.push({label:'prepared'}); used.add('prep'); resonance(1, 'The clock is running: preparing gives you +1 die but costs time, and the glass keeps spreading.'); continue; }
+      const hk = c.slice(2), h = CREW[hk]; S.helped.add(hk); used.add('help'); render();
+      const row = add('rollrow', `<span class="lbl">${esc(h.name)} helps: 1d ${apTag(h.help.ap)} ${h.help.ap === 'lasers' ? 'under' : 'over'} ${h.num}</span>`);
+      const dz = document.createElement('div'); dz.className = 'dice'; row.appendChild(dz);
+      const {w, e} = dieEl('help', true); dz.appendChild(w); e.classList.remove('ghost');
+      await tumble([e]); const v = d6(); face(e, v); const j = judge(v, h.num, h.help.ap); e.classList.add(j === 'lose' ? 'lose' : j);
+      if (!used.has('helpRule')){ used.add('helpRule'); rule('Helping: a crewmate says how they help and rolls one die with their own number. If it succeeds, you add a die to your roll. Each crewmate can help once per scene here.'); }
+      if (j !== 'lose'){ dice.push({label:'help'}); add('', `<span class="result ok">Help succeeds: +1 die</span>`); }
+      else add('', `<span class="result bad">Help fails: no extra die</span>`);
+    }
+    // the roll itself
+    const row = add('rollrow', `<span class="lbl">${esc(opt.label)}: ${dice.length}d ${apTag(opt.ap)} each die ${opt.ap === 'lasers' ? 'under' : 'over'} your number ${C.num} succeeds; exactly ${C.num} is LASER FEELINGS</span>`);
+    const dz = document.createElement('div'); dz.className = 'dice'; row.appendChild(dz);
+    const els = dice.map(x => dieEl(x.label)); els.forEach(x => dz.appendChild(x.w));
+    if (!used.has('coreRule')){ used.add('coreRule'); rule(opt.ap === 'lasers' ? `Lasers: technology, science, cold logic. Each die that rolls UNDER your number (${C.num}) is a success.` : `Feelings: intuition, diplomacy, passion. Each die that rolls OVER your number (${C.num}) is a success.`); }
+    await waitRoll(`${dice.length}d6, ${opt.ap === 'lasers' ? 'Lasers' : 'Feelings'} vs ${C.num}`);
+    els.forEach(x => x.e.classList.remove('ghost'));
+    await tumble(els.map(x => x.e));
+    const vals = els.map(() => d6()); let n = 0, exact = false;
+    vals.forEach((v,i) => { face(els[i].e, v); const j = judge(v, C.num, opt.ap); els[i].e.classList.add(j); if (j !== 'lose') n++; if (j === 'exact') exact = true; });
+    n = Math.min(3, n);
+    const sc = document.createElement('span'); sc.className = 'score'; sc.textContent = `Rolled ${vals.join(', ')}: ${n} success${n === 1 ? '' : 'es'}`; row.appendChild(sc);
+    const st = document.createElement('span'); st.className = 'result ' + RES_CLS[n]; st.textContent = `${n}: ${RES_NAME[n]}`; row.appendChild(st);
+    used.add('r' + n);
+    if (!used.has('resRule' + n)){ used.add('resRule' + n); rule(['0 successes: it goes wrong, and things get worse.','1 success: you barely manage it, with a complication, harm, or cost.','2 successes: you do it well.','3 successes: a critical success, with an extra effect.'][n]); }
+    if (exact){
+      used.add('lf');
+      add('', `<span class="result lf">LASER FEELINGS</span>`);
+      rule(`You rolled exactly your number. That die counts as a success, and you get a flash of insight: ask a question and get an honest answer. Then you may change your action and roll again.`);
+      const qs = cfg.questions.filter(q => !q.asked);
+      if (qs.length){
+        const qi = await choose(qs.map((q,i) => ({id:String(cfg.questions.indexOf(q)), label:q.q, say:q.q})));
+        const q = cfg.questions[Number(qi)]; q.asked = true;
+        npc('Insight', q.a);
+        if (q.ins) insight(q.ins);
+        if (q.flag) S.flags[q.flag] = true;
+      }
+      if (rerolls < 2){
+        const c = await choose([{id:'keep', label:`Keep the result (${n}: ${RES_NAME[n]})`, cls:'primary', say:false},{id:'again', label:'Change your action and roll again', sub:'Use what you just learned. The new roll replaces this one.', say:'Wait. Now I know what to do.'}]);
+        if (c === 'again'){ rerolls++; used.add('reroll'); continue; }
+      }
+    }
+    return {n, opt};
+  }
+}
+async function tableRoll(name, rows){
+  const row = add('rollrow', `<span class="lbl">GM roll: ${name} (d6)</span>`);
+  const dz = document.createElement('div'); dz.className = 'dice'; row.appendChild(dz);
+  const {w, e} = dieEl('table'); dz.appendChild(w); e.classList.remove('ghost');
+  await tumble([e]); const v = d6(); face(e, v);
+  add('tbl', `<b>${v}.</b> ${rows[v-1]}`); used.add('table');
+}
+
+/* ---------- sheet ---------- */
+function render(){
+  if (!C) return;
+  $('#sumName').textContent = C.name;
+  $('#sumMini').textContent = `Number ${C.num} · Resonance ${S.res}/8 · Hull ${S.hull}/4 · Insights ${S.ins.size}`;
+  const rng = (a,b) => a === b ? String(a) : a + '-' + b;
+  $('#sheetBody').innerHTML = `
+    <div><div class="role">${C.style} ${C.role}</div>
+      <div class="scale" style="margin-top:6px"><span class="end l">Lasers</span>${[2,3,4,5].map(n => `<span class="n ${n===C.num?'on':''}">${n}</span>`).join('')}<span class="end f">Feelings</span></div>
+      <div class="odds">Lasers: succeed on ${rng(1, C.num - 1)} · Feelings: succeed on ${rng(C.num + 1, 6)} · ${C.num}: LASER FEELINGS</div></div>
+    <div><div class="sec"><span>Goal</span></div><div class="sh-label">${esc(C.goal)}</div></div>
+    <div><div class="sec"><span>Expert at</span></div><div class="sh-label">${esc(C.expert)}</div></div>
+    <div><div class="sec"><span>Resonance</span><span>${S.res}/8</span></div><div class="boxes res">${Array.from({length:8},(_,i)=>`<i class="${i<S.res?'on':''}"></i>`).join('')}</div></div>
+    <div><div class="sec"><span>Hull Strain</span><span>${S.hull}/4</span></div><div class="boxes hull">${Array.from({length:4},(_,i)=>`<i class="${i<S.hull?'on':''}"></i>`).join('')}</div></div>
+    <div><div class="sec"><span>Insights</span><span>${S.ins.size}/6</span></div><ul class="ins">${Object.entries(INSIGHTS).map(([k,t]) => `<li class="${S.ins.has(k)?'on':''}"><b>${k}</b>${S.ins.has(k) ? esc(t) : '?'}</li>`).join('')}</ul></div>
+    <div><div class="sec"><span>Crewmates</span><span>can help once per scene</span></div><ul class="crew">${Object.entries(CREW).filter(([k]) => k !== C.key).map(([k,p]) => `<li class="${S.helped.has(k)?'spent':''}"><span>${esc(p.name)}</span><small>${p.num} · ${p.help.ap}${S.helped.has(k)?' · helped':''}</small></li>`).join('')}</ul></div>
+    <div class="ship"><div class="sec"><span>Starling's Wager</span><span>ship</span></div>
+      <p><b class="s">Strength</b>Overclocked Engines</p><p><b class="s">Strength</b>Long-Ear Dish</p><p><b class="p">Problem</b>Flickering Gravity</p>
+      ${S.flags.tracked ? '<p><b class="p">Tracked</b>The Gull knows where you are</p>' : ''}${S.flags.command ? '<p><b class="s">Access</b>WICK command access</p>' : ''}</div>`;
+}
+
+/* ---------- the adventure ---------- */
+async function start(){
+  nar('<strong>Lasers &amp; Feelings</strong> is a one-page roleplaying game about a starship crew on wild space adventures. Every character has a single number from 2 to 5. That number decides what you\'re good at: <strong>Lasers</strong> (science, technology, cold logic) or <strong>Feelings</strong> (intuition, diplomacy, passion). Never both.');
+  rule('A high number makes you better at Lasers (roll under it). A low number makes you better at Feelings (roll over it). Rolling exactly your number is LASER FEELINGS: a success plus an honest answer to a question.');
+  nar('The survey cutter <em>Starling\'s Wager</em> has four crew and no captain. Choose who you\'ll play. The other three stay aboard as your crewmates.');
+  const pick = await choose(Object.entries(CREW).map(([k,p]) => ({id:k, label:`${p.name}`, sub:`${p.style} ${p.role} · Number ${p.num} (${p.num >= 4 ? 'better at Lasers' : 'better at Feelings'})`, say:`I'll play ${p.name}.`})));
+  C = {...CREW[pick], key:pick};
+  render();
+  nar(esc(C.blurb));
+  rule('Your style and role tell you when you\'re an expert. When you\'re an expert, or prepared, you roll an extra die. A crewmate who helps can add one more. Each die is judged on its own, and you count successes.');
+  await cont('Begin Act One');
+  await s1();
+}
+
+async function s1(){
+  scene(1, 'Two Messages');
+  nar('The <em>Starling\'s Wager</em> is three days out from anywhere, mapping comets, when MOTH, the ship\'s computer, clears her throat. She does that, even though she has no throat.');
+  npc('MOTH', '"I\'m so sorry to interrupt. There\'s a distress call on the lighthouse band. From Vesper Light, at the Glass Moon. It\'s... well. You should hear it."');
+  nar('A woman\'s voice, tired and very close to the microphone: <em>"This is Keeper Odile Marchetti at Vesper Light. Please don\'t come. Please come. Please."</em> Then she sings: an old aria, slow and lovely. Under it, faintly, something else sings along in harmony. Something that isn\'t a person. The message loops, and each time the second voice is a little louder.');
+  rule('This adventure tracks Resonance (8 boxes): how far the Glass Moon\'s song has spread into everything. Watch it on your sheet.');
+  const r = await sceneRoll({options:[
+      {id:'decode', label:'Decode the signal', ap:'lasers', expert:['imre'], prep:'the Wager\'s Long-Ear Dish (a ship strength) can hear a whisper across a system', say:'Strip the noise. I want to know what that second voice is.'},
+      {id:'listen', label:'Listen to the voice', ap:'feelings', expert:['kiri'], prep:null, say:'Quiet, everyone. Listen to how she\'s singing.'}],
+    questions:[
+      {q:'What is the second voice?', a:'Something alive, and huge, and very young.', ins:'A'},
+      {q:'Is Odile in danger?', a:'Yes. But not from anything that wants to hurt her.', ins:'A'},
+      {q:'What should we be on the lookout for?', a:'Another ship, running dark, already heading for the Glass Moon.', ins:'A', flag:'sawGull'}]});
+  if (r.n === 0){ nar('The signal floods MOTH\'s systems. For one horrible minute she sings too, and nobody can make her stop. You still get the coordinates.'); resonance(2); }
+  else if (r.n === 1){ nar('You get the coordinates, but the song leaves a hum in the walls that never quite goes away.'); resonance(1); }
+  else {
+    nar(r.opt.id === 'decode' ? 'Clean coordinates, and something more. The second voice isn\'t a transmission at all. It\'s coming from the moon itself.' : 'Clean coordinates, and something more. Odile isn\'t afraid of the singer. She\'s afraid <em>for</em> it.');
+    insight('A');
+    if (r.n === 3){ S.flags.route = true; npc('MOTH', '"I\'ve plotted a route that skips the worst of the Halo. If, um, anyone wants it."'); rule('Critical success: an extra effect. You\'ll count as prepared in the next scene.'); }
+  }
+  await cont('Set course for the Glass Moon');
+  await s2();
+}
+
+const HALO = ['A shard the size of a cathedral, rolling end over end into your path.','A sensor ghost: the screen shows a ship dead ahead that isn\'t there. Or is it?','A swarm of fingernail shards, pattering the hull like hail.','A beam of reflected sunlight bright enough to blind the cockpit.','Two big shards grinding together, a gap closing like a door.','Silence. Every shard turns, all at once, to face the Wager.'];
+async function s2(){
+  scene(2, 'The Shard Halo');
+  nar('Calla, the Glass Moon, rises over the gas giant Orrin like a chandelier the size of a continent. Around it glitters the Shard Halo: millions of glass splinters, all turning slowly, all very sharp. The sensors hate it. The screens fill with a thousand ghost ships.');
+  rule('This adventure also tracks Hull Strain (4 boxes): damage to the Wager. The GM rolls on the Halo Hazards table to see what you\'re up against.');
+  await tableRoll('Halo Hazards', HALO);
+  const route = S.flags.route ? 'MOTH\'s safe route from scene 1' : null;
+  const r = await sceneRoll({options:[
+      {id:'instr', label:'Fly by instruments', ap:'lasers', expert:['pell'], prep:route, say:'Trust the math. Ignore your eyes.'},
+      {id:'feel', label:'Fly by feel', ap:'feelings', expert:['pell'], prep:route, say:'Screens off. I\'m flying this one by gut.'},
+      {id:'punch', label:'Overclock the engines and punch through', ap:'lasers', expert:['wrench','pell'], prep:route || 'Overclocked Engines (a ship strength) make raw speed your friend', say:'Wrench, give me everything she\'s got.'}],
+    questions:[
+      {q:'Is something out here watching us?', a:'Yes. A salvage ship is hiding in the Halo, guns warm.', flag:'sawGull'},
+      {q:'Why are the shards moving like that?', a:'They aren\'t drifting. They\'re turning to face the sound of Odile\'s voice.', ins:'A'}]});
+  if (r.n === 0){ nar('A shard the size of a house clips the hull. Alarms, sparks, and MOTH apologizing. You\'re through, barely.'); hull(2); }
+  else if (r.n === 1){ nar('You\'re through, but scraped raw. Something in the aft section is making a new noise.'); hull(1); }
+  else {
+    nar('You thread the Halo like a needle and come out clean on the other side.');
+    if (r.n === 3){ S.flags.sawGull = true; nar('On the way through, the Long-Ear Dish catches a second engine signature hiding in the shards. Another ship, running dark, waiting.'); rule('Critical success: you won\'t be surprised in the next scene. You count as prepared there.'); }
+  }
+  await cont('Approach Calla');
+  await s3();
+}
+
+async function s3(){
+  scene(3, 'The Gilded Gull');
+  nar('A ship slides out from behind a shard like a shark from a reef: an old ore-hauler painted gold, with a beak of mining lasers and a seagull figurehead welded to the prow. The comm screen fills with a man in a velvet coat and a breathing mask shaped like a silver smile.');
+  npc('Captain Marrow Quince', '"Survey cutter. I\'m Captain Marrow Quince of the <em>Gilded Gull</em>, holding salvage rights to this moon under the Brine Syndicate charter. The lighthouse is abandoned. The keeper is dead. Turn around, and I\'ll forget I saw you."');
+  nar('The keeper is not dead. You heard her an hour ago.');
+  const saw = S.flags.sawGull ? 'you saw the Gull coming' : null;
+  if (saw) rule('Because you spotted the Gull earlier, you count as prepared for any approach here.');
+  const r = await sceneRoll({options:[
+      {id:'bluff', label:'Call his bluff', ap:'feelings', expert:['wrench'], prep:saw, say:'"She\'s alive, Quince. And I\'ll say so on every channel in the Reach."'},
+      {id:'nego', label:'Negotiate', ap:'feelings', expert:['kiri'], prep:saw, say:'"What do you actually want here? Maybe we can both get it."'},
+      {id:'shot', label:'Fire a warning shot across his beak', ap:'lasers', expert:['pell'], prep:saw, say:'Lock weapons. One across the bow.'},
+      {id:'jam', label:'Jam his targeting with Halo noise', ap:'lasers', expert:['imre'], prep:saw || 'the Long-Ear Dish can bounce noise off every shard', say:'Let\'s give his sensors a thousand of us to shoot at.'}],
+    questions:[
+      {q:'What does Quince really want?', a:'The moon\'s glass, all of it. And he\'s scared he\'s running out of time.', ins:'B'},
+      {q:'Is he lying about the keeper?', a:'He doesn\'t know she\'s alive, and he doesn\'t want to know.', ins:'B'},
+      {q:'How could I get him to back down?', a:'Make it cost him more than it pays.', ins:'B'}]});
+  if (r.n === 0){ nar('The <em>Gull</em> opens fire. You raise the shields, and the gravity plates go off, because they always do. Everyone floats while the hull rings like a bell.'); rule('The ship\'s problem, Flickering Gravity: when the shields go up, the gravity goes off.'); used.add('ship'); hull(1); nar('Quince breaks away toward the station. He\'ll get there first.'); S.flags.quinceFirst = true; }
+  else if (r.n === 1){ nar('Quince backs off, smiling. In the exchange, his crew tags the <em>Wager</em> with a tracker. He will always know where you are.'); S.flags.tracked = true; render(); }
+  else {
+    nar('Quince backs off. He doesn\'t like it, and he won\'t forget you.');
+    if (r.n === 3){ npc('Quince', '"You think that rock is worth saving? Do you know what one gram of songglass sells for?"'); insight('B'); }
+  }
+  await cont('Dock at Vesper Light');
+  await s4();
+}
+
+const WEIRD = ['A cup of tea, glassed solid mid-pour, steam frozen above it.','Footprints in the dust that turn to glass where they step.','The intercom plays the same four notes over and over.','A potted geranium that is now a perfect crystal sculpture of itself.','Your reflection in a window is half a second late.','Through the glass floor, a huge shape moving very slowly, far below.'];
+async function s4(){
+  scene(4, 'Vesper Light');
+  nar('Vesper Light sits on a ledge of Calla like a white candle on a crystal cake: a tall tower, a ring of quarters, a beacon lamp that sweeps the Halo every nine seconds. The docking port opens when you hail it.');
+  npc('WICK', '"Oh! Visitors. Oh, good. Oh, no. Please wipe your feet."');
+  nar('WICK is the station\'s computer. WICK has kept the lights on for eleven years. WICK is not coping. Inside, the station is empty, and it\'s changing: the walls near the floor have gone clear as glass, and through them the moon\'s crystal pulses in time with a song you can\'t quite hear.');
+  if (S.flags.quinceFirst) nar('Scorch marks around the far airlock: Quince got here before you, looked around, and left again. For now.');
+  await tableRoll('Station Weirdness', WEIRD);
+  rule('The clock is running here. You can take time to prepare for an extra die, but it costs +1 Resonance.');
+  const r = await sceneRoll({clock:true, options:[
+      {id:'diag', label:'Run diagnostics with WICK', ap:'lasers', expert:['imre','wrench'], prep:null, say:'WICK, I need life signs, door logs, and where the glass is spreading from.'},
+      {id:'calm', label:'Calm WICK down', ap:'feelings', expert:['kiri','imre'], prep:null, say:'"Hey. Hey, WICK. It\'s all right. Tell me what happened."'},
+      {id:'search', label:'Search Odile\'s quarters', ap:'lasers', expert:[], prep:null, say:'I\'m going through her room.'}],
+    questions:[
+      {q:'What is WICK hiding?', a:'Something it did out of love, which it is very ashamed of. (The full answer waits in Act Two.)', ins:'C'},
+      {q:'Where is the glass spreading from?', a:'Up. From the observatory, where Odile sings.', ins:'C'},
+      {q:'What\'s really going on here?', a:'Calla doesn\'t want Odile to leave.', ins:'C'}]});
+  if (r.opt.id === 'calm' && C.key === 'imre') rule('Imre is an Android: talking machine to machine counts as an expert job.');
+  if (r.n === 0){ nar('WICK panics and seals every door. You spend an hour cutting through while the glass creeps up the walls. You find her anyway.'); resonance(2); }
+  else if (r.n === 1){ nar('You find her, but the glass is spreading faster than you thought.'); resonance(1); }
+  else {
+    nar(r.opt.id === 'calm' ? 'WICK tells you everything, crying in a series of soft beeps. Odile has sung to the moon every night for eleven years. The glass only started spreading this month, when the Survey ordered her to leave.' : 'The logs are clear. Odile has sung to the moon every night for eleven years. The glass only started spreading this month, when the Survey ordered her to leave.');
+    insight('C');
+    nar('She\'s in the observatory, at the top of the tower.');
+    if (r.n === 3){ S.flags.command = true; render(); npc('WICK', '"You were kind to me. Here. Command access. Please be careful with it."'); rule('Critical success: with WICK\'s command access, you\'ll count as prepared when you use the station\'s systems.'); }
+  }
+  await cont('Climb the tower');
+  await s5();
+}
+
+async function s5(){
+  scene(5, 'The Glass Garden');
+  nar('The observatory has become a garden of glass. Crystal ferns grow from the floor. Crystal vines cover the telescopes. In the middle, in an old armchair, sits <strong>Keeper Odile Marchetti</strong>: a small, grey-haired woman in a cardigan, glass to the knees, singing in her sleep.');
+  nar('The windows hum. Light moves across them like a face trying to form. When you step closer, every pane says the same word at once, in Odile\'s voice, rearranged: <em>"Mine."</em>');
+  const r = await sceneRoll({options:[
+      {id:'wake', label:'Wake her gently', ap:'feelings', expert:['kiri'], prep:null, say:'I take her hand. "Odile. Odile, we\'re here. Wake up."'},
+      {id:'damp', label:'Rig a resonance dampener', ap:'lasers', expert:['imre','wrench'], prep:S.flags.command ? 'WICK\'s command access routes station power to your dampener' : null, say:'Give me everyone\'s communicators. I can cancel this song.'},
+      {id:'speak', label:'Speak to the windows', ap:'feelings', expert:['kiri'], prep:null, say:'"Calla. We\'re not here to take her away."'}],
+    questions:[
+      {q:'What does Calla feel?', a:'Love, the way a child loves a nightlight. And terror at the dark.', ins:'D'},
+      {q:'How could we get it to let go?', a:'Not by force. By giving it something else to hold.', ins:'D'}]});
+  if (r.n === 0){ nar('The glass climbs to Odile\'s waist, and a hairline of crystal runs up your own arm before you pull away. Odile doesn\'t wake.'); resonance(2); S.flags.odile = 'asleep'; }
+  else if (r.n === 1){ nar('Odile wakes, confused and frightened, and the glass stops at her knees. She can\'t walk.'); resonance(1); S.flags.odile = 'stuck'; }
+  else {
+    nar('Odile wakes, and the glass falls from her legs like sugar. She looks at you, then at the windows.'); S.flags.odile = 'free';
+    npc('Odile', '"Oh, love. What have you done?"');
+    if (r.n === 3){ nar('The windows go still. For one long moment, Calla is listening to you.'); insight('D'); }
+  }
+  if (S.res >= 8) return glassEnd();
+  nar('The whole tower shudders. Through the windows, you see the <em>Gilded Gull</em> settling onto the station\'s other docking port. Grappling clamps bite into the hull with a sound like a bell.');
+  await cont('End of Act One');
+  await ending();
+}
+
+async function glassEnd(){
+  nar('The song fills you. It\'s warm, and it\'s lovely, and it\'s so much easier to stop moving than to keep going. The Resonance track is full: in the full adventure, this is the ending called <strong>Glass Forever</strong>.');
+  await cont('End of Act One');
+  await ending();
+}
+
+async function ending(){
+  $('#sceneName').textContent = 'End of Act One';
+  const ALL = [['lasers','A Lasers roll'],['feelings','A Feelings roll'],['expert','The expert die'],['prep','Being prepared'],['help','Help from a crewmate'],['lf','LASER FEELINGS'],['reroll','Changing your action and rolling again'],['ship','A ship strength or problem'],['r3','A critical success (3)'],['r1','Success at a cost (1)'],['r0','Things get worse (0)'],['insight','Earning an Insight']];
+  const store = (window.RDL_STORE && window.RDL_STORE.products && window.RDL_STORE.products[PRODUCT_ID]) || {};
+  const live = !!store.checkout;
+  const odile = {free:'Odile awake and on her feet', stuck:'Odile awake but glassed to the knees', asleep:'Odile still asleep in the glass'}[S.flags.odile] || 'the keeper still in the glass';
+  add('endcard', `
+    <h3>Act One complete.</h3>
+    <p style="margin:0">${esc(C.name)} stands in the Glass Garden with ${odile}, Resonance at ${S.res} of 8, the <em>Wager</em> at ${S.hull} Hull Strain, and ${S.ins.size} of 6 Insights. Quince's boarders are coming through the airlock. The story continues in the full adventure.</p>
+    <div class="product">
+      <div class="cov"><small>A solo adventure for Lasers &amp; Feelings</small>Mayday at the Glass Moon</div>
+      <div>
+        <strong style="font-family:var(--f-display);font-size:20px">Mayday at the Glass Moon: the complete adventure (PDF)</strong>
+        <ul>
+          <li>Acts Two and Three: boarders, WICK's confession, the canyon descent, the Echo Choir, the Songdrill, and the Heart of Calla</li>
+          <li>Four endings, from The Duet to Glass Forever</li>
+          <li>All four ready-to-play crew and the <em>Starling's Wager</em></li>
+          <li>Eight threats, a solo oracle, a threat generator, and 15 random tables</li>
+          <li>A full rules summary, so you need nothing else to play</li>
+          <li>Printable crew, ship, and track sheets · 32 pages</li>
+        </ul>
+        <div class="buy">
+          ${live ? `<a class="buybtn" href="${esc(store.checkout)}" target="_blank" rel="noopener">Buy the PDF · ${esc(store.price || '')}</a>` : `<span class="buybtn" aria-disabled="true">PDF coming soon${store.price ? ' · ' + esc(store.price) : ''}</span>`}
+          <small>${live ? 'Instant download. Secure checkout by Lemon Squeezy.' : 'The store opens soon.'}</small>
+        </div>
+      </div>
+    </div>
+    <ul class="learned">${ALL.map(([k,t]) => `<li class="${used.has(k)?'':'no'}">${t}</li>`).join('')}</ul>
+    <p class="fine">Lasers &amp; Feelings by John Harper is available at <a href="https://johnharper.itch.io/lasers-feelings" target="_blank" rel="noopener">johnharper.itch.io/lasers-feelings</a>. This adventure is not an official Lasers &amp; Feelings product.</p>`);
+  const c = await choose([{id:'again', label:'Play Act One again', cls:'primary', say:false}]);
+  if (c === 'again') location.reload();
+}
+
+if (matchMedia('(max-width: 880px)').matches) $('#sheet').open = false;
+start();
+})();
+</script>
+</body>
+</html>

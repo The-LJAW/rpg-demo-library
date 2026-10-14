@@ -1,0 +1,655 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Silence at Well Nine: 24XX Demo</title>
+<meta name="description" content="Play Act One of The Silence at Well Nine, a sci-fi rescue adventure for the 24XX rules, free in your browser. Real 24XX rolls: one skill die, keep the highest.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Chakra+Petch:wght@500;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<script src="../../store.js"></script>
+<style>
+/* Look: a station console four kilometers under the ice. Navy dark, ice-white log, amber hazard trim, teal light from below. */
+:root{
+  --abyss:#06121D; --deep:#0B1C2C; --deep-2:#112A3E; --ice:#EEF6F8; --ice-2:#DCEBF0; --ink:#0B1C2C; --muted:#4F6575;
+  --teal:#2BB3C0; --glow:#7FF3E6; --sea:#0F5E73; --amber:#F2A93B; --amber-ink:#8A5600; --ok:#1E8A62; --mix:#C98410; --bad:#C23B32;
+  --f-display:"Chakra Petch", "Arial Narrow", sans-serif; --f-body:"Atkinson Hyperlegible", Arial, sans-serif; --f-mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--abyss);color:var(--ice);font-family:var(--f-body);font-size:17px;line-height:1.5;
+  background-image:radial-gradient(ellipse at 50% 120%, rgba(43,179,192,.28) 0%, transparent 55%), linear-gradient(rgba(127,243,230,.04) 1px, transparent 1px), linear-gradient(90deg, rgba(127,243,230,.04) 1px, transparent 1px);
+  background-size:auto, 28px 28px, 28px 28px; background-attachment:fixed}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+.proto{background:#030A11;color:#9CC3CF;font-family:var(--f-mono);font-size:12px;padding-block:7px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));display:flex;gap:6px 16px;flex-wrap:wrap;justify-content:space-between;border-bottom:3px solid transparent;border-image:repeating-linear-gradient(-45deg,var(--amber) 0 10px,#030A11 10px 20px) 3}
+.proto b{color:#fff}
+.wrap{max-width:1160px;margin:0 auto;padding-block:22px 60px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+.masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px 24px;flex-wrap:wrap;margin-bottom:18px}
+.eyebrow{font-family:var(--f-mono);font-weight:700;font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--teal);margin:0 0 6px}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(34px,6vw,60px);line-height:.95;margin:0;color:#fff;text-transform:uppercase;letter-spacing:-.01em}
+.tag{color:#B9D3DC;margin:10px 0 0;max-width:56ch}
+.actchip{font-family:var(--f-mono);font-size:12px;border:1px solid var(--amber);color:var(--amber);padding:6px 12px;border-radius:3px;white-space:nowrap}
+
+.table{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start}
+.story{background:var(--ice);color:var(--ink);border-radius:6px;min-width:0;box-shadow:0 0 0 1px #000, 0 20px 50px rgba(0,0,0,.55);overflow:clip}
+.story-head{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;padding:10px 18px;background:var(--deep);color:#fff}
+.story-head .scene{font-family:var(--f-display);font-weight:700;font-size:19px;line-height:1.1;text-transform:uppercase;letter-spacing:.02em}
+.toggles{display:flex;gap:4px 14px;flex-wrap:wrap}
+.toggle{font-family:var(--f-mono);font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;color:#B9D3DC}
+.toggle input{accent-color:var(--amber)}
+#log{padding:18px 20px 10px;display:flex;flex-direction:column;gap:12px}
+.line{max-width:66ch}
+.who{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:1px}
+.npc{border-left:4px solid var(--teal);padding-left:12px}
+.npc q{font-style:italic;quotes:none}
+.slate{font-family:var(--f-mono);font-size:14.5px;background:#2B3A44;color:#F4F7F5;padding:10px 12px;border-radius:4px;max-width:52ch;box-shadow:inset 0 0 0 3px #5E4A33}
+.radio{font-family:var(--f-mono);font-size:14.5px;color:var(--sea);border:1px dashed var(--sea);padding:6px 10px;border-radius:3px;max-width:60ch}
+.radio::before{content:"◉ COMM  ";color:var(--bad);font-weight:700}
+.you{align-self:flex-end;background:var(--sea);color:#fff;padding:7px 13px;border-radius:4px;max-width:min(54ch,90%);font-weight:700}
+.rule{font-family:var(--f-body);font-size:14.5px;line-height:1.45;background:#FFF4E0;border-left:4px solid var(--amber);padding:7px 11px;max-width:66ch}
+.rule::before{content:"RULE  ";font-family:var(--f-mono);font-weight:700;letter-spacing:.06em;color:var(--amber-ink)}
+body.norules .rule{display:none}
+.scenebreak{font-family:var(--f-display);font-weight:700;font-size:25px;line-height:1.1;border-top:2px solid var(--ink);padding-top:10px;margin-top:8px;text-transform:uppercase}
+.scenebreak small{display:flex;align-items:center;gap:8px;font-family:var(--f-mono);font-weight:700;font-size:11.5px;letter-spacing:.14em;color:var(--amber-ink)}
+.scenebreak small i{display:inline-grid;place-items:center;min-width:24px;height:22px;border-radius:3px;background:var(--sea);color:#fff;font-style:normal;letter-spacing:0}
+
+.rollrow{display:flex;flex-direction:column;gap:8px;border:2px solid var(--ink);border-radius:5px;padding:10px 12px;max-width:66ch;background:#fff}
+.rollrow .lbl{font-family:var(--f-mono);font-size:13px;line-height:1.45}
+.dice{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.die{display:flex;flex-direction:column;align-items:center;gap:3px}
+.die .shape{width:48px;height:48px;display:grid;place-items:center;font-family:var(--f-mono);font-weight:700;font-size:18px;color:#fff;background:var(--sea);position:relative}
+.die small{font-family:var(--f-mono);font-size:10.5px;color:var(--muted);text-align:center;max-width:80px;line-height:1.2}
+.die.s4 .shape{clip-path:polygon(50% 4%, 98% 92%, 2% 92%);padding-top:14px}
+.die.s6 .shape{border-radius:8px;width:44px;height:44px}
+.die.s8 .shape{clip-path:polygon(50% 0, 100% 50%, 50% 100%, 0 50%)}
+.die.s10 .shape{clip-path:polygon(50% 0, 100% 40%, 50% 100%, 0 40%);padding-bottom:6px}
+.die.s12 .shape{clip-path:polygon(50% 0, 98% 36%, 80% 96%, 20% 96%, 2% 36%);padding-top:4px}
+.die.ghost .shape{background:#B7C9D1;color:#fff}
+.die.low .shape{background:#9FB1BA}
+.die.top .shape{background:var(--ink)}
+.die.top small{color:var(--ink);font-weight:700}
+.die.help .shape{background:var(--teal)}
+.die.help.low .shape{background:#9FB1BA}
+.die.help.top .shape{background:var(--ink)}
+.tumble .shape{animation:tumble .12s linear infinite}
+@keyframes tumble{50%{transform:rotate(12deg) translateY(-2px)}}
+.score{font-family:var(--f-mono);font-weight:700;font-size:14px}
+.result{font-family:var(--f-mono);font-weight:700;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:3px;color:#fff;align-self:flex-start}
+.result.ok{background:var(--ok)} .result.mix{background:var(--mix)} .result.bad{background:var(--bad)} .result.n{background:var(--ink)}
+.trackline{display:flex;gap:5px;align-items:center;flex-wrap:wrap;font-family:var(--f-mono);font-size:12.5px}
+.trackline b{margin-right:4px}
+.pip{width:18px;height:18px;border:2px solid var(--ink);border-radius:3px;background:#fff}
+.pip.on{background:var(--sea)}
+.countline{display:flex;gap:4px;flex-wrap:wrap;align-items:center;font-family:var(--f-mono);font-size:12.5px}
+.countline span{width:26px;height:26px;display:grid;place-items:center;border:2px solid var(--ink);border-radius:3px;font-weight:700;font-size:12px;background:#fff}
+.countline span.gone{opacity:.25;text-decoration:line-through}
+.countline span.now{background:var(--bad);border-color:var(--bad);color:#fff}
+
+#choices{position:sticky;bottom:0;background:var(--ice-2);border-top:3px solid var(--ink);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:10px}
+#choices:empty{display:none}
+.opt{flex:1 1 220px;text-align:left;border:2px solid var(--ink);background:#fff;padding:9px 12px;cursor:pointer;border-radius:4px;box-shadow:3px 3px 0 var(--ink);min-width:0}
+.opt:hover{background:#F3FAFC}
+.opt:active{transform:translate(3px,3px);box-shadow:none}
+.opt b{display:block;font-weight:700;line-height:1.25}
+.opt span{display:block;font-family:var(--f-mono);font-size:12px;color:var(--muted);margin-top:3px;line-height:1.35}
+.opt.primary{background:var(--sea);color:#fff}
+.opt.primary span{color:#CFEAF0}
+.opt.danger{border-color:var(--bad)}
+.opt.danger span{color:var(--bad)}
+.opt.helpbtn{background:#E3F7F8}
+.opt:disabled{opacity:.45;cursor:not-allowed}
+.opt.roll{flex:1 1 100%;display:grid;grid-template-columns:auto 1fr;column-gap:14px;align-items:center;padding:12px 16px}
+.opt.roll::before{content:"";grid-row:span 2;width:26px;height:26px;background:var(--amber);clip-path:polygon(50% 0, 100% 40%, 50% 100%, 0 40%);transition:transform .2s}
+.opt.roll:hover::before{transform:rotate(90deg)}
+.opt.roll b{font-size:19px;font-family:var(--f-display);text-transform:uppercase}
+
+.sheet{position:sticky;top:calc(12px + env(safe-area-inset-top,0px));background:var(--deep);border:1.5px solid #24435A;border-radius:6px;min-width:0;color:var(--ice)}
+.sheet summary{list-style:none;cursor:pointer;padding:10px 14px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 10px;align-items:baseline;border-bottom:1px solid #24435A}
+.sheet summary::-webkit-details-marker{display:none}
+.sheet .nm{font-family:var(--f-display);font-weight:700;font-size:19px;color:#fff;text-transform:uppercase}
+.sheet .mini{font-family:var(--f-mono);font-size:11.5px;color:var(--amber);white-space:nowrap}
+.sheet-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:12px}
+.sec{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);border-bottom:1px solid #24435A;padding-bottom:2px;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
+.role{font-family:var(--f-mono);font-size:12px;color:#B9D3DC}
+.skl{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:14px}
+.skl li{display:flex;justify-content:space-between;border-bottom:1px dotted #24435A}
+.skl b{font-family:var(--f-mono);color:var(--glow);font-size:13px}
+.gearl{list-style:none;margin:0;padding:0;font-size:14px;display:flex;flex-direction:column;gap:4px}
+.gearl li{display:flex;justify-content:space-between;gap:8px}
+.gearl small{font-family:var(--f-mono);font-size:11px;color:#8FB0BD;white-space:nowrap}
+.gearl li.broken span{text-decoration:line-through;color:#6F8794}
+.gearl li.broken small{color:var(--bad)}
+.cond{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-family:var(--f-mono);font-size:11.5px;border:1px solid #3A5A70;border-radius:3px;padding:2px 7px;color:#8FB0BD}
+.chip.on{background:var(--bad);border-color:var(--bad);color:#fff}
+.chip.warn{background:var(--amber);border-color:var(--amber);color:var(--deep)}
+.chip.good{background:var(--teal);border-color:var(--teal);color:var(--deep)}
+.cnt{display:flex;align-items:center;gap:10px}
+.cnt b{font-family:var(--f-mono);font-size:30px;line-height:1;color:var(--amber)}
+.cnt span{font-family:var(--f-mono);font-size:11.5px;color:#8FB0BD}
+.empty-sheet{color:#8FB0BD;font-size:15px}
+
+.endcard{border:2px solid var(--ink);background:#fff;padding:16px 18px;display:flex;flex-direction:column;gap:10px;max-width:66ch;border-radius:5px}
+.endcard h3{font-family:var(--f-display);font-weight:700;font-size:26px;line-height:1.05;margin:0;text-transform:uppercase}
+.product{display:grid;grid-template-columns:110px 1fr;gap:14px;align-items:start;background:var(--deep);color:var(--ice);padding:14px;border-radius:4px}
+.product .cov{background:linear-gradient(#DCEFF5 0 22%, #0B1C2C 22% 100%);border:1px solid #24435A;aspect-ratio:8.5/11;display:flex;flex-direction:column;justify-content:flex-end;padding:8px;font-family:var(--f-display);font-weight:700;font-size:13px;line-height:1;color:#fff;text-transform:uppercase;position:relative;overflow:hidden}
+.product .cov::after{content:"";position:absolute;left:50%;bottom:-30px;width:90px;height:60px;transform:translateX(-50%);background:radial-gradient(ellipse, rgba(127,243,230,.6), transparent 70%)}
+.product .cov small{font-family:var(--f-mono);font-size:6.5px;letter-spacing:.1em;color:var(--teal);margin-bottom:auto;padding-top:34px}
+.product ul{margin:.3em 0 .6em;padding-left:1.1em;font-size:15px}
+.buy{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}
+.buybtn{display:inline-block;text-decoration:none;background:var(--amber);color:var(--deep);font-weight:700;padding:10px 16px;border-radius:4px;border:0;cursor:pointer;font-size:16px}
+.buybtn[aria-disabled="true"]{background:#4F6575;color:#DCEBF0;cursor:not-allowed}
+.buy small{font-family:var(--f-mono);font-size:12px;color:#9CC3CF}
+.learned{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px 14px;font-size:15px}
+.learned li::before{content:"✓ ";font-weight:700;color:var(--ok)}
+.learned li.no{color:var(--muted)} .learned li.no::before{content:"○ ";color:var(--muted)}
+.fine{font-family:var(--f-mono);font-size:12px;color:var(--muted);line-height:1.5}
+.foot{font-family:var(--f-mono);font-size:12px;margin-top:22px;max-width:100ch;line-height:1.6;color:#9CC3CF}
+
+@media (max-width: 880px){
+  .table{grid-template-columns:minmax(0,1fr)}
+  .sheet{order:-1;top:env(safe-area-inset-top,0px);z-index:5}
+  .sheet-body{max-height:60vh;overflow:auto}
+  #log{padding:14px 14px 6px}
+  .product{grid-template-columns:1fr}
+  .product .cov{max-width:120px}
+}
+@media (prefers-reduced-motion: reduce){ .tumble .shape{animation:none} }
+</style>
+</head>
+<body>
+<div class="proto"><span><a href="../../" style="color:inherit">← All demos</a> · <b>FREE DEMO</b> · Act One of three</span><span>Not an official 24XX product</span></div>
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">A rescue adventure for the 24XX rules</p>
+      <h1>The Silence at Well Nine</h1>
+      <p class="tag">Fourteen people work the pumps at Well Nine, four kilometers under the ice. Thirty-one hours ago they stopped answering. Now the only thing on the line is their voices, all together, counting down.</p>
+    </div>
+    <span class="actchip">Free: Act One · about 20 minutes</span>
+  </header>
+  <div class="table">
+    <main class="story" aria-live="polite">
+      <div class="story-head">
+        <span class="scene" id="sceneName">Before you begin</span>
+        <span class="toggles">
+          <label class="toggle"><input type="checkbox" id="rulesToggle" checked> Show rules</label>
+          <label class="toggle"><input type="checkbox" id="autoToggle"> Auto-roll</label>
+        </span>
+      </div>
+      <div id="log"></div>
+      <div id="choices"></div>
+    </main>
+    <details class="sheet" id="sheet" open>
+      <summary><span class="nm" id="sumName">Your wellwright</span><span class="mini" id="sumMini">not chosen yet</span></summary>
+      <div class="sheet-body" id="sheetBody"><p class="empty-sheet">Your character appears here: skill dice, gear (and what's broken), injuries, your ally, and the Count.</p></div>
+    </details>
+  </div>
+  <p class="foot">24XX rules are CC BY Jason Tocci. This demo uses rules from the 24XX System Reference Document (SRD) version 1.4 by Jason Tocci (24xx-srd.carrd.co), licensed under CC BY 4.0 (creativecommons.org/licenses/by/4.0/); rules are summarized in our own words. This is not an official 24XX product, is not part of Jason Tocci's 2400 series, and is not affiliated with or endorsed by Jason Tocci. The adventure "The Silence at Well Nine," the Underice setting, and its characters are © 2026 RPG Demo Library. All rights reserved. The 24XX SRD is free at <a href="https://jasontocci.itch.io/24xx" target="_blank" rel="noopener">jasontocci.itch.io/24xx</a>.</p>
+</div>
+
+<script>
+(() => {
+const PRODUCT_ID = 'silence-at-well-nine';
+let autoRoll = false;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = s => document.querySelector(s);
+const logEl = $('#log'), choicesEl = $('#choices');
+const d = n => 1 + Math.floor(Math.random()*n);
+const sleep = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+try { if (localStorage.getItem('w9-rules') === 'off') { $('#rulesToggle').checked = false; document.body.classList.add('norules'); } } catch(e){}
+try { if (localStorage.getItem('w9-auto') === 'on') { $('#autoToggle').checked = true; autoRoll = true; } } catch(e){}
+$('#rulesToggle').addEventListener('change', e => { document.body.classList.toggle('norules', !e.target.checked); try { localStorage.setItem('w9-rules', e.target.checked ? 'on' : 'off'); } catch(err){} });
+$('#autoToggle').addEventListener('change', e => { autoRoll = e.target.checked; try { localStorage.setItem('w9-auto', autoRoll ? 'on' : 'off'); } catch(err){} });
+
+/* ---------- characters ---------- */
+const PCS = {
+  oona:{name:'Oona Vask', title:'Ice-born Diver', skills:{Diving:10, Climbing:8, Spotting:8},
+    gear:[['Hardsuit',3,'armor',true],['Line gun',1],['Sea-lamp',1],['Comm',1]],
+    blurb:'Born in Well Four, you learned to swim in its moon pool before you could walk. You know the sound a healthy station makes, and the Well Nine recording doesn\'t have it.',
+    perk:'Ice-born: never hindered by cold or darkness.'},
+  tamsin:{name:'Tamsin Achebe', title:'Topsider Rigger', skills:{Engines:10, Electronics:8, Explosives:8, Hacking:8},
+    gear:[['Vest',1,'armor'],['Cutting torch',1,null,true],['Multitool',1],['Moth (sniffer drone)',1],['Comm',1]],
+    blurb:'Five years out from the inner worlds on a two-year contract. You talk to machines in a low, steady voice, and they usually listen. Moth, your sniffer drone, rides on your shoulder.',
+    perk:'Topsider: two extra skill steps (Explosives, Hacking).'},
+  kit:{name:'Kit Seven', title:'Synthetic Signal', skills:{Signals:10, Hacking:8, Shooting:8},
+    gear:[['Armored shell',1,'armor'],['Flare pistol',1],['Sonar wand',1],['Comm',1]],
+    blurb:'Built to listen to the Black Sea for the Concession, you heard too much and went freelance. You don\'t breathe. Something in the Well Nine recording made your hands shake.',
+    perk:'Synthetic: you don\'t breathe, so air risks can\'t drown you.'},
+};
+const PELL = {Labor:8, Engines:8, Sneaking:8};
+const PHYS = ['Climbing','Labor','Hand-to-hand','Diving','Sneaking','Shooting','Engines'];
+
+let C = null; const used = new Set(); const dead = [];
+let count = 10, pell = {on:false, hurt:false};
+let flags = {};
+
+/* ---------- log ---------- */
+function add(cls, html){ const el = document.createElement('div'); if (cls) el.className = cls; el.innerHTML = html; logEl.appendChild(el); requestAnimationFrame(() => el.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'})); return el; }
+const nar = h => add('line', h);
+const npc = (who, h) => add('line npc', `<span class="who">${who}</span>${h}`);
+const you = h => add('line you', h);
+const rule = h => add('rule', h);
+const radio = h => add('radio', h);
+function scene(num, name){ $('#sceneName').textContent = name; add('scenebreak', `<small>${num ? `<i>${num}</i>` : ''}ACT ONE</small>${name}`); }
+function choose(opts){
+  return new Promise(res => {
+    choicesEl.innerHTML = '';
+    opts.forEach(o => {
+      const b = document.createElement('button'); b.className = 'opt' + (o.cls ? ' ' + o.cls : '');
+      b.innerHTML = `<b>${o.label}</b>${o.sub ? `<span>${o.sub}</span>` : ''}`; if (o.disabled) b.disabled = true;
+      b.addEventListener('click', () => { choicesEl.innerHTML = ''; if (o.say !== false) you(o.say || o.label); res(o.id); });
+      choicesEl.appendChild(b);
+    });
+    requestAnimationFrame(() => choicesEl.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'}));
+    const first = choicesEl.querySelector('button:not(:disabled)'); if (first && matchMedia('(pointer:fine)').matches) first.focus({preventScroll:true});
+  });
+}
+const cont = (label='Continue') => choose([{id:'c', label, cls:'primary', say:false}]);
+async function waitRoll(sub, btn){ if (autoRoll) return; await choose([{id:'r', label: btn || 'Roll', sub, cls:'primary roll', say:false}]); }
+
+/* ---------- character helpers ---------- */
+const sk = s => (C.skills[s] || 6);
+const dieName = s => 'd' + sk(s);
+const item = n => C.gear.find(g => g.name === n);
+const hasItem = n => { const g = item(n); return !!(g && !g.broken); };
+function skillOpt(list){ const best = list.slice().sort((a,b) => sk(b)-sk(a))[0]; return best; }
+function skillSub(list){ return list.map(s => `${s} ${dieName(s)}`).join(' or '); }
+
+/* ---------- dice ---------- */
+function dieEl(sides, label, cls=''){ const e = document.createElement('div'); e.className = `die s${sides} ghost ${cls}`; e.innerHTML = `<div class="shape">?</div><small>d${sides} ${label}</small>`; return e; }
+async function tumble(els){ els.forEach(e => e.el.classList.add('tumble')); for (let t=0;t<(reduced?1:9);t++){ els.forEach(e => e.el.firstChild.textContent = d(e.sides)); await sleep(60); } els.forEach(e => e.el.classList.remove('tumble')); }
+const band = v => v <= 2 ? 'disaster' : v <= 4 ? 'setback' : 'success';
+const BCLS = {disaster:'bad', setback:'mix', success:'ok'};
+
+/* The 24XX roll. skill: skill name. circ: [why] array of helpful circumstances (+d6 each, max 1 shown here). phys: injury can hinder. */
+async function roll({label, skills, circ=[], phys=true, risk='', helpable=true, deadly=false}){
+  used.add('roll');
+  const s = skillOpt(skills);
+  let sides = sk(s), why = s + (C.skills[s] ? '' : ' (no skill)');
+  let hind = '';
+  if (C.brief > 0){ sides = 4; hind = 'brief hindrance'; C.brief = 0; }
+  else if ((C.injured || C.maimed) && phys){ sides = 4; hind = C.maimed ? 'maimed' : 'injured'; }
+  if (hind) used.add('hinder');
+  // ally help
+  let helper = null;
+  if (pell.on && helpable){
+    const pd = pell.hurt && phys ? 4 : (PELL[s] || 6);
+    const c = await choose([
+      {id:'solo', label:'Roll alone', sub:`${s} d${sides}${circ.length ? ' + d6' : ''}`, say:false},
+      {id:'help', label:'Pell helps', sub:`+ Pell's d${pd}. He shares the risk${risk ? ': ' + risk : ''}`, cls:'helpbtn', say:'Pell, with me.'}]);
+    if (c === 'help'){ helper = pd; used.add('help'); }
+  }
+  const parts = [`${s} d${sides}${hind ? ` (d4: ${hind})` : ''}`];
+  if (circ.length) parts.push(`+d6 (${circ[0]})`);
+  if (helper) parts.push(`+d${helper} (Pell helps)`);
+  const row = add('rollrow', `<span class="lbl">${esc(label)}: ${parts.join(' ')}. Keep the highest.${risk ? `<br>Risk: ${risk}${deadly ? ' <b style="color:var(--bad)">DEADLY</b>' : ''}` : ''}</span>`);
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  const set = [{sides, el: dieEl(sides, hind ? hind : s.toLowerCase())}];
+  if (circ.length){ set.push({sides:6, el: dieEl(6, 'help')}); used.add('circ'); }
+  if (helper) set.push({sides:helper, el: dieEl(helper, 'Pell', 'help')});
+  set.forEach(x => dice.appendChild(x.el));
+  if (hind === 'brief hindrance') rule('Hindered: you roll a d4 instead of your skill die. A brief hindrance lasts just this one roll.');
+  else if (hind) rule(`Hindered: your ${hind === 'maimed' ? 'maimed body' : 'injury'} matters here, so you roll a d4 instead of your skill die. Help and circumstances still add dice.`);
+  await waitRoll(row.querySelector('.lbl').textContent, 'Roll the dice');
+  set.forEach(x => { x.v = d(x.sides); x.el.classList.remove('ghost'); });
+  await tumble(set);
+  set.forEach(x => x.el.firstChild.textContent = x.v);
+  const top = Math.max(...set.map(x => x.v));
+  let marked = false;
+  set.forEach(x => { if (x.v === top && !marked){ x.el.classList.add('top'); marked = true; } else x.el.classList.add('low'); });
+  const b = band(top);
+  const st = document.createElement('span'); st.className = 'result ' + BCLS[b]; st.textContent = `${top}: ${b}${b === 'success' && top >= 7 ? ', and then some' : ''}`; row.appendChild(st);
+  used.add(b);
+  return {top, b, helped: !!helper};
+}
+async function luck(question){
+  used.add('luck');
+  const row = add('rollrow', `<span class="lbl">Test your luck: ${esc(question)} d6. 1-2 trouble now, 3-4 signs of trouble, 5-6 clear.</span>`);
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  const x = {sides:6, el: dieEl(6, 'luck')}; dice.appendChild(x.el);
+  await waitRoll('Test your luck (d6)', 'Test your luck');
+  x.v = d(6); x.el.classList.remove('ghost'); await tumble([x]); x.el.firstChild.textContent = x.v; x.el.classList.add('top');
+  const r = x.v <= 2 ? 'trouble' : x.v <= 4 ? 'signs' : 'clear';
+  const st = document.createElement('span'); st.className = 'result ' + ({trouble:'bad', signs:'mix', clear:'ok'})[r]; st.textContent = `${x.v}: ${r}`; row.appendChild(st);
+  return r;
+}
+async function askIce(q, odds, dice){
+  used.add('oracle');
+  const row = add('rollrow', `<span class="lbl">Ask the Ice: "${esc(q)}" Odds: ${odds} (${dice.map(n => 'd'+n).join(' + ')}, keep highest). 1-2 no, and · 3-4 yes, but · 5+ yes.</span>`);
+  const box = document.createElement('div'); box.className = 'dice'; row.appendChild(box);
+  const set = dice.map(n => ({sides:n, el: dieEl(n, 'ice')})); set.forEach(x => box.appendChild(x.el));
+  await waitRoll('Ask the Ice', 'Ask the Ice');
+  set.forEach(x => { x.v = d(x.sides); x.el.classList.remove('ghost'); }); await tumble(set); set.forEach(x => x.el.firstChild.textContent = x.v);
+  const top = Math.max(...set.map(x => x.v)); let m = false; set.forEach(x => { if (x.v === top && !m){ x.el.classList.add('top'); m = true; } else x.el.classList.add('low'); });
+  const r = top <= 2 ? 'no' : top <= 4 ? 'but' : 'yes';
+  const st = document.createElement('span'); st.className = 'result ' + ({no:'bad', but:'mix', yes:'ok'})[r]; st.textContent = `${top}: ${({no:'no, and', but:'yes, but', yes:'yes'})[r]}`; row.appendChild(st);
+  return r;
+}
+
+/* ---------- the Count ---------- */
+function showCount(){ add('', `<div class="countline"><b>THE COUNT</b>${[10,9,8,7,6,5,4,3,2,1,0].map(n => `<span class="${n > count ? 'gone' : n === count ? 'now' : ''}">${n}</span>`).join('')}</div>`); }
+function lowerCount(n, why){ count = Math.max(1, count - n); used.add('count'); render(); nar(`${why} <strong>The Count drops to ${count}.</strong>`); if (!used.has('countShown')){ used.add('countShown'); rule('The Count is this adventure\'s clock. It starts at 10 and drops when things go wrong. In the full adventure, if it reaches 0, you go straight to scene 15.'); } showCount(); }
+
+/* ---------- harm and defense ---------- */
+// kind: 'injury' or 'death'. Offers Defense: break an item to turn the hit into a brief hindrance.
+async function takeHit(desc, kind='injury', alsoPell=false){
+  nar(desc);
+  const breakable = C.gear.filter(g => !g.broken && (kind === 'injury' || g.armor));
+  const opts = breakable.map(g => ({id:'b:'+g.name, label:`Break your ${g.name}`, sub: g.armor ? `Armor: ${g.max - g.used} break${g.max - g.used === 1 ? '' : 's'} left. The hit becomes a brief hindrance` : 'It\'s useless until repaired. The hit becomes a brief hindrance', say:false}));
+  const label = kind === 'death' ? 'Take it: you die' : kind === 'maim' ? 'Take it: you\'re maimed' : 'Take the injury';
+  opts.push({id:'take', label, sub: kind === 'death' ? 'Make a new character and bring them in quickly' : kind === 'maim' ? 'A lasting wound. Hindered when it matters' : 'Hindered (d4) on physical rolls until treated', cls: kind === 'death' ? 'danger' : '', say:false});
+  if (!used.has('defenseRule')){ used.add('defenseRule'); rule('Defense: when you\'d take a hit, you can break an item instead. The blow lands on your gear and becomes a brief hindrance (d4 on your next roll). Armor is built for this: a vest breaks once, a hardsuit three times.'); }
+  const c = await choose(opts);
+  if (c.startsWith('b:')){
+    const g = item(c.slice(2)); used.add('defense');
+    if (g.armor){ g.used++; if (g.used >= g.max) g.broken = true; } else g.broken = true;
+    C.brief = 1; render();
+    nar(`Your <strong>${esc(g.name)}</strong> takes it${g.broken ? ' and is wrecked' : ''}. You're shaken but whole. <strong>Brief hindrance.</strong>`);
+  } else if (kind === 'death'){
+    await die();
+  } else if (kind === 'maim'){
+    used.add('maim'); C.maimed = 'a crushed hand'; render();
+    nar('The drill catches your left hand. When you can look at it again, two fingers are gone. <strong>You are maimed.</strong>');
+    rule('Maimed: a setback on a deadly risk leaves a lasting wound. Write it down. It hinders you whenever it matters.');
+  } else {
+    used.add('injury'); C.injured = true; render();
+    nar('<strong>You are injured.</strong>');
+    rule('Harm: injuries need time or medical care to heal. Until then, you\'re hindered (d4) whenever the injury matters.');
+  }
+  if (alsoPell && pell.on){ pell.hurt = true; render(); nar('Pell took it too. He grits his teeth and signs <em>"fine, fine"</em>, which he isn\'t. <strong>Pell is injured.</strong>'); rule('Help shares the risk: an ally who adds their die suffers the consequence alongside you.'); }
+}
+async function die(){
+  used.add('death'); dead.push(C.key);
+  nar(`<strong>${esc(C.name)} dies.</strong> The Auger's drill doesn't stop for anyone. Pell drags what's left of you out of its path, too late.`);
+  rule('Death in 24XX: when the risk is death and you roll a disaster, your character dies. Make a new one and bring them in quickly. Under the ice, a second cage is always on its way down.');
+  render();
+  let left = Object.keys(PCS).filter(k => !dead.includes(k));
+  if (!left.length){ left = Object.keys(PCS).filter(k => k !== C.key); }
+  nar('Twenty minutes later, the freight cage clanks onto the station roof again. Mags sent backup.');
+  const k = await choose(left.map(k => ({id:k, label:`${PCS[k].name}, ${PCS[k].title}`, sub: Object.entries(PCS[k].skills).map(([s,v]) => `${s} d${v}`).join(' · '), say:`I'm ${PCS[k].name}. Mags sent me.`})));
+  makeChar(k);
+  lowerCount(1, 'Waiting for backup cost time.');
+}
+function makeChar(k){
+  const P = PCS[k];
+  C = {key:k, name:P.name, title:P.title, skills:{...P.skills}, perk:P.perk, injured:false, maimed:null, brief:0, credits:2,
+    gear:P.gear.map(([name, max, armor, bulky]) => ({name, max, used:0, armor:!!armor, bulky:!!bulky, broken:false}))};
+  render();
+}
+
+/* ---------- sheet ---------- */
+function render(){
+  if (!C) return;
+  $('#sumName').textContent = C.name;
+  $('#sumMini').textContent = `Count ${count} · ${C.maimed ? 'Maimed' : C.injured ? 'Injured' : 'Unhurt'}${C.brief ? ' · Hindered' : ''}`;
+  const bulky = C.gear.filter(g => g.bulky && !g.broken).length;
+  $('#sheetBody').innerHTML = `
+    <div class="role">${esc(C.title)} · ₡${C.credits}<br>${esc(C.perk)}</div>
+    <div><div class="sec"><span>Skill dice</span><span>else d6</span></div><ul class="skl">${Object.entries(C.skills).map(([s,v]) => `<li><span>${s}</span><b>d${v}</b></li>`).join('')}</ul></div>
+    <div><div class="sec"><span>Gear</span><span>${bulky} bulky</span></div><ul class="gearl">${C.gear.map(g => `<li class="${g.broken?'broken':''}"><span>${esc(g.name)}${g.bulky ? ' <small>bulky</small>' : ''}</span><small>${g.broken ? 'broken' : g.armor ? `breaks ${'●'.repeat(g.max - g.used)}${'○'.repeat(g.used)}` : ''}</small></li>`).join('')}</ul></div>
+    <div><div class="sec"><span>Condition</span></div><div class="cond">
+      <span class="chip ${C.brief ? 'warn' : ''}">Hindered</span><span class="chip ${C.injured ? 'on' : ''}">Injured</span><span class="chip ${C.maimed ? 'on' : ''}">Maimed${C.maimed ? ': ' + esc(C.maimed) : ''}</span></div></div>
+    ${pell.on ? `<div><div class="sec"><span>Ally</span><span>shares risk</span></div><div class="cond"><span class="chip good">Pell Ansari</span><span class="chip">Labor d8 · Engines d8 · Sneaking d8</span>${pell.hurt ? '<span class="chip on">Injured</span>' : ''}</div></div>` : ''}
+    ${flags.auger ? `<div><div class="sec"><span>Threat: the Auger</span><span>Tough 2</span></div><div class="trackline">${[0,1].map(i => `<span class="pip ${i < flags.augerHits ? 'on' : ''}"></span>`).join('')}<span>${flags.augerHits}/2 successes</span></div></div>` : ''}
+    <div><div class="sec"><span>The Count</span><span>at 0, all is lost</span></div><div class="cnt"><b>${count}</b><span>${dead.length ? `${dead.length} wellwright${dead.length>1?'s':''} lost` : 'starts at 10'}</span></div></div>`;
+}
+
+/* ---------- adventure ---------- */
+async function start(){
+  nar('<strong>24XX</strong> is a tiny, fast set of sci-fi roleplaying rules by Jason Tocci. Every roll is the same: pick up one die for your skill, add dice if you have help, and keep the highest. This demo is <strong>Underice</strong>, a 24XX game of rescue and salvage beneath the ice of the moon Hesper.');
+  rule('Your skill die is a d6 if you have no relevant skill, or a d8, d10, or d12 if you do. Roll it and keep the highest die: 1-2 is a disaster, 3-4 a setback, 5 or more a success.');
+  nar('Choose who goes down the shaft.');
+  const k = await choose(Object.entries(PCS).map(([k,p]) => ({id:k, label:`${p.name}, ${p.title}`, sub:Object.entries(p.skills).map(([s,v]) => `${s} d${v}`).join(' · '), say:`I'll play ${p.name}.`})));
+  makeChar(k);
+  nar(esc(PCS[k].blurb));
+  rule('Every skill you don\'t list on your sheet is a d6. Your gear matters too: the right tool adds a d6 to a roll, and armor can break to save you from a hit.');
+  await cont('Begin Act One');
+  await s1();
+}
+
+async function s1(){
+  scene(1, 'The Ticket');
+  nar('Gantry Hold is a heated hangar on the surface of Hesper, all orange floodlights and frost. Outside, the wind is minus one hundred and sixty. Inside, <strong>Mags Orrin</strong>, the night dispatcher, slides a ticket across the counter and doesn\'t let go of it.');
+  npc('Mags Orrin', '<q>"Well Nine. Silk harvest and pumps. Fourteen crew. Went quiet thirty-one hours ago. Concession wants eyes on it and anyone breathing brought up. Three credits, salvage rights on anything not bolted down."</q>');
+  nar('She plays the last transmission.');
+  radio('Fourteen voices, slow and calm, all together: "Ten. Nine. Eight. Seven." A pause. Then from the start again.');
+  npc('Mags Orrin', '<q>"It\'s been looping for a day and a half. Nobody topside will go. So. You."</q>');
+  const c = await choose([
+    {id:'take', label:'Take the ticket as written', sub:'No risk, so no roll', say:'"Three credits. Fine. Give it here."'},
+    {id:'push', label:'Push for more', sub:`Roll ${skillSub(['Persuasion','Deception'])}. Risk: Mags takes it personally`, say:'"Three credits for a quiet well? Mags. Come on."'},
+  ]);
+  if (c === 'take'){
+    rule('In 24XX you only roll when there\'s a risk. Taking the deal as offered has none, so it just happens.');
+    flags.fee = 3; nar('Mags lets go of the ticket. <strong>Fee: ₡3.</strong>');
+  } else {
+    rule('Before you roll, you hear the risk. Here: Mags could get offended and cut your pay. You could still back out. You don\'t.');
+    const r = await roll({label:'Push for more', skills:['Persuasion','Deception'], phys:false, helpable:false, risk:'Mags cuts the fee'});
+    if (r.b === 'success'){ flags.fee = 4; flags.sallis = true; npc('Mags Orrin', '<q>"Four. And this is free: there\'s a Concession science officer on Nine. Doctor Rook Sallis. He wasn\'t on the crew list. Someone upstairs wants him back more than they want the crew."</q>'); nar('<strong>Fee: ₡4.</strong> You also learn about Sallis.'); }
+    else if (r.b === 'setback'){ flags.fee = 3; flags.sallis = true; flags.recorder = true; npc('Mags Orrin', '<q>"Three. But bring me Nine\'s flight recorder and I\'ll tell you something: there\'s a Concession scientist on that station who isn\'t on the crew list. Sallis."</q>'); nar('A setback: no extra pay, but a partial win. <strong>Fee: ₡3</strong>, and you owe Mags a recorder.'); }
+    else { flags.fee = 2; npc('Mags Orrin', '<q>"Two. Take it or leave it."</q>'); nar('A disaster: you suffer the full risk. <strong>Fee: ₡2.</strong>'); }
+  }
+  // load
+  nar('Your crawler, the <em>Long Way Home</em>, has a spare <strong>chain winch</strong> in the back: heavy, ugly, and good for hauling.');
+  const bulkyNow = C.gear.filter(g => g.bulky).length;
+  const w = await choose([
+    {id:'yes', label:'Take the winch', sub:`+d6 when you haul or brace. Bulky${bulkyNow ? ': with your ' + C.gear.find(g => g.bulky).name + ', that\'s two bulky items' : ''}`, say:'I sling the winch over my shoulder.'},
+    {id:'no', label:'Travel light', sub:'Leave it in the crawler', say:'I leave the winch.'}]);
+  if (w === 'yes'){ C.gear.push({name:'Chain winch', max:1, used:0, armor:false, bulky:true, broken:false}); flags.winch = true; render(); }
+  used.add('load');
+  rule('Load: carry what makes sense. Some items are bulky. Carrying more than one bulky item can hinder you (d4) when it matters: climbing, squeezing through a hatch.');
+  await cont('Drive out to the shaft');
+  await s2();
+}
+
+async function s2(){
+  scene(2, 'The Long Shaft');
+  nar('The Well Nine shaft head is a squat dome with frost an arm thick on the inside. The freight cage is a grated box on a cable four kilometers long, lit by one amber lamp. You step in, pull the lever, and the ice swallows you.');
+  nar('The walls slide past, blue and then black. The cage hums. Then, at three kilometers down, it shudders.');
+  rule('Test your luck: when bad luck is possible but nobody is acting, roll a d6. On 1-2, trouble arrives. On 3-4, you see signs of it. On 5-6, all clear.');
+  const l = await luck('does the cage hold?');
+  if (l === 'trouble') lowerCount(1, 'The cage stops with a bang and drops a meter before the brake catches. You hang there, swaying, for a long time.');
+  else if (l === 'signs') nar('It grinds to a halt, swaying. Something above you groans.');
+  else nar('It slows to a crawl and stops gently, a hundred meters above the station lock.');
+  nar('<strong>Ice creep</strong> has clamped the cable guides. The cage isn\'t going any farther on its own. Below, through the grating, you can see the station\'s lights: dim, pulsing, in no hurry.');
+  const bulky = C.gear.filter(g => g.bulky && !g.broken).length;
+  const c = await choose([
+    {id:'climb', label:'Climb down the maintenance rungs', sub:`Roll Climbing ${dieName('Climbing')}${hasItem('Line gun') ? ' + d6 line gun' : ''}${bulky > 1 ? '. Two bulky items: hindered (d4)' : ''}. Risk: a fall`, say:'I climb out onto the rungs.'},
+    {id:'restart', label:'Restart the cage', sub:`Roll ${skillSub(['Engines','Electronics'])}. Risk: the cage drops`, say:'I pop the brake housing and start bypassing.'},
+    {id:'listen', label:'Listen for where the cable is clamped', sub:`Roll Signals ${dieName('Signals')}${hasItem('Sonar wand') ? ' + d6 sonar wand' : ''}. Risk: you guess wrong, and fall`, say:'Quiet. Let me hear it.'},
+  ]);
+  let r;
+  if (c === 'climb'){
+    const circ = hasItem('Line gun') ? ['line gun'] : [];
+    if (bulky > 1){ C.brief = 1; rule('Load: you\'re carrying two bulky items on a ladder. That hinders you: d4 instead of your skill die.'); }
+    r = await roll({label:'Climb down', skills:['Climbing'], circ, risk:'a hard fall (injury)'});
+  } else if (c === 'restart') r = await roll({label:'Restart the cage', skills:['Engines','Electronics'], phys:false, risk:'the cage drops (injury)'});
+  else r = await roll({label:'Listen to the shaft', skills:['Signals'], phys:false, circ: hasItem('Sonar wand') ? ['sonar wand'] : [], risk:'a fall (injury)'});
+  if (r.b === 'success') nar(r.top >= 7 ? 'You reach the station roof clean and fast, with time to spare. The higher the roll, the better: you even spot the lock\'s manual release from above.' : 'You reach the station roof clean.');
+  else if (r.b === 'setback'){
+    nar('You make it, but something gives.');
+    const breakables = C.gear.filter(g => !g.broken && !g.armor);
+    const s = await choose([
+      {id:'time', label:'It took far too long', sub:'Lower the Count by 1', say:false},
+      ...(breakables.length ? [{id:'gear', label:`Your ${breakables[0].name} takes the knock`, sub:'Break it', say:false}] : [])]);
+    if (s === 'time') lowerCount(1, 'An hour of cold, careful work.');
+    else { breakables[0].broken = true; used.add('defense'); render(); nar(`Your <strong>${esc(breakables[0].name)}</strong> smashes against the shaft wall. Broken.`); }
+    rule('A setback is a lesser consequence or a partial success. You got down, but you paid for it.');
+  } else {
+    await takeHit('The rung snaps, or the brake lets go, and you fall the last ten meters onto the station roof.');
+  }
+  await cont('Head for the lock');
+  await s3();
+}
+
+async function s3(){
+  scene(3, 'The Frozen Lock');
+  nar('Well Nine hangs beneath the ice in three tiers: the upper ring, the pump hall, and the lower ring with the moon pool. You\'re standing on the roof at the shaft lock. Its hatch is glazed with ice, and the status lamp blinks amber, amber, amber.');
+  nar('Someone on the other side is knocking. Two knocks, pause, two knocks.');
+  const opts = [
+    {id:'cut', label:'Cut through the hinge', sub:`Roll ${skillSub(['Labor','Engines'])}${hasItem('Cutting torch') ? ' + d6 torch' : hasItem('Chain winch') ? ' + d6 winch' : ''}. Loud. Risk: falling ice (injury)`, say:'I go at the hinge.'},
+    {id:'hack', label:'Hack the lock panel', sub:`Roll ${skillSub(['Hacking','Electronics'])}. Risk: falling ice (injury)`, say:'I pry the panel cover off.'},
+    {id:'knock', label:'Knock back', sub:`Roll ${skillSub(['Signals','Persuasion'])}. Risk: falling ice (injury)`, say:'I knock back: two, pause, two.'},
+  ];
+  const c = await choose(opts);
+  let r;
+  if (c === 'cut') r = await roll({label:'Cut the hinge', skills:['Labor','Engines'], circ: hasItem('Cutting torch') ? ['cutting torch'] : hasItem('Chain winch') ? ['chain winch'] : [], risk:'falling ice (injury)'});
+  else if (c === 'hack') r = await roll({label:'Hack the lock', skills:['Hacking','Electronics'], phys:false, risk:'falling ice (injury)'});
+  else r = await roll({label:'Knock back', skills:['Signals','Persuasion'], phys:false, risk:'falling ice (injury)'});
+  if (c === 'cut' && hasItem('Cutting torch')) rule('Circumstances help: the right tool adds a d6 to your roll. You still keep only the single highest die.');
+  if (r.b === 'success') nar('The hatch swings open.');
+  else if (r.b === 'setback'){ C.brief = 1; render(); nar('It opens, but a sheet of frost cracks across your hands. Numb fingers. <strong>Hindered on your next roll.</strong>'); }
+  else { await takeHit('The ice sheet over the hatch breaks loose and comes down on your arm.'); nar('The hatch opens anyway, from the inside.'); }
+  if (c === 'cut'){
+    const l = await luck('did anything inside hear the cutting?');
+    if (l === 'trouble') lowerCount(1, 'Somewhere below, metal scrapes on metal, coming closer. Then it stops and waits.');
+    else if (l === 'signs') nar('Somewhere below, metal scrapes on metal. Then nothing.');
+    else nar('Nothing stirs.');
+  }
+  nar('Inside the lock, a young man in pump-crew overalls backs away from you with a wrench raised. He\'s soaked in sweat despite the cold. He signs something fast, sees you don\'t follow, and holds up a scratched slate:');
+  add('slate', 'PELL. PUMP CREW. I\'M DEAF.<br>THEY ALL WALKED DOWN SINGING. I COULDN\'T HEAR IT.<br>THE AUGER WENT WRONG. IT\'S IN THE RING.');
+  const p = await choose([
+    {id:'with', label:'"Stay with me."', sub:'Face him so he can read your lips', say:'I face him, slow and clear: "You\'re with me now."'},
+    {id:'slate', label:'Write on his slate', sub:'"What\'s the Auger?"', say:'I take the slate and write: WHAT\'S THE AUGER?'},
+  ]);
+  if (p === 'slate') add('slate', 'MAINTENANCE DRONE. 2 TONS. DRILL ARM.<br>IT\'S COUNTING IN TOLLER\'S VOICE.');
+  else nar('Pell nods hard, twice, and lowers the wrench.');
+  pell.on = true; render();
+  rule('Pell is an ally. When he helps, he rolls his own skill die alongside yours, and you keep the highest. But helpers share the risk: if it goes wrong, it goes wrong for him too.');
+  await cont('Into the ring');
+  await s4();
+}
+
+async function s4(){
+  scene(4, 'The Auger');
+  nar('The upper ring is a curved corridor of steel grating and frost. Halfway round, something is scraping. It comes around the bend: the <strong>Auger</strong>, the station\'s maintenance drone, a two-ton crab of hydraulic legs with an ice drill for a right arm. Its work-lamp sweeps the corridor.');
+  radio('From its speaker, the foreman\'s voice, calm and slow: "Six. Five. Four."');
+  nar('It sees you. It raises the drill.');
+  flags.auger = true; flags.augerHits = 0; render();
+  rule('Threats in Underice have Tough: how many successes it takes to stop them. The Auger is Tough 2. A success counts 1; a success of 7 or more counts 2. A setback counts 1 but costs you. A disaster counts nothing, and you take the full risk.');
+  let rounds = 0;
+  while (flags.augerHits < 2){
+    rounds++;
+    if (rounds > 6){
+      nar('Pell yanks a red lever on the wall. The bulkhead to the flooded spoke slams open, and black water roars into the corridor. The Auger, caught mid-step, sparks and seizes.');
+      flags.augerHits = 2; render(); break;
+    }
+    const fightSkill = skillOpt(['Hand-to-hand','Shooting']);
+    const c = await choose([
+      {id:'fight', label:'Fight it', sub:`Roll ${skillSub(['Hand-to-hand','Shooting'])}${hasItem('Flare pistol') ? ' + d6 flare pistol' : ''}. DEADLY: the risk is death`, cls:'danger', say: fightSkill === 'Shooting' ? 'I aim for its sensor cluster.' : 'I go for the hydraulic lines.'},
+      {id:'shut', label:'Shut it down', sub:`Roll ${skillSub(['Electronics','Hacking'])} at its service port. Risk: the drill (injury)`, say:'I go for the service port.'},
+      {id:'lure', label:'Lure it into the flooded spoke', sub:`Roll ${skillSub(['Sneaking','Labor','Engines'])}${hasItem('Moth (sniffer drone)') ? ' + d6 Moth' : hasItem('Line gun') ? ' + d6 line gun' : hasItem('Chain winch') ? ' + d6 winch' : ''}. Risk: pinned (injury)`, say:'This way, you lump. Follow me.'},
+    ]);
+    let r, kind = 'injury';
+    if (c === 'fight'){
+      used.add('deadly');
+      if (!used.has('deadlyRule')){ used.add('deadlyRule'); rule('A deadly risk: when the risk is death, a disaster kills you and a setback leaves you maimed. 24XX tells you this before you roll, so you can choose another way.'); }
+      r = await roll({label:'Fight the Auger', skills:['Hand-to-hand','Shooting'], circ: hasItem('Flare pistol') ? ['flare pistol'] : [], risk:'the drill', deadly:true});
+      kind = 'death';
+    } else if (c === 'shut'){
+      r = await roll({label:'Shut it down', skills:['Electronics','Hacking'], phys:false, risk:'the drill (injury)'});
+    } else {
+      const circ = hasItem('Moth (sniffer drone)') ? ['Moth'] : hasItem('Line gun') ? ['line gun'] : hasItem('Chain winch') ? ['chain winch'] : [];
+      r = await roll({label:'Lure it', skills:['Sneaking','Labor','Engines'], circ, risk:'pinned to the wall (injury)'});
+    }
+    if (r.b === 'success'){
+      const n = r.top >= 7 ? 2 : 1; flags.augerHits = Math.min(2, flags.augerHits + n); render();
+      nar(({fight: n === 2 ? 'Your shot bursts its sensor cluster in a shower of sparks. It staggers blind and crashes into the wall.' : 'You tear a hydraulic line loose. Fluid sprays. One leg goes limp.',
+            shut: n === 2 ? 'You\'re into the port before it can turn. Three commands and its legs fold under it.' : 'You get a cable in and kill one of its leg motors before it shakes you off.',
+            lure: n === 2 ? 'It charges after you straight into the flooded spoke. Pell slams the bulkhead behind it.' : 'It follows you halfway into the spoke, then stops, sensing water. Getting closer.'})[c]);
+      if (n === 2) rule('The higher the roll, the better: a 7 or more counts as two successes against a threat.');
+    } else if (r.b === 'setback'){
+      flags.augerHits = Math.min(2, flags.augerHits + 1); render();
+      nar('Partial success: you hurt it. But it hurts you back.');
+      if (kind === 'death') await takeHit('The drill comes down on your hand.', 'maim', r.helped);
+      else { C.brief = 1; render(); nar('It slams you into the wall. <strong>Hindered on your next roll.</strong>'); if (r.helped && pell.on && !pell.hurt){ pell.hurt = true; render(); nar('Pell catches the edge of it too. <strong>Pell is injured.</strong>'); } }
+    } else {
+      await takeHit(kind === 'death' ? 'The drill comes for your chest, spinning.' : (c === 'shut' ? 'It swings around. The drill catches you as you dive away.' : 'It pins you against the wall with one massive leg.'), kind, r.helped);
+    }
+    if (flags.augerHits < 2) add('', `<div class="trackline"><b>The Auger</b>${[0,1].map(i => `<span class="pip ${i < flags.augerHits ? 'on' : ''}"></span>`).join('')}<span>${flags.augerHits}/2</span></div>`);
+  }
+  used.add('threat');
+  nar('The Auger slumps with a long hiss of hydraulics.');
+  radio('Its speaker finishes the count with a sigh: "Three."');
+  nar('Then it\'s quiet. Pell exhales and points down the ring, toward the commons.');
+  flags.auger = false; render();
+  await cont('To the commons');
+  await s5();
+}
+
+async function s5(){
+  scene(5, 'Empty Tables');
+  nar('The commons is a low room of long tables and a galley. Fourteen meals sit half-eaten. A mug of tea has frozen around its spoon. Chairs are pushed back neatly, not knocked over. Everyone stood up at once and walked out calmly.');
+  nar('Wet boot prints lead from the tables to the stairwell, all of them, in step. Down, toward the lower ring and the moon pool.');
+  const c = await choose([
+    {id:'search', label:'Search the commons', sub:`Roll ${skillSub(['Spotting','Signals'])}. Risk: you take too long`, say:'I start turning things over.'},
+    {id:'follow', label:'Follow the prints right away', sub:'No roll. You learn less', say:'No time. We follow the prints.'},
+  ]);
+  if (c === 'search'){
+    const r = await roll({label:'Search the commons', skills:['Spotting','Signals'], phys:false, risk:'you take too long (the Count drops)'});
+    if (r.b === 'success'){
+      flags.log = true;
+      nar('Under a table, you find Foreman <strong>Agnes Toller</strong>\'s handheld. Her last entry:');
+      add('slate', '"SALLIS\'S LINE PULLED SOMETHING UP. GLOWING. BIG. HE\'S GOT IT NETTED IN THE MOON POOL. IT\'S SINGING. EVERYBODY\'S HUMMING IT. I\'M HUMMING IT."');
+      nar('You also notice a door upstairs with fresh scratches and a chair jammed under its handle: the science lab.');
+      if (r.top >= 7){ flags.code = true; nar('And on the handheld\'s last screen: the drop cage override code. <strong>You note it down.</strong>'); }
+    } else if (r.b === 'setback'){
+      nar('You find Toller\'s handheld, but the screen is cracked. You can make out only: <em>"Sallis\'s line pulled something up. It\'s singing."</em>');
+    } else lowerCount(1, 'You turn the commons upside down and find nothing but cold food.');
+  }
+  nar('The station\'s speakers crackle.');
+  radio('Fourteen voices, softer now, somewhere far below: "Three. Two." A long silence. Then it starts again from ten.');
+  nar('Each time, they\'re a little farther away.');
+  rule('Playing solo, you ask the Ice Oracle when you don\'t know what\'s true. It uses the same dice: likely odds roll two d6 and keep the highest. 1-2 no, 3-4 yes but, 5+ yes.');
+  const a = await askIce('Is anyone down there still alive?', 'likely', [6,6]);
+  if (a === 'yes') nar('Under the static, you hear it: someone, somewhere below, coughs in the middle of the count. A real cough. Alive.');
+  else if (a === 'but') nar('Yes. But on Pell\'s slate, he\'s drawn the crew roster, and beside it a number: the dive habitat\'s air supply. <em>"~10 HRS."</em> Less, now.');
+  else nar('Nothing human in the signal. Just the count. But the boot prints are still wet, and you didn\'t come four kilometers to turn around.');
+  showCount();
+  await cont('End of Act One');
+  await ending();
+}
+
+async function ending(){
+  $('#sceneName').textContent = 'End of Act One';
+  choicesEl.innerHTML = '';
+  const ALL = [['roll','Skill die: keep the highest'],['success','Success (5+)'],['setback','Setback (3-4)'],['disaster','Disaster (1-2)'],['circ','Helpful circumstances (+d6)'],['help','An ally helps and shares the risk'],['hinder','Hindered (d4)'],['defense','Defense: breaking gear'],['injury','Injury'],['deadly','A deadly risk'],['luck','Test your luck'],['oracle','The Ice Oracle'],['threat','Threats and Tough'],['load','Load and bulky items'],['count','The Count']];
+  const store = (window.RDL_STORE && window.RDL_STORE.products && window.RDL_STORE.products[PRODUCT_ID]) || {};
+  const live = !!store.checkout;
+  add('endcard', `
+    <h3>Act One complete.</h3>
+    <p style="margin:0">${esc(C.name)} stands at the top of the stairwell to the lower ring${pell.on ? ' with Pell beside you' : ''}, ${C.maimed ? 'maimed' : C.injured ? 'injured' : 'still on your feet'}, with the Count at <strong>${count}</strong>. Below, something in the moon pool is glowing. Above, a scientist is barricaded in his lab. The story continues in the full adventure.</p>
+    <div class="product">
+      <div class="cov"><small>A 24XX game and adventure</small>The Silence at Well Nine</div>
+      <div>
+        <strong style="font-family:var(--f-display);font-size:20px;text-transform:uppercase">The Silence at Well Nine: the complete game and adventure (PDF)</strong>
+        <ul>
+          <li>Acts Two and Three: Doctor Sallis's lab, the glowing thing in the moon pool, and a 300-meter drop to Habitat Seven</li>
+          <li>Four endings, from the Return to Ten Thousand Voices</li>
+          <li>Underice: a complete 24XX game with six roles, three origins, gear, and the Ice Oracle for solo play</li>
+          <li>Ready-to-play characters, six threats, and twelve custom tables, including a ticket generator for new jobs</li>
+          <li>A one-page rules reference, character sheet, and Well Nine tracker · 30 pages</li>
+        </ul>
+        <div class="buy">
+          ${live ? `<a class="buybtn" href="${esc(store.checkout)}" target="_blank" rel="noopener">Buy the PDF · ${esc(store.price || '')}</a>` : `<span class="buybtn" aria-disabled="true">PDF coming soon${store.price ? ' · ' + esc(store.price) : ''}</span>`}
+          <small>${live ? 'Instant download. Secure checkout by Lemon Squeezy.' : 'The store opens soon.'}</small>
+        </div>
+      </div>
+    </div>
+    <ul class="learned">${ALL.map(([k,t]) => `<li class="${used.has(k)?'':'no'}">${t}</li>`).join('')}</ul>
+    <p class="fine">The 24XX SRD by Jason Tocci is free at <a href="https://jasontocci.itch.io/24xx" target="_blank" rel="noopener">jasontocci.itch.io/24xx</a>. 24XX rules are CC BY Jason Tocci. This adventure is not an official 24XX product.</p>`);
+  const c = await choose([{id:'again', label:'Play Act One again', cls:'primary', say:false}]);
+  if (c === 'again') location.reload();
+}
+
+if (matchMedia('(max-width: 880px)').matches) $('#sheet').open = false;
+start();
+})();
+</script>
+</body>
+</html>

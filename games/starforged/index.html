@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Long Sleep of the Lodestar: Starforged Demo</title>
+<meta name="description" content="Play Act One of The Long Sleep of the Lodestar, a solo adventure for Ironsworn: Starforged, free in your browser. Real moves, real dice, real oracles.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=JetBrains+Mono:wght@400;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap">
+<script src="../../store.js"></script>
+<style>
+/* Layout: a ship's flight log on a dark nav-grid. Signal orange for action, indigo for structure, mono for instrument readouts. */
+:root{
+  --void:#0A0B16; --void-2:#11132A; --panel:#161936; --panel-2:#1D2147; --line:#2E3366; --text:#E9E6F2; --dim:#A3A6C8; --faint:#6E7299;
+  --signal:#FF6A3D; --signal-2:#FF8A63; --indigo:#5B63D6; --ok:#3CCFB4; --mix:#F2B33D; --bad:#FF5468; --paper:#F4F1EA; --ink:#15161F;
+  --f-display:"Chakra Petch", "Arial Narrow", sans-serif; --f-body:"Source Serif 4", Georgia, serif; --f-mono:"JetBrains Mono", ui-monospace, Menlo, monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--void);color:var(--text);font-family:var(--f-body);font-size:17px;line-height:1.55;overflow-x:hidden;
+  background-image:radial-gradient(circle at 85% -10%, rgba(91,99,214,.22) 0, transparent 45%),linear-gradient(rgba(233,230,242,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(233,230,242,.035) 1px,transparent 1px);
+  background-size:auto,32px 32px,32px 32px}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+.proto{background:#05060D;color:var(--dim);font-family:var(--f-mono);font-size:12px;letter-spacing:.04em;padding-block:7px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));display:flex;gap:6px 16px;flex-wrap:wrap;justify-content:space-between;border-bottom:1px solid var(--line)}
+.proto b{color:var(--signal)}
+.wrap{max-width:1180px;margin:0 auto;padding-block:24px 60px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+.masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px 24px;flex-wrap:wrap;margin-bottom:20px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--signal);margin:0 0 8px}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(34px,6vw,60px);line-height:.95;margin:0;text-transform:uppercase;letter-spacing:.01em}
+.tag{font-style:italic;color:var(--dim);margin:12px 0 0;max-width:56ch}
+.actchip{font-family:var(--f-mono);font-size:12px;border:1px solid var(--signal);color:var(--signal);padding:6px 12px;white-space:nowrap;clip-path:polygon(0 0,100% 0,100% 70%,94% 100%,0 100%)}
+
+.table{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start}
+.story{background:var(--panel);border:1px solid var(--line);min-width:0;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.story-head{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;padding:10px 18px;border-bottom:1px solid var(--line);background:var(--void-2)}
+.story-head .scene{font-family:var(--f-display);font-weight:700;font-size:18px;line-height:1.1;text-transform:uppercase;letter-spacing:.04em}
+.toggles{display:flex;gap:4px 14px;flex-wrap:wrap}
+.toggle{font-family:var(--f-mono);font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--dim)}
+.toggle input{accent-color:var(--signal)}
+#log{padding:18px 20px 10px;display:flex;flex-direction:column;gap:12px}
+.line{max-width:66ch}
+.line strong{color:#fff}
+.who{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--signal);display:block;margin-bottom:2px}
+.npc{border-left:3px solid var(--signal);padding-left:12px;font-style:italic}
+.npc .who{font-style:normal}
+.comms{font-family:var(--f-mono);font-size:14.5px;line-height:1.5;background:#0C0E20;border:1px solid var(--line);padding:8px 12px;max-width:66ch;color:#C9CCF0}
+.comms .who{color:var(--ok)}
+.you{align-self:flex-end;background:var(--signal);color:#1A0D07;padding:7px 13px;max-width:min(54ch,90%);font-weight:700;clip-path:polygon(0 0,100% 0,100% 100%,8px 100%,0 calc(100% - 8px))}
+.rule{font-family:var(--f-mono);font-size:13px;line-height:1.5;background:rgba(91,99,214,.14);border-left:3px solid var(--indigo);padding:7px 11px;max-width:66ch;color:#D3D5F2}
+.rule::before{content:"RULE // ";font-weight:700;color:#9EA5FF}
+body.norules .rule{display:none}
+.scenebreak{font-family:var(--f-display);font-weight:700;font-size:25px;line-height:1.1;border-top:1px solid var(--line);padding-top:12px;margin-top:8px;text-transform:uppercase;letter-spacing:.02em}
+.scenebreak small{display:flex;align-items:center;gap:8px;font-family:var(--f-mono);font-weight:700;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:4px}
+.scenebreak small i{display:inline-grid;place-items:center;min-width:24px;height:20px;padding:0 4px;background:var(--signal);color:#1A0D07;font-style:normal;letter-spacing:0;clip-path:polygon(0 0,100% 0,100% 70%,80% 100%,0 100%)}
+.scenebreak.sub{font-size:19px}
+
+details.move{max-width:66ch;border:1px solid var(--line);background:var(--void-2)}
+details.move summary{cursor:pointer;padding:6px 11px;font-family:var(--f-display);font-weight:700;font-size:16px;display:flex;justify-content:space-between;gap:8px;align-items:baseline;text-transform:uppercase;letter-spacing:.03em}
+details.move summary small{font-family:var(--f-mono);font-weight:400;font-size:10.5px;letter-spacing:.08em;color:var(--dim)}
+details.move .mt{padding:0 12px 10px;font-size:15px;color:#D6D4E4}
+details.move .mt p{margin:.4em 0} details.move .mt ul{margin:.2em 0;padding-left:1.2em}
+details.move .mt table{border-collapse:collapse;font-family:var(--f-mono);font-size:12px} details.move .mt td,details.move .mt th{border-bottom:1px solid var(--line);padding:2px 10px 2px 0;text-align:left}
+body.norules details.move{display:none}
+
+.rollrow{display:flex;flex-direction:column;gap:8px;border:1px solid var(--line);border-left:3px solid var(--signal);padding:10px 12px;max-width:66ch;background:#0F1126}
+.rollrow .lbl{font-family:var(--f-mono);font-size:13px;color:var(--dim)}
+.dice{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.dice .sep{font-family:var(--f-mono);font-size:13px;color:var(--faint)}
+.d6{width:42px;height:42px;border:2px solid var(--signal);background:#26140E;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:5px;border-radius:4px}
+.d6 i{width:7px;height:7px;border-radius:50%;background:var(--signal);place-self:center;visibility:hidden}
+.d6.preset{border-style:double;border-width:4px}
+.d10{width:46px;height:46px;display:grid;place-items:center;font-family:var(--f-mono);font-weight:700;font-size:17px;color:#fff;background:var(--indigo);clip-path:polygon(50% 0,100% 38%,82% 100%,18% 100%,0 38%)}
+.d10 span{margin-top:6px}
+.d10.beat{background:#3A3E66;color:#8C90B8}
+.d100{min-width:60px;height:40px;padding:0 10px;display:grid;place-items:center;border:1px solid var(--ok);font-family:var(--f-mono);font-weight:700;font-size:18px;color:var(--ok);background:#0B1D1E}
+.prog{border-color:var(--signal);color:var(--signal);background:#26140E}
+.ghost{opacity:.4;border-style:dashed}
+.d10.ghost{background:#3A3E66}
+.tumble{animation:tumble .12s linear infinite}
+@keyframes tumble{50%{transform:rotate(8deg) translateY(-2px)}}
+.score{font-family:var(--f-mono);font-weight:700;font-size:13.5px}
+.result{font-family:var(--f-mono);font-weight:700;font-size:12px;letter-spacing:.1em;text-transform:uppercase;padding:3px 9px;color:#0A0B16;align-self:flex-start}
+.result.ok{background:var(--ok)} .result.mix{background:var(--mix)} .result.bad{background:var(--bad)} .result.n{background:#C9CCF0}
+.oracle-out{font-family:var(--f-body);font-style:italic;color:#fff}
+.trackline{display:flex;gap:4px;align-items:center;flex-wrap:wrap;font-family:var(--f-mono);font-size:12px;color:var(--dim)}
+.trackline b{margin-right:6px;color:var(--text)}
+.box{width:20px;height:20px;border:1px solid var(--dim);display:inline-grid;grid-template:1fr 1fr/1fr 1fr;background:transparent}
+.box i.t{background:var(--signal)}
+.box.clk i.t{background:var(--bad)}
+
+#choices{position:sticky;bottom:0;background:var(--void-2);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:10px;z-index:3}
+#choices:empty{display:none}
+.opt{flex:1 1 220px;min-width:0;text-align:left;border:1px solid var(--line);background:var(--panel-2);padding:9px 12px;cursor:pointer;clip-path:polygon(0 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%);transition:background .12s}
+.opt:hover{background:#272C5E}
+.opt b{display:block;font-family:var(--f-display);font-weight:600;font-size:16.5px;line-height:1.25}
+.opt span{display:block;font-family:var(--f-mono);font-size:11.5px;color:var(--dim);margin-top:3px;line-height:1.4}
+.opt.primary{background:var(--signal);color:#1A0D07;border-color:var(--signal)}
+.opt.primary span{color:#4A1E0E}
+.opt.primary:hover{background:var(--signal-2)}
+.opt.burn{background:#3A2A0C;border-color:var(--mix)}
+.opt.burn b{color:var(--mix)}
+.opt:disabled{opacity:.4;cursor:not-allowed}
+.opt.roll{flex:1 1 100%;display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:14px;align-items:center;padding:12px 16px}
+.opt.roll::before{content:"";grid-row:span 2;width:26px;height:26px;background:#1A0D07;clip-path:polygon(50% 0,100% 38%,82% 100%,18% 100%,0 38%);transition:transform .2s}
+.opt.roll:hover::before{transform:rotate(72deg)}
+.opt.roll b{font-size:19px}
+
+/* sheet */
+.sheet{position:sticky;top:calc(12px + env(safe-area-inset-top,0px));background:var(--void-2);border:1px solid var(--line);min-width:0}
+.sheet summary{list-style:none;cursor:pointer;padding:10px 14px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:2px 10px;align-items:baseline;border-bottom:1px solid var(--line)}
+.sheet summary::-webkit-details-marker{display:none}
+.sheet .nm{font-family:var(--f-display);font-weight:700;font-size:18px;text-transform:uppercase;letter-spacing:.03em}
+.sheet .mini{font-family:var(--f-mono);font-size:11px;color:var(--signal)}
+.sheet-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:12px}
+.sec{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);border-bottom:1px solid var(--line);padding-bottom:3px;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
+.statrow{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;text-align:center}
+.statrow div{display:grid;place-items:center;align-content:center;padding:6px 0;background:var(--panel);clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
+.statrow b{font-family:var(--f-display);font-size:22px;line-height:1}
+.statrow small{font-family:var(--f-mono);font-size:9px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)}
+.meter{display:grid;grid-template-columns:70px repeat(6,1fr);gap:3px;align-items:center;font-family:var(--f-mono);font-size:11.5px;margin:3px 0}
+.meter b{font-family:var(--f-display);font-weight:600;font-size:13px;text-transform:uppercase}
+.meter span{border:1px solid var(--line);text-align:center;color:var(--faint);padding:1px 0}
+.meter span.on{background:var(--signal);color:#1A0D07;border-color:var(--signal);font-weight:700}
+.meter.ship span.on{background:var(--indigo);border-color:var(--indigo);color:#fff}
+.mom{display:flex;align-items:center;gap:10px;font-family:var(--f-mono);font-size:11.5px;color:var(--dim)}
+.mom b{font-family:var(--f-display);font-size:28px;color:var(--signal);min-width:44px}
+.pos{font-family:var(--f-mono);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px}
+.pos.ctrl{background:var(--ok);color:#0A0B16} .pos.badspot{background:var(--bad);color:#0A0B16}
+.sh-track{display:flex;gap:3px;flex-wrap:wrap}
+.sh-track .box{width:17px;height:17px}
+.sh-label{font-family:var(--f-body);font-size:14px;margin:2px 0 4px;color:var(--text)}
+.leg{display:grid;grid-template-columns:78px 1fr;gap:4px 6px;align-items:center;font-family:var(--f-mono);font-size:11px;color:var(--dim)}
+.leg .sh-track .box{width:13px;height:13px}
+.assets{list-style:none;margin:0;padding:0;font-size:14px;display:flex;flex-direction:column;gap:4px}
+.assets li{display:flex;justify-content:space-between;gap:8px;cursor:help}
+.assets small{font-family:var(--f-mono);font-size:10px;color:var(--faint);white-space:nowrap;text-transform:uppercase}
+.imp{font-family:var(--f-mono);font-size:11.5px;color:var(--bad)}
+.empty-sheet{font-style:italic;color:var(--dim);font-size:15px;margin:0}
+
+.endcard{border:1px solid var(--signal);background:#0F1126;padding:16px 18px;display:flex;flex-direction:column;gap:12px;max-width:68ch}
+.endcard h3{font-family:var(--f-display);font-weight:700;font-size:26px;line-height:1.05;margin:0;text-transform:uppercase}
+.product{display:grid;grid-template-columns:112px minmax(0,1fr);gap:14px;align-items:start;background:var(--paper);color:var(--ink);padding:14px}
+.product .cov{background:#0E0F1C;aspect-ratio:8.5/11;display:flex;flex-direction:column;justify-content:flex-end;padding:8px;font-family:var(--f-display);font-weight:700;font-size:13px;line-height:1;color:#F3EEE4;text-transform:uppercase;position:relative;overflow:hidden}
+.product .cov::before{content:"";position:absolute;width:90px;height:90px;border:1.5px dashed var(--signal);border-radius:50%;right:-30px;top:14px}
+.product .cov::after{content:"";position:absolute;width:26px;height:26px;background:#2A2D55;border:1.5px solid var(--signal);border-radius:50%;right:2px;top:46px}
+.product .cov small{font-family:var(--f-mono);font-size:6px;letter-spacing:.1em;color:#9EA2C4;margin-bottom:auto;position:relative;z-index:1}
+.product strong.pt{font-family:var(--f-display);font-size:19px;line-height:1.15;display:block}
+.product ul{margin:.3em 0 .7em;padding-left:1.1em;font-size:15px}
+.buy{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}
+.buybtn{display:inline-block;text-decoration:none;background:var(--signal);color:#1A0D07;font-family:var(--f-display);font-weight:700;padding:10px 16px;border:0;cursor:pointer;font-size:16px;text-transform:uppercase;letter-spacing:.03em}
+.buybtn[aria-disabled="true"]{background:#8A8DA8;color:#F4F1EA;cursor:not-allowed}
+.buy small{font-family:var(--f-mono);font-size:11.5px;color:#5E6176}
+.learned{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px 14px;font-size:14.5px}
+.learned li::before{content:"[x] ";font-family:var(--f-mono);font-weight:700;color:var(--ok)}
+.learned li.no{color:var(--faint)} .learned li.no::before{content:"[ ] ";color:var(--faint)}
+.fine{font-family:var(--f-mono);font-size:11.5px;color:var(--dim);line-height:1.6;margin:0}
+.foot{font-family:var(--f-mono);font-size:11.5px;margin-top:24px;max-width:100ch;line-height:1.65;color:var(--dim)}
+
+@media (max-width: 900px){
+  .table{grid-template-columns:minmax(0,1fr)}
+  .sheet{order:-1;top:env(safe-area-inset-top,0px);z-index:5}
+  .sheet-body{max-height:58vh;overflow:auto}
+  #log{padding:14px 14px 8px}
+  .product{grid-template-columns:1fr}
+  .product .cov{max-width:120px}
+}
+@media (max-width: 420px){ body{font-size:16.5px} .opt{flex-basis:100%} .d10{width:42px;height:42px} }
+@media (prefers-reduced-motion: reduce){ .tumble{animation:none} }
+</style>
+</head>
+<body>
+<div class="proto"><span><a href="../../" style="color:inherit">← All demos</a> · <b>FREE DEMO</b> · Act One of three</span><span>Not an official Ironsworn product</span></div>
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">A solo adventure for Ironsworn: Starforged</p>
+      <h1>The Long Sleep of the Lodestar</h1>
+      <p class="tag">Eighty-one years after it vanished, the colony ship Lodestar has come back. It is falling toward Tamsin Hold, and its beacon is reading the names of its sleepers. Last night, it read yours.</p>
+    </div>
+    <span class="actchip">FREE · ACT ONE · ~20 MIN</span>
+  </header>
+  <div class="table">
+    <main class="story" aria-live="polite">
+      <div class="story-head">
+        <span class="scene" id="sceneName">Before you launch</span>
+        <span class="toggles">
+          <label class="toggle"><input type="checkbox" id="rulesToggle" checked> Show rules</label>
+          <label class="toggle"><input type="checkbox" id="autoToggle"> Auto-roll</label>
+        </span>
+      </div>
+      <div id="log"></div>
+      <div id="choices"></div>
+    </main>
+    <details class="sheet" id="sheet" open>
+      <summary><span class="nm" id="sumName">Your character</span><span class="mini" id="sumMini">not chosen yet</span></summary>
+      <div class="sheet-body" id="sheetBody"><p class="empty-sheet">Your character appears here: stats, health, spirit, supply, your starship's integrity, momentum, assets, your vow, and your legacy tracks.</p></div>
+    </details>
+  </div>
+  <p class="foot">This work is based on Ironsworn: Starforged (found at www.ironswornrpg.com), created by Shawn Tomkin, and licensed for our use under the Creative Commons Attribution 4.0 International license (creativecommons.org/licenses/by/4.0/). Move, asset, and oracle text shown in this demo is from the Ironsworn: Starforged Reference Guide and asset cards by Shawn Tomkin, CC BY 4.0, via the Datasworn project. This is not an official Ironsworn product. The adventure "The Long Sleep of the Lodestar" and its characters are © 2026 RPG Demo Library. All rights reserved. Find Ironsworn: Starforged at <a href="https://www.ironswornrpg.com" target="_blank" rel="noopener">ironswornrpg.com</a>.</p>
+</div>
+
+<script>
+(() => {
+const DATA = {"moves":{"face_danger":{"name":"Face Danger","text":"__When you attempt something risky or react to an imminent threat__, envision your action and roll. If you act...\n\n  * With speed, mobility, or agility: Roll +edge\n  * With resolve, command, or sociability: Roll +heart\n  * With strength, endurance, or aggression: Roll +iron\n  * With deception, stealth, or trickery: Roll +shadow\n  * With expertise, focus, or observation: Roll +wits\n\nOn a __strong hit__, you are successful. Take +1 momentum.\n\nOn a __weak hit__, you succeed, but not without a cost. Make a suffer move (-1).\n\nOn a __miss__, you fail, or a momentary success is undermined by a dire turn of events. [Pay the Price](id:starforged/moves/fate/pay_the_price)."},"gather_information":{"name":"Gather Information","text":"__When you search for clues, conduct an investigation, analyze evidence, or do research__, roll +wits.\n\nOn a __strong hit__, you discover something helpful and specific. The path you must follow or action you must take to make progress is made clear. Envision what you learn. Then, take +2 momentum.\n\nOn a __weak hit__, the information provides new insight, but also complicates your quest. Envision what you discover. Then, take +1 momentum.\n\nOn a __miss__, your investigation unearths a dire threat or reveals an unwelcome truth that undermines your quest. [Pay the Price](id:starforged/moves/fate/pay_the_price)."},"secure_an_advantage":{"name":"Secure an Advantage","text":"__When you assess a situation, make preparations, or attempt to gain leverage__, envision your action and roll. If you act...\n\n  * With speed, mobility, or agility: Roll +edge\n  * With resolve, command, or sociability: Roll +heart\n  * With strength, endurance, aggression: Roll +iron\n  * With deception, stealth, or trickery: Roll +shadow\n  * With expertise, focus, or observation: Roll +wits\n\nOn a __hit__, you succeed. On a __strong hit__, take both. On a __weak hit__, choose one.\n\n  * Take +2 momentum\n  * Add +1 on your next move (not a progress move)\n\nOn a __miss__, you fail or your assumptions betray you. [Pay the Price](id:starforged/moves/fate/pay_the_price)."},"swear_an_iron_vow":{"name":"Swear an Iron Vow","text":"__When you swear upon iron to complete a quest__, write your vow and give it a rank. Then, roll +heart. If you swear this vow to a connection, add +1; if you share a bond, add +2.\n\nOn a __strong hit__, you are emboldened and it is clear what you must do next. Take +2 momentum.\n\nOn a __weak hit__, you are determined but begin your quest with more questions than answers. Take +1 momentum, and envision what you do to find a path forward.\n\nOn a __miss__, you must overcome a significant obstacle before you begin your quest. Envision what stands in your way."},"reach_a_milestone":{"name":"Reach a Milestone","text":"__When you make headway in your quest__ by doing any of the following...\n\n  * overcoming a critical obstacle\n  * gaining meaningful insight\n  * completing a perilous expedition\n  * acquiring a crucial item or resource\n  * earning vital support\n  * defeating a notable foe\n\n...you may mark progress per the rank of the vow."},"undertake_an_expedition":{"name":"Undertake an Expedition","text":"__When you trailblaze a route through perilous space, journey over hazardous terrain, or survey a mysterious site__, give the expedition a name and rank. Then, for each segment of the expedition, envision your approach. If you...\n\n  * Move at speed: Roll +edge\n  * Keep under the radar: Roll +shadow\n  * Stay vigilant: Roll +wits\n\nOn a __strong hit__, you reach a waypoint. Envision the location and mark progress per the rank of the expedition.\n\nOn a __weak hit__, as above, but this progress costs you. Choose one.\n\n  * Suffer costs en route: Make a suffer move (-2), or two suffer moves (-1).\n  * Face a peril at the waypoint: Envision what you encounter.\n\nOn a __miss__, you are waylaid by a crisis, or arrive at a waypoint to confront an immediate hardship or threat. Do not mark progress, and [Pay the Price](id:starforged/moves/fate/pay_the_price)."},"explore_a_waypoint":{"name":"Explore a Waypoint","text":"__When you divert from an expedition to examine a notable location__, roll +wits.\n\nOn a __strong hit__, choose one. On a __strong hit with a match__, you may instead [Make a Discovery](id:starforged/moves/exploration/make_a_discovery).\n\n  * Find an opportunity: Envision a favorable insight, situation, resource, or encounter. Then, take +2 momentum.\n  * Gain progress: Mark progress on your expedition, per its rank.\n\nOn a __weak hit__, you uncover something interesting, but it is bound up in a peril or reveals an ominous aspect of this place. Envision what you encounter. Then, take +1 momentum.\n\nOn a __miss__, you encounter an immediate hardship or threat, and must [Pay the Price](id:starforged/moves/fate/pay_the_price). On a __miss with a match__, you may instead [Confront Chaos](id:starforged/moves/exploration/confront_chaos)."},"make_a_discovery":{"name":"Make a Discovery","text":"__When your exploration of a waypoint uncovers something wondrous__, roll on the table below or choose one. Then, envision the nature of the discovery and how it is revealed. When you first experience or engage with the discovery, you and your allies may mark two ticks on your discoveries legacy track.\n\n(Table: see the oracle roll in the story.)"},"confront_chaos":{"name":"Confront Chaos","text":"__When your exploration of a waypoint uncovers something dreadful__, decide the number of aspects: one, two, or three. Roll that number of times or choose that number of aspects on the table below. Then, envision how the encounter begins.\n\nFor each result, when you first confront that aspect within the scope of the encounter, you and your allies may mark one tick on your discoveries legacy track.\n\n(Table: see the oracle roll in the story.)"},"finish_an_expedition":{"name":"Finish an Expedition","text":"__When your expedition comes to an end__, roll the challenge dice and compare to your progress.\n\nOn a __strong hit__, you reach your destination or complete your survey. Mark a reward on your discoveries legacy track per expedition's rank: troublesome=1 tick; dangerous=2 ticks; formidable=1 box; extreme=2 boxes; epic=3 boxes. Any allies who shared this expedition also mark the reward.\n\nOn a __weak hit__, as above, but you face an unforeseen complication at the end of your expedition. Make the legacy reward one rank lower, and envision what you encounter.\n\nOn a __miss__, your destination is lost to you, or you come to understand the true nature or cost of the expedition. Envision what happens and choose one.\n\n  * Abandon the expedition: Envision the cost of this setback and [Pay the Price](id:starforged/moves/fate/pay_the_price).\n  * Return to the expedition: Roll both challenge dice, take the lowest value, and clear that number of progress boxes. Then, raise the expedition's rank by one (if not already epic)."},"enter_the_fray":{"name":"Enter the Fray","text":"__When you initiate combat or are forced into a fight__, envision your objective and give it a rank. If the combat includes discrete challenges or phases, set an objective with a rank for each.\n\nThen, roll to see if you are in control. If you are...\n\n  * On the move: Roll +edge\n  * Facing off against your foe: Roll +heart\n  * In the thick of it at close quarters: Roll +iron\n  * Preparing to act against an unaware foe: Roll +shadow\n  * Caught in a trap or sizing up the situation: Roll +wits\n\nOn a __strong hit__, take both. On a __weak hit__, choose one.\n\n  * Take +2 momentum\n  * You are in control\n\nOn a __miss__, the fight begins with you in a bad spot."},"gain_ground":{"name":"Gain Ground","text":"__When you are in control and take action in a fight to reinforce your position or move toward an objective__, envision your approach and roll. If you are...\n\n  * In pursuit, fleeing, or maneuvering: Roll +edge\n  * Charging boldly into action, coming to the aid of others, negotiating, or commanding: Roll +heart\n  * Gaining leverage with force, powering through, or making a threat: Roll +iron\n  * Hiding, preparing an ambush, or misdirecting: Roll +shadow\n  * Coordinating a plan, studying a situation, or cleverly gaining leverage: Roll +wits\n\nOn a __hit__, you stay in control. On a __strong hit__, choose two. On a __weak hit__, choose one.\n\n  * Mark progress\n  * Take +2 momentum\n  * Add +1 on your next move (not a progress move)\n\nOn a __miss__, your foe gains the upper hand, the fight moves to a new location, or you encounter a new peril. You are in a bad spot and must [Pay the Price](id:starforged/moves/fate/pay_the_price)."},"react_under_fire":{"name":"React Under Fire","text":"__When you are in a bad spot and take action in a fight to avoid danger or overcome an obstacle__, envision your approach and roll. If you are...\n\n  * In pursuit, fleeing, dodging, getting back into position, or taking cover: Roll +edge\n  * Remaining stalwart against fear or temptation: Roll +heart\n  * Blocking or diverting with force, or taking the hit: Roll +iron\n  * Moving into hiding or creating a distraction: Roll +shadow\n  * Changing the plan, finding a way out, or cleverly bypassing an obstacle: Roll +wits\n\nOn a __strong hit__, you succeed and are in control. Take +1 momentum.\n\nOn a __weak hit__, you avoid the worst of the danger or overcome the obstacle, but not without a cost. Make a suffer move (-1). You stay in a bad spot.\n\nOn a __miss__, the situation worsens. You stay in a bad spot and must [Pay the Price](id:starforged/moves/fate/pay_the_price)."},"strike":{"name":"Strike","text":"__When you are in control and assault a foe at close quarters__, roll +iron; __when you attack at a distance__, roll +edge.\n\nOn a __strong hit__, mark progress twice. You dominate your foe and stay in control.\n\nOn a __weak hit__, mark progress twice, but you expose yourself to danger. You are in a bad spot.\n\nOn a __miss__, the fight turns against you. You are in a bad spot and must [Pay the Price](id:starforged/moves/fate/pay_the_price)."},"clash":{"name":"Clash","text":"__When you are in a bad spot and fight back against a foe at close quarters__, roll +iron; __when you exchange fire at a distance__, roll +edge.\n\nOn a __strong hit__, mark progress twice. You overwhelm your foe and are in control.\n\nOn a __weak hit__, mark progress, but you are dealt a counterblow or setback. You stay in a bad spot and must [Pay the Price](id:starforged/moves/fate/pay_the_price).\n\nOn a __miss__, your foe dominates this exchange. You stay in a bad spot and must [Pay the Price](id:starforged/moves/fate/pay_the_price)."},"take_decisive_action":{"name":"Take Decisive Action","text":"__When you seize an objective in a fight__, envision how you take decisive action. Then, roll the challenge dice and compare to your progress.\n\nIf you are in control, check the result as normal. If you are in a bad spot, count a strong hit without a match as a weak hit, and a weak hit as a miss.\n\nOn a __strong hit__, you prevail. Take +1 momentum. If any objectives remain and the fight continues, you are in control.\n\nOn a __weak hit__, you achieve your objective, but not without cost. Roll on the table below or choose one. If the fight continues, you are in a bad spot.\n\n(Table: see the oracle roll in the story.)\n\nOn a __miss__, you are defeated or your objective is lost. [Pay the Price](id:starforged/moves/fate/pay_the_price)."},"endure_harm":{"name":"Endure Harm","text":"__When you face physical injury, fatigue, or illness__, suffer -1 health for minor harm, -2 for serious harm, or -3 for major harm. If your health is 0, [Lose Momentum](id:starforged/moves/suffer/lose_momentum) equal to any remaining harm.\n\nThen, if your health is 0 or you choose to resist the harm, roll +health or +iron, whichever is higher.\n\nOn a __strong hit__, choose one.\n\n  * Shake it off: If you are not wounded, take +1 health\n  * Embrace the pain: Take +1 momentum\n\nOn a __weak hit__, if you are not wounded, you may [Lose Momentum](id:starforged/moves/suffer/lose_momentum) (-1) in exchange for +1 health. Otherwise, press on.\n\nOn a __miss__, it’s worse than you thought. Suffer an additional -1 health or [Lose Momentum](id:starforged/moves/suffer/lose_momentum) (-2). If your health is 0, you must also mark wounded or permanently harmed, or roll on the table below.\n\n(Table: see the oracle roll in the story.)"},"endure_stress":{"name":"Endure Stress","text":"__When you face mental strain, shock, or despair__, suffer -1 spirit for minor stress, -2 for serious stress, or -3 for major stress. If your spirit is 0, [Lose Momentum](id:starforged/moves/suffer/lose_momentum) equal to any remaining stress.\n\nThen, if your spirit is 0 or you choose to resist the stress, roll +spirit or +heart, whichever is higher.\n\nOn a __strong hit__, choose one.\n\n  * Shake it off: If you are not shaken, take +1 spirit\n  * Embrace the darkness: Take +1 momentum\n\nOn a __weak hit__, if you are not shaken, you may [Lose Momentum](id:starforged/moves/suffer/lose_momentum) (-1) in exchange for +1 spirit. Otherwise, press on.\n\nOn a __miss__, it's worse than you thought. Suffer an additional -1 spirit or [Lose Momentum](id:starforged/moves/suffer/lose_momentum) (-2). If your spirit is 0, you must also mark shaken or traumatized, or roll on the table below.\n\n(Table: see the oracle roll in the story.)"},"withstand_damage":{"name":"Withstand Damage","text":"__When your vehicle faces a damaging situation or environment__, suffer -1 integrity for minor damage, -2 for serious damage, or -3 for major damage. If your integrity is 0, [Lose Momentum](id:starforged/moves/suffer/lose_momentum) equal to any remaining damage.\n\nThen, if your integrity is 0 or you choose to resist the damage, roll +integrity.\n\nOn a __strong hit__, choose one.\n\n  * Bypass: If your vehicle is not battered, take +1 integrity\n  * Ride it out: Take +1 momentum\n\nOn a __weak hit__, if your vehicle is not battered, you may [Lose Momentum](id:starforged/moves/suffer/lose_momentum) (-1) in exchange for +1 integrity. Otherwise, press on.\n\nOn a __miss__, it’s worse than you thought. Suffer an additional -1 integrity or [Lose Momentum](id:starforged/moves/suffer/lose_momentum) (-2). If your integrity is 0, also suffer a cost according to the vehicle type.\n\n  * __Command vehicle:__ Mark the vehicle as __battered__ or __cursed__, mark a module as __broken__, destroy a broken module by discarding it, or roll on the table below. If the command vehicle is destroyed, [Overcome Destruction](id:starforged/moves/threshold/overcome_destruction).\n  * __Support vehicle:__ Mark the vehicle as __battered__ or roll on the table below. If the vehicle is destroyed, discard the asset.\n  * __Incidental vehicle:__ Roll on the table below.\n\n(Table: see the oracle roll in the story.)"},"sacrifice_resources":{"name":"Sacrifice Resources","text":"__When you lose or consume resources__, suffer -1 supply for a minor loss, -2 for a serious loss, or -3 for a major loss.\n\nIf your supply is exhausted (reduced to 0), mark __unprepared__. When you suffer a loss of resources while unprepared, envision how this causes you hardship and apply the cost to a different suffer move."},"lose_momentum":{"name":"Lose Momentum","text":"__When you are delayed or disadvantaged__, suffer -1 momentum for a minor setback, -2 for a serious setback, or -3 for a major setback.\n\nWhen your momentum is at its minimum (-6) and you must suffer -momentum, choose one.\n\n  * Envision how the price is paid and apply the cost to a different suffer move.\n  * Envision how this undermines your progress on a vow, expedition, connection, or combat. Then, clear 1 unit of progress on that track per its rank: troublesome=3 boxes; dangerous=2 boxes; formidable=1 box; extreme=2 ticks; epic=1 tick."},"ask_the_oracle":{"name":"Ask the Oracle","text":"__When you seek to resolve questions, reveal details, discover locations, determine how other characters respond, or trigger encounters or events__, you may...\n\n  * Draw a conclusion: Decide the answer based on the most interesting and obvious result.\n  * Spark an idea: Use an oracle table or other random prompt.\n  * Ask a yes/no question: Decide the odds of a yes, and roll on the table below to check the answer.\n  * Pick two: Envision two options. Rate one as likely, and roll on the table below to see if it is true. If not, it is the other.\n\nOdds           | The answer is yes if you roll...\n---------------|---------------------------------\nSmall Chance   | 10 or less\nUnlikely       | 25 or less\n50/50          | 50 or less\nLikely         | 75 or less\nAlmost Certain | 90 or less\n\nOn a match, envision an extreme result or twist."},"pay_the_price":{"name":"Pay the Price","text":"__When you suffer the outcome of an action__, choose one.\n\n  * Make the most obvious negative outcome happen.\n  * [Ask the Oracle](id:starforged/moves/fate/ask_the_oracle) for inspiration. Interpret the answer as a hardship or complication appropriate to the situation.\n  * Roll on the table below. If the result doesn’t fit the situation, roll again.\n\n(Table: see the oracle roll in the story.)"}},"tables":{"ptp":[[1,2,"A trusted individual or community acts against you"],[3,4,"An individual or community you care about is exposed to danger"],[5,7,"You encounter signs of a looming threat"],[8,10,"You create an opportunity for an enemy"],[11,14,"You face a tough choice"],[15,18,"You face the consequences of an earlier choice"],[19,22,"A surprising development complicates your quest"],[23,26,"You are separated from something or someone"],[27,32,"Your action causes collateral damage or has an unintended effect"],[33,38,"Something of value is lost or destroyed"],[39,44,"The environment or terrain introduces a new hazard"],[45,50,"A new enemy is revealed"],[51,56,"A friend, companion, or ally is in harm’s way (or you are, if alone)"],[57,62,"Your equipment or vehicle malfunctions"],[63,68,"Your vehicle suffers damage"],[69,74,"You waste resources"],[75,81,"You are harmed"],[82,88,"You are stressed"],[89,95,"You are delayed or put at a disadvantage"],[96,100,"Roll twice"]],"discovery":[[1,4,"Advanced technology waiting to be harnessed or salvaged"],[5,8,"Ancient archive or message"],[9,10,"Artificial consciousness evolved to a higher state"],[11,12,"Clues to a crucial resource or uncharted domain"],[13,14,"Envoy from another time or reality"],[15,22,"Extraordinary natural phenomenon"],[23,24,"First contact with intelligent life"],[25,26,"Gateway to another time or alternate reality"],[27,28,"Key to unlocking a language or method of communication"],[29,34,"Lost or hidden people"],[35,42,"Majestic or unusual lifeforms"],[43,46,"Marvel of ancient engineering"],[47,50,"Miraculously preserved artifact or specimen"],[51,56,"Monumental architecture or artistry of an ancient civilization"],[57,62,"Mysterious device or artifact of potential value"],[63,66,"New understanding of an enduring mystery"],[67,68,"Pathway or means of travel to a distant location"],[69,70,"Person or lifeform with phenomenal abilities"],[71,78,"Place of awe-inspiring beauty"],[79,86,"Rare and valuable resource"],[87,88,"Safeguarded or idyllic location"],[89,90,"Visions or prophesies of the future"],[91,100,"Roll twice"]],"chaos":[[1,4,"Baneful weapon of mass destruction"],[5,9,"Cataclysmic environmental effects"],[10,12,"Dead given unnatural life"],[13,17,"Destructive lifeform of monstrous proportion"],[18,20,"Dread hallucinations or illusions"],[21,24,"Harbingers of an imminent invasion"],[25,27,"Horde of insatiable hunger or fury"],[28,32,"Horrific lifeforms of inscrutable purpose"],[33,36,"Impostors in human form"],[37,41,"Machines made enemy"],[42,45,"Malignant contagion or parasite"],[46,50,"Messenger or signal with a dire warning"],[51,53,"Passage to a grim alternate reality"],[54,58,"People corrupted by chaos"],[59,63,"Powerful distortions of time or space"],[64,68,"Signs of an impending catastrophe"],[69,72,"Site of a baffling disappearance"],[73,77,"Site of a horrible disaster"],[78,82,"Site of terrible carnage"],[83,87,"Technology nullified or made unstable"],[88,92,"Technology warped for dark purpose"],[93,96,"Vault of dread technology or power"],[97,100,"Worshipers of great and malevolent powers"]],"tda":[[1,40,"It’s worse than you thought: Make a suffer move (-2)"],[41,52,"Victory is short-lived: A new peril or foe appears"],[53,64,"You face collateral damage: Something is lost, damaged, or broken"],[65,76,"Others pay the price: Someone else suffers the cost"],[77,88,"Others won’t forget: You are marked for vengeance"],[89,100,"It gets complicated: The true nature of a foe or objective is revealed"]],"peril":[[1,3,"Artificial gravity generator malfunctions"],[4,6,"Automated defenses or mines protect this area"],[7,9,"Compartment catches fire or is breached"],[10,12,"Contagion or illness threatens to take hold"],[13,15,"Dust clouds imperil navigation or conceal foes"],[16,18,"Energy storm looms"],[19,21,"Familiar foe appears or sends an ominous message"],[22,24,"Gravity well or vortex takes hold"],[25,27,"Imperiled ship calls for help"],[28,30,"Important device fails or malfunctions"],[31,33,"Infestation is revealed"],[34,36,"Intruder or stowaway creates trouble"],[37,39,"Isolation or fear presses in"],[40,42,"Life support system malfunctions"],[43,45,"Meteoroid storm fills the sky"],[46,48,"Mysterious wreckage portends a new threat"],[49,51,"Nearby settlement calls for help"],[52,54,"Old repair or patch fails"],[55,57,"Onboard dispute or inner turmoil causes a disruption"],[58,60,"Others obstruct your path or form a blockade"],[61,63,"Phantom signals suggest a lurking foe"],[64,66,"Pirates hunt for prey"],[67,69,"Power fails"],[70,72,"Primary drive or generator malfunctions"],[73,75,"Sabotage is revealed"],[76,78,"Shockwave or gravity wave approaches"],[79,81,"Someone questions your presence here"],[82,84,"Stellar anomaly emits hazardous energies"],[85,87,"Threatening lifeform draws near"],[88,90,"Troubling visions or apparitions"],[91,93,"True nature of a cargo, occupant, or passenger is revealed"],[94,96,"Unsettling sounds or disturbances"],[97,99,"Action + Theme"],[100,100,"Roll twice"]],"opportunity":[[1,4,"Advance warning of an environmental threat"],[5,8,"Automated signal offers a helpful message or warning"],[9,12,"Cache of cargo or supplies"],[13,16,"Chance for fellowship or a moment of inner peace"],[17,20,"Clear path through otherwise perilous space"],[21,24,"Clue offers insight into a current quest or mystery"],[25,28,"Clue to a lifeform's nature or vulnerabilities"],[29,32,"Derelict ripe for the picking"],[33,36,"Foe inadvertently reveals themselves or tips their hand"],[37,40,"Friendly interaction with a benign lifeform"],[41,44,"Friendly settlement in range"],[45,48,"Friendly spacers at work here"],[49,52,"Friendly starship crosses your path"],[53,56,"Helpful or encouraging message from an acquaintance"],[57,60,"Impressive vista offers comfort or inspiration"],[61,64,"Interesting site offers opportunities for exploration"],[65,68,"Mineral or energy resource detected"],[69,72,"Navigational or environmental hazard is left behind"],[73,76,"Opening to escape or avoid foes"],[77,80,"Plea for help from a potential benefactor"],[81,84,"Probe or beacon with useful data"],[85,88,"Refuge offers a place to hide, plan, or recover"],[89,92,"Sensors pinpoint a lurking foe"],[93,96,"Sensors reveal helpful or interesting environmental data"],[97,100,"Vehicle or equipment performs beyond expectations"]],"shiplook":[[1,4,"Abnormal sensor readings"],[5,8,"Brightly painted"],[9,13,"Bristling with weapons"],[14,18,"Dark or stealthy"],[19,23,"Heavy armor"],[24,28,"Immobile"],[29,33,"Intimidating profile"],[34,37,"Large sensor arrays"],[38,41,"Leaking radiation"],[42,45,"Low-profile or disguised"],[46,49,"Modern or advanced design"],[50,54,"Obsolete design"],[55,59,"Obvious damage"],[60,63,"Biological components"],[64,67,"Ornate markings"],[68,71,"Oversized engines"],[72,75,"Prominent guild emblem"],[76,80,"Refitted or repurposed hull"],[81,85,"Scarred hull"],[86,90,"Built from scrap"],[91,94,"Towing or linked"],[95,100,"Descriptor + Focus"]]},"assets":{"starship":{"name":"Starship","type":"command_vehicle","text":"Your armed, multipurpose starship is suited for interstellar and atmospheric flight. It can comfortably transport several people, has space for cargo, and can carry and launch support vehicles. When you Advance, you may spend experience to equip this vehicle with module assets."},"ace":{"name":"Ace","type":"path","text":"When you Face Danger or React Under Fire by guiding your vehicle through a hazard or out of harm’s way, add +1 and take +1 momentum on a hit."},"scavenger":{"name":"Scavenger","type":"path","text":"When you Gather Information or Resupply by scavenging a wreck, ruin, or abandoned site, add +1 and take +1 momentum on a hit. On a strong hit with a match, you also find something of unique value, significance, or function; envision the nature of this discovery, take +2 momentum, and mark 2 ticks on your discoveries legacy track."},"utility_bot":{"name":"Utility Bot","type":"companion","text":"Your utility bot companion has helpful tools at-hand. When you make a move by directing it to access a system, cut through an obstacle, analyze a mechanical issue, or assemble or disassemble a device, roll +its health and take +1 momentum on a hit. On a strong hit with a match, it reveals an unexpected advantage or insight; take another +1 momentum."},"veteran":{"name":"Veteran","type":"path","text":"When you are in a fight, increase your momentum reset by 1. Then, if you burn momentum to improve your result, add +1 on your next move."},"gunner":{"name":"Gunner","type":"path","text":"When you Strike, choose one (before rolling).\n\n  * Pin them down: Add +1 and take +1 momentum on a hit.\n  * Make them hurt: Mark progress on a hit."},"reinforced_hull":{"name":"Reinforced Hull","type":"module","text":"Your vehicle is clad in iron. When you Withstand Damage, add +1. On a strong hit, take +1 momentum."},"explorer":{"name":"Explorer","type":"path","text":"When you Explore a Waypoint, take +1 momentum on a hit. When you Finish an Expedition and score a hit, mark 1 extra tick on your discoveries legacy track."},"tech":{"name":"Tech","type":"path","text":"When you make a move to configure, optimize, hack, or disrupt an electronic system, add +1. On a weak hit, you can choose to press your luck. If you do, reroll all dice and add +2 (instead of +1)."},"sensor_array":{"name":"Sensor Array","type":"module","text":"Your advanced sensors scan the paths ahead to help spot dangers. When you Undertake an Expedition (+wits), you may reroll one challenge die."}}};
+const PRODUCT_ID = 'long-sleep-of-the-lodestar';
+let autoRoll = false;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = s => document.querySelector(s);
+const logEl = $('#log'), choicesEl = $('#choices');
+const d = n => 1 + Math.floor(Math.random()*n);
+const sleep = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+try { if (localStorage.getItem('sf-rules') === 'off') { $('#rulesToggle').checked = false; document.body.classList.add('norules'); } } catch(e){}
+try { if (localStorage.getItem('sf-auto') === 'on') { $('#autoToggle').checked = true; autoRoll = true; } } catch(e){}
+$('#rulesToggle').addEventListener('change', e => { document.body.classList.toggle('norules', !e.target.checked); try { localStorage.setItem('sf-rules', e.target.checked ? 'on' : 'off'); } catch(err){} });
+$('#autoToggle').addEventListener('change', e => { autoRoll = e.target.checked; try { localStorage.setItem('sf-auto', autoRoll ? 'on' : 'off'); } catch(err){} });
+
+/* ---------- official text rendering ---------- */
+function inline(s){ return esc(s).replace(/__([^_]+)__/g,'<strong>$1</strong>').replace(/\[([^\]]+)\]\(id:[^)]+\)/g,'<em>$1</em>'); }
+function md(t){
+  return t.split(/\n\n+/).map(b => {
+    const ls = b.split('\n').filter(l=>l.trim());
+    if (ls.length && ls.every(l => /^\s*\*/.test(l))) return '<ul>' + ls.map(l => `<li>${inline(l.replace(/^\s*\*\s*/,''))}</li>`).join('') + '</ul>';
+    if (b.includes('|') && /-{3,}/.test(b)){
+      const rows = ls.filter(l => !/^[-|\s]+$/.test(l)).map(l => l.split('|').map(c => c.trim()));
+      return `<table><tr>${rows[0].map(c=>`<th>${inline(c)}</th>`).join('')}</tr>${rows.slice(1).map(r=>`<tr>${r.map(c=>`<td>${inline(c)}</td>`).join('')}</tr>`).join('')}</table>`;
+    }
+    return `<p>${inline(b.trim())}</p>`;
+  }).join('');
+}
+const shownMoves = new Set();
+function showMove(key, force){
+  const m = DATA.moves[key]; if (!m) return;
+  if (shownMoves.has(key) && !force) return; shownMoves.add(key);
+  add('', `<details class="move"><summary><span>${m.name}</span><small>READ THE MOVE · CC BY</small></summary><div class="mt">${md(m.text)}</div></details>`);
+}
+
+/* ---------- characters ---------- */
+const PCS = {
+  wren:{name:'Wren Okonkwo-Hale', title:'the salvage pilot', ship:"Magpie's Due", stats:{edge:3,heart:1,iron:1,shadow:2,wits:2}, assets:['starship','ace','scavenger','utility_bot'], bot:'Sprocket', conn:false,
+    blurb:'You make your living picking over wrecks, and you fly like the wrecks are chasing you. Your utility bot, Sprocket, is older than your ship and has opinions about both.'},
+  dagny:{name:'Dagny Strand', title:'the void-marshal', ship:'Long Patience', stats:{edge:2,heart:3,iron:2,shadow:1,wits:1}, assets:['starship','veteran','gunner','reinforced_hull'], conn:true,
+    blurb:'Twenty years hunting pirates along the Wending Reach. Overseer Marisol Achterberg once pulled you out of a burning hab-drum. You never stopped owing her.'},
+  ishaan:{name:'Ishaan Vore', title:'the surveyor', ship:'Quiet Index', stats:{edge:1,heart:2,iron:1,shadow:2,wits:3}, assets:['starship','explorer','tech','sensor_array'], conn:false,
+    blurb:'You chart dead ships for the Cartographers\' Lyceum. You wrote a paper on the Lodestar. You did not expect it to know your name.'},
+};
+const has = a => C && C.assets.includes(a);
+const RANKS = {troublesome:12, dangerous:8, formidable:4, extreme:2, epic:1};
+const LEGACY = {troublesome:1, dangerous:2, formidable:4, extreme:8, epic:12};
+const RANK_UP = {troublesome:'dangerous', dangerous:'formidable', formidable:'extreme', extreme:'epic', epic:'epic'};
+
+let C = null; const used = new Set();
+const vow = {ticks:0, rank:'dangerous'}, exp = {ticks:0, rank:'dangerous'}, fight = {ticks:0, rank:'dangerous'};
+const legacy = {quests:0, bonds:0, discoveries:0};
+let closing = 3;
+
+/* ---------- log ---------- */
+function add(cls, html){ const el = document.createElement('div'); if (cls) el.className = cls; el.innerHTML = html; logEl.appendChild(el); requestAnimationFrame(() => el.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'})); return el; }
+const nar = h => add('line', h);
+const npc = (who, h) => add('line npc', `<span class="who">${who}</span>${h}`);
+const comms = (who, h) => add('comms', `<span class="who">${who}</span>${h}`);
+const you = h => add('line you', h);
+const rule = h => add('rule', h);
+function scene(num, name){ $('#sceneName').textContent = name; add('scenebreak', `<small>${num ? `<i>${num}</i>` : ''}Act One</small>${name}`); }
+function subscene(tag, name){ add('scenebreak sub', `<small>${tag}</small>${name}`); }
+function choose(opts){
+  return new Promise(res => {
+    choicesEl.innerHTML = '';
+    opts.forEach(o => {
+      const b = document.createElement('button'); b.className = 'opt' + (o.cls ? ' ' + o.cls : '');
+      b.innerHTML = `<b>${o.label}</b>${o.sub ? `<span>${o.sub}</span>` : ''}`; if (o.disabled) b.disabled = true;
+      b.addEventListener('click', () => { choicesEl.innerHTML = ''; if (o.say !== false) you(o.say || o.label); res(o.id); });
+      choicesEl.appendChild(b);
+    });
+    requestAnimationFrame(() => choicesEl.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'}));
+    const first = choicesEl.querySelector('button:not(:disabled)'); if (first && matchMedia('(pointer:fine)').matches) first.focus({preventScroll:true});
+  });
+}
+const cont = (label='Continue') => choose([{id:'c', label, cls:'primary', say:false}]);
+async function waitRoll(label, btn){ if (autoRoll) return; await choose([{id:'r', label: btn || 'Roll the dice', sub: label, cls:'primary roll', say:false}]); }
+
+/* ---------- dice visuals ---------- */
+const PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function d6El(){ const e = document.createElement('div'); e.className = 'd6 ghost'; for (let i=0;i<9;i++) e.appendChild(document.createElement('i')); return e; }
+function face6(e, v){ [...e.children].forEach((p,i) => p.style.visibility = (PIPS[v]||[]).includes(i) ? 'visible' : 'hidden'); e.setAttribute('aria-label','d6 showing '+v); }
+function d10El(){ const e = document.createElement('div'); e.className = 'd10 ghost'; e.innerHTML = '<span>?</span>'; return e; }
+async function tumble(fn){ for (let t=0;t<(reduced?1:9);t++){ fn(); await sleep(55); } }
+
+/* ---------- momentum, meters, tracks ---------- */
+function impactsCount(){ return C.impacts.length; }
+function momMax(){ return 10 - impactsCount(); }
+function momReset(){ const n = impactsCount(); let r = n === 0 ? 2 : n === 1 ? 1 : 0; if (C.inFight && has('veteran')) r += 1; return r; }
+function mom(n){ C.momentum = Math.max(-6, Math.min(momMax(), C.momentum + n)); render(); }
+function setMeter(k, n){ const max = 5; C[k] = Math.max(0, Math.min(max, C[k] + n)); render(); }
+function ticksHTML(t, cls=''){ return Array.from({length:10}, (_,i) => { const f = Math.max(0, Math.min(4, t - i*4)); return `<span class="box ${cls}">${[0,1,2,3].map(j => `<i class="${j<f?'t':''}"></i>`).join('')}</span>`; }).join(''); }
+function showTrack(label, tr){ add('', `<div class="trackline"><b>${label}</b>${ticksHTML(tr.ticks)}<span>${Math.floor(tr.ticks/4)}/10 · ${tr.rank}</span></div>`); }
+function markProgress(tr, times=1){ tr.ticks = Math.min(40, tr.ticks + RANKS[tr.rank]*times); render(); }
+function markClosing(n=1, why){ closing = Math.min(10, closing + n); render(); used.add('closing'); add('', `<div class="trackline"><b>Closing Distance</b>${ticksHTML(closing*4,'clk')}<span>${closing}/10</span></div>`); if (why) nar(why); }
+function markLegacy(k, ticks, why){ legacy[k] = Math.min(40, legacy[k] + ticks); used.add('legacy'); render(); rule(`${why}: mark ${ticks} tick${ticks>1?'s':''} on your ${k} legacy track. Fill a box (4 ticks) and you earn 2 experience.`); }
+const momStr = v => (v > 0 ? '+' : '') + v;
+function addImpact(name){ if (!C.impacts.includes(name)){ C.impacts.push(name); if (C.momentum > momMax()) C.momentum = momMax(); render(); rule(`Impact: ${name}. Each impact lowers your max momentum by 1 and your momentum reset.`); } }
+
+/* ---------- the action roll ---------- */
+const outcome = (s, a, b) => (s > a && s > b) ? 'strong' : (s > a || s > b) ? 'weak' : 'miss';
+const rank = r => ({miss:0, weak:1, strong:2})[r];
+const rname = r => ({strong:'strong hit', weak:'weak hit', miss:'miss'})[r];
+function stamp(row, res, pre=''){ const s = document.createElement('span'); s.className = 'result ' + ({strong:'ok',weak:'mix',miss:'bad'})[res]; s.textContent = pre + rname(res); row.appendChild(s); }
+
+// stat: key into C.stats, or use statVal + statName for meters/companions
+async function actionRoll({move, label, stat, statVal, statName, adds=[], rerollOne=false, preset=null}){
+  used.add('action');
+  if (adds.some(a => a[2] === 'asset')) used.add('asset');
+  if (C.nextAdd && !label.startsWith('Endure') && !label.startsWith('Withstand')){ adds = adds.concat([[1,'from your last move']]); C.nextAdd = false; render(); }
+  if (move) showMove(move);
+  const sv = statVal !== undefined ? statVal : C.stats[stat];
+  const sn = statName || stat;
+  const addSum = adds.reduce((a,x)=>a+x[0],0);
+  const row = add('rollrow', `<span class="lbl">${label}: d6 + ${sn} ${sv}${adds.map(a => ` + ${a[0]} (${a[1]})`).join('')} vs two challenge dice</span>`);
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  const a6 = d6El(); const sep = document.createElement('span'); sep.className='sep'; sep.textContent='vs';
+  const c1 = d10El(), c2 = d10El(); dice.append(a6, sep, c1, c2);
+  await waitRoll(row.querySelector('.lbl').textContent);
+  const av = preset || d(6); let cv1 = d(10), cv2 = d(10);
+  [a6,c1,c2].forEach(e => e.classList.remove('ghost'));
+  await tumble(() => { if (!preset) face6(a6, d(6)); c1.firstChild.textContent = d(10); c2.firstChild.textContent = d(10); });
+  face6(a6, av); if (preset) a6.classList.add('preset'); c1.firstChild.textContent = cv1; c2.firstChild.textContent = cv2;
+  const cancelled = C.momentum < 0 && -C.momentum === av;
+  const raw = (cancelled ? 0 : av) + sv + addSum;
+  const score = Math.min(10, raw);
+  const sc = document.createElement('span'); sc.className = 'score';
+  sc.textContent = `Action score ${score}${raw > 10 ? ' (max 10)' : ''}${cancelled ? ' (action die cancelled by negative momentum)' : ''}`;
+  row.appendChild(sc);
+  if (cancelled) rule('Negative momentum: when your action die matches your negative momentum, the action die is cancelled and counts as 0.');
+  let res = outcome(score, cv1, cv2);
+  if (rerollOne && res !== 'strong'){
+    const c = await choose([{id:'rr', label:'Reroll the higher challenge die', sub:'Sensor Array: you may reroll one challenge die', say:'I let the sensors find a better line.'},{id:'no', label:`Keep the ${rname(res)}`, say:false}]);
+    if (c === 'rr'){ used.add('asset'); const hi = cv1 >= cv2 ? 1 : 2; const nv = d(10); if (hi === 1){ cv1 = nv; c1.firstChild.textContent = nv; } else { cv2 = nv; c2.firstChild.textContent = nv; } res = outcome(score, cv1, cv2); rule('Sensor Array: when you Undertake an Expedition (+wits), you may reroll one challenge die.'); }
+  }
+  if (score > cv1) c1.classList.add('beat'); if (score > cv2) c2.classList.add('beat');
+  const match = cv1 === cv2;
+  stamp(row, res);
+  if (match){ add('', `<span class="result n">Match: ${cv1} and ${cv2}</span>`); rule('The challenge dice match. On a strong hit, an opportunity or flourish; on a miss, a dire twist.'); used.add('match'); }
+  let burned = false;
+  const burnRes = C.momentum > 0 ? outcome(C.momentum, cv1, cv2) : res;
+  if (rank(burnRes) > rank(res)){
+    const c = await choose([
+      {id:'burn', label:`Burn momentum (${momStr(C.momentum)}) for a ${rname(burnRes)}`, sub:`Your momentum cancels the dice it beats, then resets to ${momStr(momReset())}`, cls:'burn', say:'I burn my momentum!'},
+      {id:'keep', label:`Keep the ${rname(res)}`, say:false}]);
+    if (c === 'burn'){ burned = true; used.add('burn'); res = burnRes; C.momentum = momReset(); render(); add('', `<span class="result ${res==='strong'?'ok':'mix'}">Burned: ${rname(res)}</span>`); rule(`Burning momentum: your momentum beats a challenge die, so that die is cancelled. Then momentum resets to ${momStr(momReset())}.`);
+      if (C.inFight && has('veteran')){ C.nextAdd = true; rule('Veteran: you burned momentum in a fight, so add +1 on your next move.'); used.add('asset'); }
+    }
+  }
+  return {res, match, burned, av, cv1, cv2};
+}
+async function progressRoll({move, label, tr, bad=false}){
+  used.add('progress');
+  if (move) showMove(move);
+  const score = Math.floor(tr.ticks/4);
+  const row = add('rollrow', `<span class="lbl">${label}: progress ${score} vs two challenge dice (momentum doesn't count)</span>`);
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  const sc = document.createElement('div'); sc.className = 'd100 prog'; sc.textContent = score;
+  const sep = document.createElement('span'); sep.className='sep'; sep.textContent='vs';
+  const c1 = d10El(), c2 = d10El(); dice.append(sc, sep, c1, c2);
+  await waitRoll(row.querySelector('.lbl').textContent, 'Make the progress roll');
+  const cv1 = d(10), cv2 = d(10); [c1,c2].forEach(e => e.classList.remove('ghost'));
+  await tumble(() => { c1.firstChild.textContent = d(10); c2.firstChild.textContent = d(10); });
+  c1.firstChild.textContent = cv1; c2.firstChild.textContent = cv2;
+  if (score > cv1) c1.classList.add('beat'); if (score > cv2) c2.classList.add('beat');
+  const match = cv1 === cv2;
+  let res = outcome(score, cv1, cv2);
+  if (match){ add('', `<span class="result n">Match: ${cv1} and ${cv2}</span>`); used.add('match'); }
+  if (bad && res !== 'miss'){
+    const was = res;
+    if (res === 'strong' && !match) res = 'weak'; else if (res === 'weak') res = 'miss';
+    if (res !== was){ stamp(row, was, 'rolled '); rule('Take Decisive Action from a bad spot: a strong hit without a match counts as a weak hit, and a weak hit counts as a miss.'); }
+  }
+  stamp(row, res);
+  return {res, match, cv1, cv2};
+}
+async function d100(label, btn){
+  const row = add('rollrow', `<span class="lbl">${label}</span>`);
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  const e = document.createElement('div'); e.className = 'd100 ghost'; e.textContent = '?'; dice.appendChild(e);
+  await waitRoll(label, btn || 'Roll the oracle');
+  const v = d(100); e.classList.remove('ghost'); await tumble(() => e.textContent = d(100)); e.textContent = v;
+  return {v, row};
+}
+const lookup = (t, v) => t.find(x => v >= x[0] && v <= x[1]);
+async function oracle(table, title, auto){
+  used.add('oracle');
+  let v;
+  if (auto){ v = d(100); add('', `<div class="rollrow"><span class="lbl">${title} (rolled for you)</span><div class="dice"><div class="d100">${v}</div><span class="oracle-out">${esc(lookup(table, v)[2])}</span></div></div>`); }
+  else { const r = await d100(`${title} (d100)`); v = r.v; const s = document.createElement('span'); s.className = 'oracle-out'; s.textContent = lookup(table, v)[2]; r.row.querySelector('.dice').appendChild(s); }
+  return lookup(table, v);
+}
+async function askOracle(q, odds, threshold){
+  used.add('oracle'); used.add('ask'); showMove('ask_the_oracle');
+  const {v, row} = await d100(`Ask the Oracle: "${q}" Odds: ${odds} (yes on ${threshold} or less)`, 'Ask the oracle');
+  const yes = v <= threshold; const match = v === 100 || (v > 10 && v % 11 === 0);
+  const s = document.createElement('span'); s.className = 'result ' + (yes ? 'ok' : 'bad'); s.textContent = `${v}: ${yes ? 'yes' : 'no'}${match ? ' · match' : ''}`; row.appendChild(s);
+  if (match) rule('A match on the oracle (doubles): envision an extreme result or a twist.');
+  return {yes, match};
+}
+
+/* ---------- suffer moves ---------- */
+async function endure(kind, amount, why){
+  const isH = kind === 'harm';
+  used.add('suffer');
+  const k = isH ? 'health' : 'spirit', st = isH ? 'iron' : 'heart', imp = isH ? 'wounded' : 'shaken';
+  if (why) nar(why);
+  showMove(isH ? 'endure_harm' : 'endure_stress');
+  const before = C[k]; setMeter(k, -amount);
+  const over = amount - before; if (over > 0){ mom(-over); rule(`Your ${k} was already low, so the remaining ${over} comes off your momentum.`); }
+  rule(`${isH ? 'Endure Harm' : 'Endure Stress'}: suffer -${amount} ${k}. Then, if ${k} is 0 or you choose to resist, roll +${k} or +${st}, whichever is higher.`);
+  if (C[k] > 0){
+    const c = await choose([{id:'r', label:`Resist the ${isH ? 'harm' : 'stress'}`, sub:`Roll +${C[k] >= C.stats[st] ? k : st} ${Math.max(C[k], C.stats[st])}`, say:false},{id:'n', label:'Let it be', sub:'Accept the loss and move on', say:false}]);
+    if (c === 'n') return;
+  }
+  const useMeter = C[k] >= C.stats[st];
+  const r = await actionRoll({label:`${isH ? 'Endure Harm' : 'Endure Stress'} (+${useMeter ? k : st})`, stat:st, statVal: Math.max(C[k], C.stats[st]), statName: useMeter ? k : st});
+  const blocked = C.impacts.includes(imp);
+  if (r.res === 'strong'){
+    const c = await choose([{id:'shake', label:'Shake it off', sub:`+1 ${k}`, disabled: blocked || C[k] >= 5},{id:'emb', label: isH ? 'Embrace the pain' : 'Embrace the darkness', sub:'+1 momentum'}]);
+    if (c === 'shake') setMeter(k, 1); else mom(1);
+  } else if (r.res === 'weak'){
+    if (!blocked && C[k] < 5){ const c = await choose([{id:'t', label:'Trade momentum for it', sub:`Lose Momentum (-1) for +1 ${k}`},{id:'p', label:'Press on'}]); if (c === 't'){ mom(-1); setMeter(k, 1); } }
+    else nar('You press on.');
+  } else {
+    const c = await choose([{id:'m', label:`Suffer an additional -1 ${k}`},{id:'mo', label:'Lose Momentum (-2)'}]);
+    if (c === 'm') setMeter(k, -1); else mom(-2);
+    if (C[k] === 0){ nar(`At 0 ${k}, it's worse than you thought. You mark <strong>${imp}</strong>.`); addImpact(imp); }
+  }
+}
+async function withstand(amount, why){
+  used.add('suffer'); used.add('ship');
+  if (why) nar(why);
+  showMove('withstand_damage');
+  const before = C.integrity; C.integrity = Math.max(0, C.integrity - amount); render();
+  const over = amount - before; if (over > 0){ mom(-over); rule(`Integrity was already low: the remaining ${over} comes off your momentum.`); }
+  rule(`Withstand Damage: your ship suffers -${amount} integrity. If integrity is 0 or you choose to resist, roll +integrity.`);
+  if (C.integrity > 0){
+    const c = await choose([{id:'r', label:'Resist the damage', sub:`Roll +integrity ${C.integrity}${has('reinforced_hull') ? ', Reinforced Hull +1' : ''}`, say:false},{id:'n', label:'Let it be', sub:'Accept the damage and move on', say:false}]);
+    if (c === 'n') return;
+  }
+  const adds = has('reinforced_hull') ? [[1,'Reinforced Hull','asset']] : [];
+  const r = await actionRoll({label:'Withstand Damage (+integrity)', stat:'iron', statVal:C.integrity, statName:'integrity', adds});
+  if (has('reinforced_hull') && r.res === 'strong'){ mom(1); rule('Reinforced Hull: +1 momentum on a strong hit.'); }
+  const battered = C.impacts.includes('battered');
+  if (r.res === 'strong'){
+    const c = await choose([{id:'b', label:'Bypass', sub:'+1 integrity', disabled: battered || C.integrity >= 5},{id:'o', label:'Ride it out', sub:'+1 momentum'}]);
+    if (c === 'b'){ C.integrity++; render(); } else mom(1);
+  } else if (r.res === 'weak'){
+    if (!battered && C.integrity < 5){ const c = await choose([{id:'t', label:'Trade momentum for it', sub:'Lose Momentum (-1) for +1 integrity'},{id:'p', label:'Press on'}]); if (c === 't'){ mom(-1); C.integrity++; render(); } }
+    else nar('The ship groans and holds.');
+  } else {
+    const c = await choose([{id:'m', label:'Suffer an additional -1 integrity'},{id:'mo', label:'Lose Momentum (-2)'}]);
+    if (c === 'm'){ C.integrity = Math.max(0, C.integrity - 1); render(); } else mom(-2);
+    if (C.integrity === 0){ nar(`Alarms everywhere. You mark <strong>${esc(C.ship)}</strong> as <strong>battered</strong>. It needs real repairs before it's whole again.`); addImpact('battered'); }
+  }
+}
+async function sacrifice(amount, why){
+  used.add('suffer'); if (why) nar(why);
+  setMeter('supply', -amount);
+  rule(`Sacrifice Resources: -${amount} supply.${C.supply === 0 ? ' At 0 supply, you mark unprepared.' : ''}`);
+  if (C.supply === 0) addImpact('unprepared');
+}
+function loseMom(amount, why){ used.add('suffer'); if (why) nar(why); mom(-amount); rule(`Lose Momentum: -${amount} momentum.`); }
+async function sufferMenu(amount, ship){
+  const opts = [
+    {id:'m', label:`Lose Momentum (-${amount})`, sub:'You are delayed or lose your edge'},
+    {id:'h', label:`Endure Harm (-${amount})`, sub:'You are hurt or worn down'},
+    {id:'s', label:`Endure Stress (-${amount})`, sub:'You are rattled or afraid'},
+    {id:'r', label:`Sacrifice Resources (-${amount})`, sub:'You burn fuel, food, or gear'},
+  ];
+  if (ship) opts.push({id:'w', label:`Withstand Damage (-${amount})`, sub:`${C.ship} takes the hit`});
+  const c = await choose(opts);
+  if (c === 'm') loseMom(amount); else if (c === 'h') await endure('harm', amount); else if (c === 's') await endure('stress', amount);
+  else if (c === 'r') await sacrifice(amount); else await withstand(amount);
+}
+async function payPrice(obvious, ship){
+  used.add('price');
+  showMove('pay_the_price');
+  const c = await choose([
+    {id:'obv', label:'Make the most obvious negative outcome happen', sub: obvious.label},
+    {id:'tbl', label:'Roll on the Pay the Price table', sub:'d100 on the official oracle'}]);
+  if (c === 'obv'){ await obvious.fn(); return; }
+  const [lo, , text] = await oracle(DATA.tables.ptp, 'Pay the Price');
+  if (lo >= 57 && lo <= 68 && ship){ await withstand(1, `${esc(text)}. Here, that means ${esc(C.ship)} takes a hit.`); }
+  else if (lo >= 69 && lo <= 74){ await sacrifice(1, 'You burn through fuel and supplies getting out of it.'); }
+  else if (lo >= 75 && lo <= 81){ await endure('harm', 1, 'You are thrown hard against your harness.'); }
+  else if (lo >= 82 && lo <= 88){ await endure('stress', 1, 'Your hands are shaking. The void feels very close.'); }
+  else if (lo >= 89 && lo <= 95){ loseMom(2, 'You lose time and your nerve.'); }
+  else { rule('Oracle results are prompts you interpret. Here, the most fitting reading lands like the obvious outcome:'); await obvious.fn(); }
+}
+
+/* ---------- sheet ---------- */
+function render(){
+  if (!C) return;
+  $('#sumName').textContent = C.name;
+  $('#sumMini').textContent = `MOM ${momStr(C.momentum)} · HP ${C.health} · SPR ${C.spirit} · SUP ${C.supply} · INT ${C.integrity}`;
+  const m = (label, v, cls='') => `<div class="meter ${cls}"><b>${label}</b>${[0,1,2,3,4,5].map(i => `<span class="${i===v?'on':''}">${i}</span>`).join('')}</div>`;
+  const A = DATA.assets;
+  $('#sheetBody').innerHTML = `
+    <div class="statrow">${['edge','heart','iron','shadow','wits'].map(s => `<div><b>${C.stats[s]}</b><small>${s}</small></div>`).join('')}</div>
+    <div>${m('Health', C.health)}${m('Spirit', C.spirit)}${m('Supply', C.supply)}</div>
+    <div class="mom"><b>${momStr(C.momentum)}</b><span>momentum<br>max ${momMax()} · reset ${momStr(momReset())}${C.nextAdd ? '<br>+1 on your next move' : ''}</span></div>
+    ${C.impacts.length ? `<div class="imp">Impacts: ${C.impacts.join(', ')}</div>` : ''}
+    <div><div class="sec"><span>Starship</span><span>${esc(C.ship)}</span></div>${m('Integrity', C.integrity, 'ship')}</div>
+    <div><div class="sec"><span>Vow</span><span>${vow.rank}</span></div>${vow.text ? `<div class="sh-label">${esc(vow.text)}</div><div class="sh-track">${ticksHTML(vow.ticks)}</div>` : '<div class="sh-label">Not sworn yet</div>'}</div>
+    ${exp.on ? `<div><div class="sec"><span>Expedition</span><span>${exp.rank}</span></div><div class="sh-label">Through the Lodestar's halo</div><div class="sh-track">${ticksHTML(exp.ticks)}</div></div>` : ''}
+    ${C.inFight ? `<div><div class="sec"><span>Fight</span><span>${fight.rank}</span></div><div class="sh-label">Drive off the Tithe of Ash <span class="pos ${C.control ? 'ctrl' : 'badspot'}">${C.control ? 'in control' : 'bad spot'}</span></div><div class="sh-track">${ticksHTML(fight.ticks)}</div></div>` : ''}
+    <div><div class="sec"><span>Closing Distance</span><span>${closing}/10</span></div><div class="sh-track">${ticksHTML(closing*4,'clk')}</div></div>
+    <div><div class="sec"><span>Legacy tracks</span><span>ticks</span></div><div class="leg">${['quests','bonds','discoveries'].map(k => `<span>${k}</span><div class="sh-track">${ticksHTML(legacy[k])}</div>`).join('')}</div></div>
+    <div><div class="sec"><span>Assets</span><span>CC BY · hover to read</span></div><ul class="assets">${C.assets.map(a => `<li title="${esc(A[a].text)}"><span>${esc(A[a].name)}${a === 'starship' ? ': ' + esc(C.ship) : a === 'utility_bot' ? ': ' + esc(C.bot) + ' (health ' + C.botHealth + ')' : ''}</span><small>${({command_vehicle:'ship',path:'path',companion:'companion',module:'module'})[A[a].type]}</small></li>`).join('')}</ul></div>`;
+}
+
+/* ---------- the adventure ---------- */
+async function start(){
+  nar('<strong>Ironsworn: Starforged</strong> is a game of perilous quests among the stars. You play a hero who swears iron vows, and the dice and oracles stand in for a game master. It\'s built to be played solo, which makes it perfect for this.');
+  rule('Most moves are action rolls: a d6 plus one of your stats, against two d10 challenge dice. Beat both for a strong hit, one for a weak hit, neither for a miss.');
+  nar('Choose who answers the call.');
+  const A = DATA.assets;
+  const pick = await choose(Object.entries(PCS).map(([k,p]) => ({id:k, label:`${p.name}, ${p.title}`, sub:`${['edge','heart','iron','shadow','wits'].map(s => s[0].toUpperCase()+s.slice(1)+' '+p.stats[s]).join(' · ')} · Starship + ${p.assets.slice(1).map(a => A[a].name).join(', ')}`, say:`I'll play ${p.name}.`})));
+  const P = PCS[pick];
+  C = {...P, key:pick, stats:{...P.stats}, health:5, spirit:5, supply:5, integrity:5, momentum:2, impacts:[], botHealth:4, inFight:false, control:false, nextAdd:false};
+  render();
+  nar(esc(P.blurb));
+  rule('A Starforged hero has five stats (3, 2, 2, 1, 1), three meters (health, spirit, supply), momentum, and assets. Everyone starts with a STARSHIP asset with its own integrity meter. Hover an asset on your sheet to read its marked ability.');
+  await cont('Begin Act One');
+  await s1();
+}
+
+async function s1(){
+  scene(1, 'The Roll Call');
+  nar('The summons finds you on Spoke Four of <strong>Tamsin Hold</strong>, a mining station hung from the ice moon Ossery on a forty-kilometer tether. Above it, the gas giant Calder fills half the sky. ' + esc(C.ship) + ' sits in the clamps, taking on fuel.');
+  nar('In the Ops ring, <strong>Overseer Marisol Achterberg</strong> doesn\'t offer you a seat. On the main plot, a long white mark crawls toward the green circle of Ossery\'s orbit.');
+  npc('Marisol', '"The <strong>Lodestar</strong>. Colony ship, three thousand one hundred and twelve sleepers. It vanished eighty-one years ago. Nine days ago it came back. Its drive is dead, and it crosses our orbit in three days. If it hits the tether, the Hold falls into Calder."');
+  nar('She taps the console. A thin, patient voice fills the room, reading names, one each minute.');
+  comms('LODESTAR BEACON', '"Abernathy, Corin. Abiodun, Faith. Achterberg, Ingrid..."');
+  npc('Marisol', '"That\'s my grandmother. She died on this station when I was nine. She never set foot on that ship."');
+  comms('LODESTAR BEACON', `"...${esc(C.name.split(' ').slice(-1)[0])}, ${esc(C.name.split(' ')[0])}."`);
+  nar('It just read <strong>your</strong> name.');
+  npc('Marisol', '"The two drones we sent went dark in its debris halo. I can\'t evacuate twenty-four hundred people in three days. Go out there and stop it. Whatever it takes."');
+  closing = 3; render();
+  rule('Closing Distance is this adventure\'s clock: ten boxes, already three filled. It shows how close the Lodestar is to Tamsin Hold.');
+  await choose([
+    {id:'iron', label:'Lay your hand on the console\'s steel and swear', say:'"On iron, I swear it. I will stop the Lodestar before it reaches Tamsin Hold."'},
+    {id:'look', label:'Look Marisol in the eye and swear', say:'"I\'ll stop it, Marisol. On iron."'},
+  ]);
+  vow.text = 'Stop the Lodestar before it reaches Tamsin Hold'; render();
+  rule('A vow is the heart of the game. You give it a rank (this one is dangerous) and a ten-box progress track. Each milestone marks progress on it.');
+  const adds = C.conn ? [[1,'sworn to your connection, Marisol']] : [];
+  if (C.conn) rule('Dagny counts Marisol as a connection, so the vow gets +1.');
+  const r = await actionRoll({move:'swear_an_iron_vow', label:'Swear an Iron Vow', stat:'heart', adds});
+  used.add('vow');
+  if (r.res === 'strong'){ mom(2); nar('Marisol hands you the drones\' last telemetry: a rough map of the halo. It\'s clear what you must do. <strong>+2 momentum.</strong>'); C.telemetry = true; }
+  else if (r.res === 'weak'){ mom(1); nar('Marisol can only tell you where the drones went dark. More questions than answers. <strong>+1 momentum.</strong>'); }
+  else {
+    nar('An obstacle before you even begin. When you reach Spoke Four, your docking clamps are locked.');
+    comms('DOCKMASTER FERRO LISK', '"Nobody else flies into that thing. Clamps stay shut until the Overseer signs it in triplicate."');
+    const opts = [
+      {id:'heart', label:'Talk him down', sub:'Face Danger +heart', say:'"Ferro. Three days. Open the clamps."'},
+      {id:'wits', label:'Override the clamps from your cockpit', sub:`Face Danger +wits${has('tech') ? ', Tech +1' : ''}`, say:'I pull the access panel and start rerouting.'},
+      {id:'edge', label:'Power out of the cradle and let him bill you', sub:'Face Danger +edge', say:'I hit the thrusters.'},
+    ];
+    const c = await choose(opts);
+    const fa = c === 'wits' && has('tech') ? [[1,'Tech','asset']] : [];
+    const f = await actionRoll({move:'face_danger', label:'Face Danger', stat:c, adds:fa});
+    used.add('face');
+    if (f.res === 'strong'){ mom(1); nar('The clamps let go. <strong>+1 momentum.</strong>'); }
+    else if (f.res === 'weak'){ nar('You get clear, but not cleanly.'); rule('Face Danger weak hit: make a suffer move (-1).'); await sufferMenu(1, true); }
+    else await payPrice({label:'You tear free: Withstand Damage (-1) and mark Closing Distance', fn: async () => { await withstand(1, 'You tear the cradle\'s locking pins out of their sockets. Something on your hull goes with them.'); markClosing(1, 'The hours lost on the dock cost you.'); }}, true);
+  }
+  await cont('Launch');
+  await s2();
+}
+
+const HALO = [[10,'A cloud of frozen coolant that glitters like a galaxy in miniature.'],[20,'One of the Hold\'s interceptor drones, dead, its casing peeled open.'],[30,'An antenna mast a kilometer long, still faintly broadcasting names.'],[40,'A cargo container stenciled LANDFALL: SEED STOCK.'],[50,'A spinning hull plate with a hand-painted mural of a blue-green world.'],[60,'An escape pod, empty, its hatch opened from the outside.'],[70,'Fresh scorch marks on the debris. Someone has been shooting here.'],[80,'A drifting colonist\'s suitcase, its clothes spread around it like petals.'],[90,'Hull-lice carpeting a slab of insulation, rippling as you pass.'],[100,'A clear view of the Lodestar, close enough to read its name.']];
+async function waypoint(){
+  const {v, row} = await d100('Halo Waypoints oracle: what\'s at this waypoint? (d100)', 'Roll on the Halo Waypoints oracle');
+  const s = HALO.find(x => v <= x[0]); const o = document.createElement('span'); o.className = 'oracle-out'; o.textContent = s[1]; row.querySelector('.dice').appendChild(o); used.add('oracle');
+}
+async function s2(){
+  scene(2, 'The Debris Halo');
+  nar('The Lodestar sheds as it falls. A cloud of hull plating, frozen coolant, and broken antenna masts spreads ahead of it in a slow, glittering fan: the <strong>halo</strong>. On your scopes it looks like snow. Up close, some of the snowflakes are the size of your ship.');
+  exp.on = true; render();
+  rule('Undertake an Expedition: name it and give it a rank. This one is dangerous, so each waypoint marks 2 boxes. Roll once per segment of the trip, choosing your approach each time.');
+  let legs = 0, shear = false, explored = false;
+  while (true){
+    const c = await choose([
+      {id:'edge', label:'Move at speed', sub:`Roll +edge ${C.stats.edge}`, say:'Full burn. Weave through.'},
+      {id:'shadow', label:'Keep under the radar', sub:`Roll +shadow ${C.stats.shadow}`, say:'Running lights off. Drift with the debris.'},
+      {id:'wits', label:'Stay vigilant', sub:`Roll +wits ${C.stats.wits}${has('sensor_array') ? ' · Sensor Array may reroll a challenge die' : ''}`, say:'Slow and careful. Eyes on every scope.'},
+    ]);
+    const r = await actionRoll({move:'undertake_an_expedition', label:'Undertake an Expedition', stat:c, rerollOne: c === 'wits' && has('sensor_array')});
+    used.add('expedition'); legs++;
+    if (r.res === 'strong'){
+      markProgress(exp); nar(C.telemetry && legs === 1 ? 'You follow the drones\' telemetry to a waypoint they charted.' : 'You reach a waypoint.');
+      await waypoint();
+    } else if (r.res === 'weak'){
+      markProgress(exp); nar('You reach a waypoint, but this progress costs you.');
+      await waypoint();
+      const ch = await choose([
+        {id:'one', label:'Suffer costs en route: one suffer move (-2)'},
+        {id:'two', label:'Suffer costs en route: two suffer moves (-1)'},
+        {id:'peril', label:'Face a peril at the waypoint', sub: shear ? 'Roll on the official Space Peril oracle' : 'The Shear: scene 2a'},
+      ]);
+      if (ch === 'one') await sufferMenu(2, true);
+      else if (ch === 'two'){ await sufferMenu(1, true); await sufferMenu(1, true); }
+      else if (!shear){ shear = true; await s2a(); }
+      else { await oracle(DATA.tables.peril, 'Space Peril'); await peril(); }
+    } else {
+      nar('You are waylaid. No progress.');
+      await payPrice({label:'Debris rakes your hull: Withstand Damage (-1)', fn: () => withstand(1, 'A slab of tumbling plate grinds along your hull.')}, true);
+      if (!shear){ shear = true; await s2a(); }
+    }
+    showTrack('Expedition', exp);
+    if (!explored && r.res !== 'miss'){
+      const e = await choose([{id:'x', label:'Divert to examine this place', sub:`Explore a Waypoint +wits${has('explorer') ? ' · Explorer: +1 momentum on a hit' : ''}`, say:'Hold up. I want a closer look.'},{id:'n', label:'Keep moving', say:false}]);
+      if (e === 'x'){ explored = true; await explore(); }
+    }
+    const boxes = Math.floor(exp.ticks/4);
+    if (boxes >= 4 || legs >= 5){
+      const c2 = legs >= 5 ? 'go' : await choose([{id:'go', label:'Push on toward the Lodestar', sub:`${boxes} boxes of progress`},{id:'more', label:'Another segment', sub:'More progress, more risk'}]);
+      if (c2 === 'go') break;
+    }
+  }
+  await s3();
+}
+async function peril(){
+  nar('You have to deal with it now.');
+  const r = await actionRoll({move:'face_danger', label:'Face Danger (+wits)', stat:'wits'});
+  used.add('face');
+  if (r.res === 'strong') mom(1); else if (r.res === 'weak') await sufferMenu(1, true);
+  else await payPrice({label:'It catches you: Withstand Damage (-2)', fn: () => withstand(2)}, true);
+}
+async function explore(){
+  const r = await actionRoll({move:'explore_a_waypoint', label:'Explore a Waypoint', stat:'wits'});
+  used.add('explore');
+  if (r.res !== 'miss' && has('explorer')){ mom(1); used.add('asset'); rule('Explorer: +1 momentum on a hit when you Explore a Waypoint.'); }
+  if (r.res === 'strong'){
+    const opts = [{id:'opp', label:'Find an opportunity', sub:'+2 momentum, roll Space Opportunity'},{id:'prog', label:'Gain progress', sub:'Mark progress on the expedition'}];
+    if (r.match) opts.unshift({id:'disc', label:'Make a Discovery', sub:'Strong hit with a match: something wondrous', cls:'primary'});
+    const c = await choose(opts);
+    if (c === 'disc'){ showMove('make_a_discovery'); await oracle(DATA.tables.discovery, 'Make a Discovery'); nar('You hold your breath. Out here, in the wreckage of a lost colony, something truly new.'); markLegacy('discoveries', 2, 'Make a Discovery'); }
+    else if (c === 'opp'){ mom(2); await oracle(DATA.tables.opportunity, 'Space Opportunity'); }
+    else { markProgress(exp); showTrack('Expedition', exp); }
+  } else if (r.res === 'weak'){
+    mom(1); nar('Something interesting, bound up in a peril.'); await oracle(DATA.tables.peril, 'Space Peril');
+  } else {
+    if (r.match){ const c = await choose([{id:'ch', label:'Confront Chaos', sub:'Miss with a match: something dreadful', cls:'primary'},{id:'p', label:'Pay the Price'}]);
+      if (c === 'ch'){ showMove('confront_chaos'); await oracle(DATA.tables.chaos, 'Confront Chaos (one aspect)'); nar('You back away, very carefully. You will not forget this.'); markLegacy('discoveries', 1, 'Confront Chaos'); return; } }
+    await payPrice({label:'Something here wakes: Endure Stress (-1)', fn: () => endure('stress', 1, 'Something in the debris turns to follow your lights.')}, true);
+  }
+}
+async function s2a(){
+  subscene('Scene 2a', 'The Shear');
+  nar('A belt of shed hull plates turns end over end ahead of you, each bigger than a hab-drum. The gaps between them open and close like a mouth.');
+  const opts = [
+    {id:'edge', label:'Thread a gap at full burn', sub:`Face Danger +edge${has('ace') ? ', Ace +1 and +1 momentum on a hit' : ''}`, say:'I see a gap. Going for it.'},
+    {id:'iron', label:'Take a glancing blow on the bow and ride it out', sub:'Face Danger +iron', say:'Brace. We\'re going through.'},
+    {id:'wits', label:'Read the tumble and wait for the gap that stays open', sub:'Face Danger +wits', say:'Wait... wait...'},
+  ];
+  const c = await choose(opts);
+  const ace = c === 'edge' && has('ace');
+  const r = await actionRoll({move:'face_danger', label:'Face Danger', stat:c, adds: ace ? [[1,'Ace','asset']] : []});
+  used.add('face');
+  if (ace && r.res !== 'miss'){ mom(1); rule('Ace: +1 momentum on a hit when you guide your vehicle through a hazard.'); }
+  if (r.res === 'strong'){ mom(1); nar('You come out the far side as two plates kiss behind you in silence. <strong>+1 momentum.</strong>'); }
+  else if (r.res === 'weak'){ nar('You make it, but not cleanly.'); rule('Face Danger weak hit: make a suffer move (-1).'); await sufferMenu(1, true); }
+  else await payPrice({label:'A plate clips you: Withstand Damage (-2)', fn: () => withstand(2, 'A plate the size of a hab-drum clips your stern and sends you spinning.')}, true);
+}
+
+async function s3(){
+  scene(3, 'The Tithe of Ash');
+  nar('A hull plate ahead of you is not tumbling. It\'s turning toward you. It\'s a ship.');
+  const [, , look] = await oracle(DATA.tables.shiplook, 'Starship: First Look', true);
+  nar(`A squat, scorched gunship with salvage claws folded under its belly like a crab\'s legs. <em>${esc(look)}.</em> Its flanks are painted with a column of tally marks.`);
+  comms('MOTHER SABINE KROLL', '"This is the <em>Tithe of Ash</em>. The Lodestar is consecrated salvage. Everything aboard belongs to the Tithe. Turn around, little ship, or join the tally."');
+  rule('The GM rolls for you: foe and world oracles are rolled automatically. Your own moves are yours to roll.');
+  const c = await choose([
+    {id:'heart', label:'Answer her and hold your course', sub:`Enter the Fray +heart ${C.stats.heart}`, say:`"This is ${C.ship}. I'm going to that ship. Get out of my way."`},
+    {id:'edge', label:'Throw your ship into motion', sub:`Enter the Fray +edge ${C.stats.edge}`, say:'I slam the throttle and break hard to port.'},
+    {id:'shadow', label:'Cut your lights and drift behind a plate before she locks on', sub:`Enter the Fray +shadow ${C.stats.shadow}`, say:'Lights off. Let her guess.'},
+    {id:'wits', label:'Scan her and size up the fight', sub:`Enter the Fray +wits ${C.stats.wits}`, say:'Scanning. What is she carrying?'},
+    {id:'slip', label:'Vanish into the halo without a fight', sub:'Face Danger +shadow. She reaches the Lodestar first', say:'Not today. I go dark and slip away.'},
+  ]);
+  if (c === 'slip'){
+    const r = await actionRoll({move:'face_danger', label:'Face Danger (slip away)', stat:'shadow'});
+    used.add('face');
+    if (r.res !== 'miss'){ if (r.res === 'strong') mom(1); else await sufferMenu(1, true); nar('You drift away among the plates until her signal fades. Somewhere ahead of you, she\'s heading for the Lodestar too.'); C.slipped = true; return s4(); }
+    nar('Her targeting laser finds you. She has you.');
+  }
+  C.inFight = true; fight.ticks = 0; render();
+  rule('Enter the Fray: set an objective and rank. "Drive off the Tithe of Ash," dangerous. Position is everything: in control, you press the attack; in a bad spot, you react.');
+  used.add('combat');
+  if (has('veteran')){ rule('Veteran: in a fight, your momentum reset increases by 1.'); used.add('asset'); }
+  const r = c === 'slip' ? {res:'caught'} : await actionRoll({move:'enter_the_fray', label:'Enter the Fray', stat:c});
+  if (r.res === 'caught'){ showMove('enter_the_fray'); C.control = false; rule('Caught trying to slip away: the fight begins with you in a bad spot.'); }
+  else if (r.res === 'strong'){ mom(2); C.control = true; nar('You have the measure of her. <strong>+2 momentum, and you are in control.</strong>'); }
+  else if (r.res === 'weak'){ const ch = await choose([{id:'m', label:'Take +2 momentum', sub:'but start in a bad spot'},{id:'c', label:'You are in control'}]); if (ch === 'm'){ mom(2); C.control = false; } else C.control = true; }
+  else { C.control = false; nar('Her first volley lights up your shields. You start in a bad spot.'); }
+  render();
+  const won = await fightLoop();
+  C.inFight = false; render();
+  if (won){ comms('MOTHER SABINE KROLL', '"The tally is patient." Her signal dies.'); nar('The <em>Tithe of Ash</em> breaks off and retreats into the halo, trailing vapor.'); }
+  else { nar('Kroll drives you off your line and burns ahead toward the Lodestar. You limp after her.'); markClosing(1, 'You lost precious hours regrouping.'); }
+  await s4();
+}
+async function fightLoop(){
+  let rounds = 0;
+  while (true){
+    rounds++;
+    showTrack('Drive off the Tithe of Ash', fight);
+    const prog = Math.floor(fight.ticks/4);
+    const opts = [];
+    if (C.control){
+      opts.push({id:'strike', label:'Strike: open fire with the ship\'s guns', sub:`+edge ${C.stats.edge} (at a distance). Strong hit: mark progress twice, stay in control`, say:'Guns hot. Firing.'});
+      opts.push({id:'gain', label:'Gain Ground', sub:'Reinforce your position. Hit: stay in control and choose rewards', say:false});
+    } else {
+      opts.push({id:'clash', label:'Clash: exchange fire', sub:`+edge ${C.stats.edge}. Strong hit: mark progress twice and take control`, say:'Return fire!'});
+      opts.push({id:'react', label:'React Under Fire', sub:'Get out of danger. Strong hit: back in control', say:false});
+    }
+    if (fight.ticks > 0) opts.unshift({id:'tda', label:'Take Decisive Action', sub:`Progress roll: ${prog} boxes vs the challenge dice${C.control ? '' : ' (from a bad spot: results are worse)'}`, cls: (prog >= 6 || rounds > 9) ? 'primary' : '', say:'This ends now.'});
+    const c = await choose(opts);
+    if (c === 'tda'){ const res = await tda(); if (res !== null) return res; continue; }
+    if (c === 'strike') await strike();
+    else if (c === 'clash') await clash();
+    else if (c === 'gain') await gainGround();
+    else await reactUnderFire();
+    render();
+  }
+}
+const firePrice = () => ({label:'Her cannons rake your hull: Withstand Damage (-2)', fn: () => withstand(2, 'Her cannons walk a line of fire across your hull.')});
+async function strike(){
+  let adds = [], gun = null;
+  if (has('gunner')){
+    gun = await choose([{id:'pin', label:'Pin them down', sub:'Gunner: add +1 and take +1 momentum on a hit'},{id:'hurt', label:'Make them hurt', sub:'Gunner: mark progress on a hit'}]);
+    if (gun === 'pin') adds = [[1,'Gunner','asset']]; else used.add('asset');
+  }
+  const r = await actionRoll({move:'strike', label:'Strike (+edge)', stat:'edge', adds});
+  used.add('strike');
+  if (r.res !== 'miss' && gun === 'pin'){ mom(1); rule('Gunner (pin them down): +1 momentum on a hit.'); }
+  if (r.res !== 'miss' && gun === 'hurt'){ markProgress(fight); rule('Gunner (make them hurt): mark progress on a hit.'); }
+  if (r.res === 'strong'){ markProgress(fight, 2); nar('Your shots stitch across her flank. Plating sprays into the dark. You stay in control.'); }
+  else if (r.res === 'weak'){ markProgress(fight, 2); C.control = false; nar('You hit her hard, but you overcommit and she swings her guns onto you. You\'re in a bad spot.'); }
+  else { C.control = false; nar('Your shots go wide into the debris. The fight turns against you.'); await payPrice(firePrice(), true); }
+}
+async function clash(){
+  const r = await actionRoll({move:'clash', label:'Clash (+edge)', stat:'edge'});
+  used.add('clash');
+  if (r.res === 'strong'){ markProgress(fight, 2); C.control = true; nar('You trade fire and win the exchange. You\'re in control.'); }
+  else if (r.res === 'weak'){ markProgress(fight); nar('You both land hits. Hers land harder.'); await payPrice(firePrice(), true); }
+  else { nar('She dominates the exchange.'); await payPrice(firePrice(), true); }
+}
+async function gainGround(){
+  const opts = [
+    {id:'edge', label:'Maneuver for a better angle', sub:`+edge ${C.stats.edge}`, say:'I swing wide around the plates for a better angle.'},
+    {id:'heart', label:'Hail her and promise violence', sub:`+heart ${C.stats.heart}`, say:'"Kroll. Last warning."'},
+    {id:'wits', label:'Jam her targeting systems', sub:`+wits ${C.stats.wits}${has('tech') ? ', Tech +1' : ''}`, say:'I flood her targeting band with noise.'},
+    {id:'shadow', label:'Vanish into the debris and set up an ambush', sub:`+shadow ${C.stats.shadow}`, say:'Into the plates. Make her come to me.'},
+  ];
+  const c = await choose(opts);
+  const adds = c === 'wits' && has('tech') ? [[1,'Tech','asset']] : [];
+  const r = await actionRoll({move:'gain_ground', label:'Gain Ground', stat:c, adds});
+  used.add('gain');
+  if (r.res === 'miss'){ C.control = false; nar('She sees it coming. You\'re in a bad spot.'); await payPrice(firePrice(), true); return; }
+  nar('It works. You stay in control.');
+  const n = r.res === 'strong' ? 2 : 1;
+  const picks = new Set();
+  for (let i = 0; i < n; i++){
+    const ch = await choose([
+      {id:'p', label:'Mark progress', disabled: picks.has('p')},
+      {id:'m', label:'Take +2 momentum', disabled: picks.has('m')},
+      {id:'a', label:'Add +1 on your next move', sub:'(not a progress move)', disabled: picks.has('a')},
+    ].map(o => ({...o, say:false})));
+    picks.add(ch);
+    if (ch === 'p') markProgress(fight); else if (ch === 'm') mom(2); else { C.nextAdd = true; render(); }
+  }
+}
+async function reactUnderFire(){
+  const opts = [
+    {id:'edge', label:'Evade: throw the ship out of her line of fire', sub:`+edge ${C.stats.edge}${has('ace') ? ', Ace +1 and +1 momentum on a hit' : ''}`, say:'Evasive! Now!'},
+    {id:'iron', label:'Take the hit on your strongest plating', sub:`+iron ${C.stats.iron}`, say:'Turn the bow into it. Brace.'},
+    {id:'wits', label:'Change the plan: use the halo against her', sub:`+wits ${C.stats.wits}`, say:'There. Put a plate between us.'},
+  ];
+  const c = await choose(opts);
+  const ace = c === 'edge' && has('ace');
+  const r = await actionRoll({move:'react_under_fire', label:'React Under Fire', stat:c, adds: ace ? [[1,'Ace','asset']] : []});
+  used.add('react');
+  if (ace && r.res !== 'miss'){ mom(1); rule('Ace: +1 momentum on a hit.'); }
+  if (r.res === 'strong'){ mom(1); C.control = true; nar('You get clear and come around on her tail. You\'re in control. <strong>+1 momentum.</strong>'); }
+  else if (r.res === 'weak'){ nar('You avoid the worst of it, but not without cost. You stay in a bad spot.'); await sufferMenu(1, true); }
+  else { nar('It gets worse.'); await payPrice(firePrice(), true); }
+}
+async function tda(){
+  const r = await progressRoll({move:'take_decisive_action', label:'Take Decisive Action', tr:fight, bad:!C.control});
+  used.add('tda');
+  if (r.res === 'strong'){ mom(1); nar('You put a burst straight through her drive housing. The <em>Tithe of Ash</em> shudders, venting, and turns away. You prevail. <strong>+1 momentum.</strong>'); return true; }
+  if (r.res === 'weak'){
+    nar('You achieve your objective, but not without cost.');
+    const [lo, , text] = await oracle(DATA.tables.tda, 'Take Decisive Action: the cost');
+    if (lo <= 40){ rule('It\'s worse than you thought: make a suffer move (-2).'); await sufferMenu(2, true); }
+    else if (lo <= 52){ nar('Victory is short-lived: her parting shot breaks a plate loose, and it comes tumbling at you.'); await withstand(1); }
+    else if (lo <= 64){ await sacrifice(1, 'Collateral damage: her last volley shreds your external cargo pod.'); }
+    else if (lo <= 76){ markClosing(1, 'Others pay the price: her guns took out the Hold\'s relay buoy. Marisol loses track of the Lodestar for an hour.'); }
+    else if (lo <= 88){ C.vengeance = true; nar('Others won\'t forget: Kroll paints your ship\'s name on her hull. <strong>She has marked you for vengeance.</strong> (That matters in Act Three.)'); }
+    else { comms('MOTHER SABINE KROLL', '"You think that wreck is empty, little ship? Go and see."'); nar('It gets complicated. She knows something you don\'t.'); }
+    return true;
+  }
+  nar('Your objective is lost.');
+  await payPrice(firePrice(), true);
+  return false;
+}
+
+async function s4(){
+  scene(4, 'The Lodestar');
+  nar('You come out of the halo and there it is: two kilometers of spine, ringed at its middle by twelve fat cryo-drums like beads on a wire. Frost scabs its hull. Not one light shows. But the beacon at its prow pulses, and with every pulse, a name.');
+  let returned = false;
+  while (true){
+    const r = await progressRoll({move:'finish_an_expedition', label:'Finish an Expedition', tr:exp});
+    used.add('finish');
+    if (r.res !== 'miss'){
+      const base = r.res === 'strong' ? LEGACY[exp.rank] : LEGACY[RANK_UP_DOWN(exp.rank)];
+      markLegacy('discoveries', base, `Finish an Expedition (${r.res === 'strong' ? exp.rank : 'one rank lower'})`);
+      if (has('explorer')){ markLegacy('discoveries', 1, 'Explorer'); used.add('asset'); }
+      nar(r.res === 'strong' ? 'You match velocity and seat your clamps on the spine\'s docking collar without a scratch.' : 'Your clamps won\'t seat on the frozen collar. You tether by hand, out on the hull, with Calder turning below you.');
+      break;
+    }
+    const c = returned ? 'abandon' : await choose([
+      {id:'return', label:'Return to the expedition', sub:'Clear progress equal to the lower challenge die, raise the rank, keep going'},
+      {id:'abandon', label:'Abandon the careful route', sub:'Burn straight in and Pay the Price'},
+    ]);
+    if (c === 'return'){
+      returned = true; const lose = Math.min(r.cv1, r.cv2); exp.ticks = Math.max(0, exp.ticks - lose*4); exp.rank = RANK_UP[exp.rank]; render();
+      rule(`You clear ${lose} boxes and the expedition becomes ${exp.rank}.`);
+      for (let i = 0; i < 2; i++){
+        const a = await choose([{id:'edge', label:'Move at speed', sub:'+edge'},{id:'shadow', label:'Keep under the radar', sub:'+shadow'},{id:'wits', label:'Stay vigilant', sub:'+wits'}].map(o => ({...o, say:false})));
+        const rr = await actionRoll({label:'Undertake an Expedition', stat:a});
+        if (rr.res !== 'miss') markProgress(exp); if (rr.res === 'weak') await sufferMenu(1, true);
+        if (rr.res === 'miss') await payPrice({label:'Lose Momentum (-2)', fn: async () => loseMom(2)}, true);
+      }
+      showTrack('Expedition', exp);
+      continue;
+    }
+    nar('You give up on finesse and burn straight for the spine.');
+    await payPrice({label:'You hit the docking collar hard: Withstand Damage (-1)', fn: () => withstand(1, 'You hit the docking collar hard enough to rattle your teeth.')}, true);
+    break;
+  }
+  exp.on = false; render();
+  nar('The main airlock is sealed and dark. Beside it, a hand-painted sign has frozen into the hull: <strong>WELCOME HOME</strong>, with a date eighty-one years gone.');
+  if (C.slipped) nar('Fresh clamp scars ring the airlock. Kroll got here before you.');
+  const opts = [{id:'g', label:'Search the hull around the lock', sub:`Gather Information +wits${has('scavenger') ? ' · Scavenger +1, +1 momentum on a hit' : ''}`, say:'I work my way around the lock, looking for another way in.'}];
+  if (has('utility_bot')) opts.push({id:'bot', label:`Send ${C.bot} to access the lock\'s systems`, sub:`Gather Information, rolling +${C.bot}'s health ${C.botHealth} · +1 momentum on a hit`, say:`${C.bot}, get into that panel.`});
+  if (has('tech')) opts.push({id:'tech', label:'Hack the airlock\'s maintenance log', sub:'Gather Information +wits, Tech +1', say:'I splice into the lock controller.'});
+  const c = await choose(opts);
+  let r;
+  if (c === 'bot'){ r = await actionRoll({move:'gather_information', label:'Gather Information', stat:'wits', statVal:C.botHealth, statName:`${C.bot}'s health`, adds:[]}); used.add('asset'); if (r.res !== 'miss'){ mom(1); rule('Utility Bot: when you direct it to access a system, roll +its health and take +1 momentum on a hit.'); } }
+  else if (c === 'tech'){ r = await actionRoll({move:'gather_information', label:'Gather Information', stat:'wits', adds:[[1,'Tech','asset']]}); }
+  else { const sc = has('scavenger'); r = await actionRoll({move:'gather_information', label:'Gather Information', stat:'wits', adds: sc ? [[1,'Scavenger','asset']] : []}); if (sc && r.res !== 'miss'){ mom(1); rule('Scavenger: +1 momentum on a hit when you scavenge a wreck.'); }
+    if (sc && r.res === 'strong' && r.match){ mom(2); nar('Wedged in a hull seam you find a colonist\'s data-slate, still sealed: a diary of the last day before the jump.'); markLegacy('discoveries', 2, 'Scavenger (strong hit with a match)'); } }
+  used.add('gather');
+  if (r.res === 'strong'){ mom(2); nar('A maintenance hatch with fresh seals: someone opened it recently, from the inside. And beside it, scratched into the frost: forty-one tally marks. The same as on the <em>Tithe of Ash</em>. Kroll has been aboard. <strong>+2 momentum.</strong>'); }
+  else if (r.res === 'weak'){ mom(1); nar('A maintenance hatch with fresh seals. Someone opened it recently, from the inside. That\'s a way in, and a new worry. <strong>+1 momentum.</strong>'); }
+  else await payPrice({label:'Hull-lice swarm out of the seams: Withstand Damage (-1)', fn: () => withstand(1, 'The frost around the lock moves. Hull-lice, hundreds of them, pour out of the seams and onto your ship.')}, true);
+  const {yes, match} = await askOracle('Is anyone awake aboard the Lodestar?', 'likely', 75);
+  if (match) nar(yes ? 'Not one heat signature. Hundreds. All at once, then gone, as if the whole ship took a breath.' : 'Nothing moves. Then every light on the spine flickers on, once, and off again.');
+  else nar(yes ? 'A heat signature flickers deep in the cryo-drums: one body, moving.' : 'Nothing moves. But the frost on the inside of the hatch window has been wiped clear by a hand.');
+  rule('You found a way in. That\'s a milestone. On a dangerous vow, Reach a Milestone marks 2 boxes.');
+  showMove('reach_a_milestone'); markProgress(vow); used.add('milestone');
+  showTrack('Your vow', vow);
+  comms('LODESTAR BEACON', `"${esc(C.name.split(' ').slice(-1)[0])}, ${esc(C.name.split(' ')[0])}."`);
+  comms('LODESTAR BEACON', '"Welcome aboard. You are late."');
+  nar('The hatch slides open.');
+  await cont('End of Act One');
+  await ending();
+}
+function RANK_UP_DOWN(r){ return ({troublesome:'troublesome', dangerous:'troublesome', formidable:'dangerous', extreme:'formidable', epic:'extreme'})[r]; }
+
+async function ending(){
+  $('#sceneName').textContent = 'End of Act One';
+  const ALL = [['action','Action rolls vs challenge dice'],['vow','Swear an Iron Vow'],['expedition','Undertake an Expedition'],['explore','Explore a Waypoint'],['progress','Progress rolls'],['finish','Finish an Expedition'],['oracle','Oracles'],['ask','Ask the Oracle'],['combat','Fights: in control and bad spot'],['tda','Take Decisive Action'],['burn','Burning momentum'],['suffer','Suffer moves'],['ship','Withstand Damage (your starship)'],['price','Pay the Price'],['milestone','Reach a Milestone'],['legacy','Legacy tracks'],['match','A match on the dice'],['asset','Using an asset']];
+  const store = (window.RDL_STORE && window.RDL_STORE.products && window.RDL_STORE.products[PRODUCT_ID]) || {};
+  const live = !!store.checkout;
+  add('endcard', `
+    <h3>Act One complete.</h3>
+    <p style="margin:0">${esc(C.name)} stands in the Lodestar's open airlock with a vow ${Math.floor(vow.ticks/4)} boxes along and Closing Distance at ${closing} of 10. Somewhere inside, a patient voice is still reading names. The story continues in the full adventure.</p>
+    <div class="product">
+      <div class="cov"><small>A solo adventure for Ironsworn: Starforged</small>The Long Sleep of the Lodestar</div>
+      <div>
+        <strong class="pt">The Long Sleep of the Lodestar: the complete adventure (PDF)</strong>
+        <ul>
+          <li>Acts Two and Three: the sleeping ship, Teodor the last one awake, Cantor the ship's mind, and Mother Kroll's last bargain</li>
+          <li>Three plans, three endings, a failure ending, and three vows to keep playing</li>
+          <li>All three ready-to-play characters with full asset text</li>
+          <li>Six custom Lodestar oracles and five new threats</li>
+          <li>The complete Starforged moves plus core, space, and derelict oracles, so you need nothing else to play</li>
+          <li>Printable character, starship, and track sheets · 38 pages</li>
+        </ul>
+        <div class="buy">
+          ${live ? `<a class="buybtn" href="${esc(store.checkout)}" target="_blank" rel="noopener">Buy the PDF · ${esc(store.price || '')}</a>` : `<span class="buybtn" aria-disabled="true">PDF coming soon${store.price ? ' · ' + esc(store.price) : ''}</span>`}
+          <small>${live ? 'Instant download. Secure checkout by Lemon Squeezy.' : 'The store opens soon.'}</small>
+        </div>
+      </div>
+    </div>
+    <ul class="learned">${ALL.map(([k,t]) => `<li class="${used.has(k)?'':'no'}">${t}</li>`).join('')}</ul>
+    <p class="fine">Ironsworn: Starforged is by Shawn Tomkin. Find it at <a href="https://www.ironswornrpg.com" target="_blank" rel="noopener">ironswornrpg.com</a>. This adventure is not an official Ironsworn product.</p>`);
+  const c = await choose([{id:'again', label:'Play Act One again', cls:'primary', say:false}]);
+  if (c === 'again') location.reload();
+}
+
+if (matchMedia('(max-width: 900px)').matches) $('#sheet').open = false;
+start();
+})();
+</script>
+</body>
+</html>

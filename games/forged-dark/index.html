@@ -1,0 +1,957 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Cinderhouse Score: Forged in the Dark Demo</title>
+<meta name="description" content="Play Act One of The Cinderhouse Score, a solo heist for Forged in the Dark, free in your browser. Real dice pools, position and effect, stress, clocks, flashbacks, and downtime.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Spectral:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Sans+Condensed:wght@400;600;700&display=swap">
+<script src="../../store.js"></script>
+<style>
+/* Layout: a gasworks at the grey hour. Soot-black room, a ledger page lit by one ember lamp, a brass gauge-board for the sheet. */
+:root{
+  --soot:#151311; --soot-2:#1F1B18; --soot-3:#2B2622; --ledger:#EFEAE1; --ledger-2:#E4DDD1; --ink:#1F1C19; --muted:#6A625A;
+  --ember:#C4511F; --ember-2:#E2683A; --brass:#C9A15A; --breath:#4F9A75; --ok:#3C7F58; --mix:#B9771C; --bad:#A33A26;
+  --f-display:"Big Shoulders Display", Impact, sans-serif; --f-body:"Spectral", Georgia, serif; --f-sans:"IBM Plex Sans Condensed", "Arial Narrow", Arial, sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--soot);color:var(--ledger);font-family:var(--f-body);font-size:17px;line-height:1.5;overflow-x:hidden;
+  background-image:radial-gradient(ellipse at 50% 120%, rgba(196,81,31,.28) 0%, transparent 55%), radial-gradient(circle at 20% 30%, rgba(255,255,255,.035) 0 1.2px, transparent 1.6px), radial-gradient(circle at 70% 60%, rgba(255,255,255,.03) 0 1px, transparent 1.4px);
+  background-size:auto, 37px 43px, 23px 29px; background-attachment:fixed}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--brass);outline-offset:2px}
+.proto{background:#0C0B0A;color:#C2B7A8;font-family:var(--f-sans);font-size:13px;padding-block:7px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));display:flex;gap:6px 16px;flex-wrap:wrap;justify-content:space-between}
+.proto b{color:#fff}
+.wrap{max-width:1180px;margin:0 auto;padding-block:22px 60px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+.masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px 24px;flex-wrap:wrap;margin-bottom:18px}
+.eyebrow{font-family:var(--f-sans);font-weight:700;font-size:12.5px;letter-spacing:.26em;text-transform:uppercase;color:var(--brass);margin:0 0 6px}
+h1{font-family:var(--f-display);font-weight:900;font-size:clamp(40px,7vw,74px);line-height:.88;margin:0;color:#F6EFE3;text-transform:uppercase;letter-spacing:.01em}
+.tag{font-style:italic;color:#D6CDBF;margin:12px 0 0;max-width:54ch}
+.actchip{font-family:var(--f-sans);font-size:13px;font-weight:600;border:1px solid var(--ember-2);color:var(--ember-2);padding:6px 12px;white-space:nowrap}
+
+.table{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start}
+.story{background:var(--ledger);color:var(--ink);min-width:0;box-shadow:0 0 0 1px #000, 0 20px 44px rgba(0,0,0,.5);border-top:6px solid var(--ember);
+  background-image:repeating-linear-gradient(0deg, transparent 0 27px, rgba(31,28,25,.05) 27px 28px)}
+.story-head{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;padding:10px 18px;border-bottom:2px solid var(--ink);background:var(--ledger)}
+.story-head .scene{font-family:var(--f-display);font-weight:800;font-size:22px;line-height:1.05;text-transform:uppercase}
+.toggles{display:flex;gap:4px 14px;flex-wrap:wrap}
+.toggle{font-family:var(--f-sans);font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--muted)}
+.toggle input{accent-color:var(--ember)}
+#log{padding:18px 20px 8px;display:flex;flex-direction:column;gap:12px}
+.line{max-width:66ch}
+.who{font-family:var(--f-sans);font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:1px}
+.npc{border-left:4px solid var(--brass);padding-left:12px;font-style:italic}
+.npc .who{font-style:normal}
+.you{align-self:flex-end;background:var(--ink);color:#F6EFE3;padding:7px 13px;max-width:min(54ch,90%);font-weight:600;border-left:4px solid var(--ember)}
+.rule{font-family:var(--f-sans);font-size:14.5px;line-height:1.45;background:#F7E4DA;border-left:4px solid var(--ember);padding:7px 11px;max-width:66ch}
+.rule::before{content:"RULE  ";font-weight:700;letter-spacing:.08em;color:var(--ember)}
+body.norules .rule, body.norules details.srd{display:none}
+.scenebreak{font-family:var(--f-display);font-weight:900;font-size:30px;line-height:1;text-transform:uppercase;border-top:3px solid var(--ink);padding-top:10px;margin-top:8px}
+.scenebreak small{display:flex;align-items:center;gap:8px;font-family:var(--f-sans);font-weight:700;font-size:12px;letter-spacing:.16em;color:var(--ember);margin-bottom:4px}
+.scenebreak small i{display:inline-grid;place-items:center;width:24px;height:24px;background:var(--ember);color:#fff;font-style:normal;letter-spacing:0;font-family:var(--f-display);font-size:15px}
+.subbreak{font-family:var(--f-display);font-weight:800;font-size:20px;text-transform:uppercase;color:var(--ember);margin-top:4px}
+
+details.srd{max-width:66ch;border:1.5px solid var(--ink);background:#FBF8F3}
+details.srd summary{cursor:pointer;padding:6px 11px;font-family:var(--f-display);font-weight:800;font-size:17px;text-transform:uppercase;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+details.srd summary small{font-family:var(--f-sans);font-weight:700;font-size:11px;letter-spacing:.1em;color:var(--muted)}
+details.srd .mt{padding:0 12px 10px;font-size:15px}
+details.srd .mt p{margin:.4em 0} details.srd .mt ul,details.srd .mt ol{margin:.2em 0;padding-left:1.2em}
+details.srd blockquote{margin:.3em 0 .3em .5em;font-style:italic;color:var(--muted)}
+
+.rollrow{display:flex;flex-direction:column;gap:8px;border:2px solid var(--ink);padding:10px 12px;max-width:66ch;background:#fff}
+.rollrow .lbl{font-family:var(--f-sans);font-size:14px}
+.pe{display:flex;gap:6px;flex-wrap:wrap}
+.pe span{font-family:var(--f-sans);font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border:1.5px solid var(--ink)}
+.pe .controlled{background:#E3EFE7} .pe .risky{background:#F6E7C9} .pe .desperate{background:#F2D3C9}
+.dice{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.die{width:42px;height:42px;border:2px solid var(--ink);border-radius:6px;background:#fff;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:5px}
+.die i{width:7px;height:7px;border-radius:50%;background:var(--ink);place-self:center;visibility:hidden}
+.die.ghost{opacity:.4;border-style:dashed}
+.die.top{box-shadow:0 0 0 3px var(--ink)}
+.die.t6{background:var(--ok);border-color:var(--ok)} .die.t6 i{background:#fff}
+.die.t45{background:var(--mix);border-color:var(--mix)} .die.t45 i{background:#fff}
+.die.t13{background:var(--bad);border-color:var(--bad)} .die.t13 i{background:#fff}
+.die.dim{opacity:.45}
+.tumble{animation:tumble .12s linear infinite}
+@keyframes tumble{50%{transform:rotate(10deg) translateY(-2px)}}
+.result{font-family:var(--f-sans);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;color:#fff;align-self:flex-start}
+.result.ok{background:var(--ok)} .result.mix{background:var(--mix)} .result.bad{background:var(--bad)} .result.n{background:var(--ink)}
+.clockline{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-family:var(--f-sans);font-size:13.5px;font-weight:600}
+.clockline svg{width:44px;height:44px;flex:none}
+
+#choices{position:sticky;bottom:0;background:var(--ledger-2);border-top:2px solid var(--ink);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:10px;z-index:4}
+#choices:empty{display:none}
+.opt{flex:1 1 220px;text-align:left;border:2px solid var(--ink);background:#fff;padding:9px 12px;cursor:pointer;box-shadow:3px 3px 0 var(--ink);min-width:0}
+.opt:hover{background:#FBF3EA}
+.opt:active{transform:translate(3px,3px);box-shadow:none}
+.opt b{display:block;font-weight:700;line-height:1.25}
+.opt span{display:block;font-family:var(--f-sans);font-size:13px;color:var(--muted);margin-top:2px}
+.opt.primary{background:var(--ink);color:#F6EFE3}
+.opt.primary span{color:#D6CDBF}
+.opt.fb{background:#EAF3EE;border-color:var(--breath)}
+.opt:disabled{opacity:.45;cursor:not-allowed}
+.opt.roll{flex:1 1 100%;display:grid;grid-template-columns:auto 1fr;column-gap:14px;align-items:center;padding:12px 16px;background:var(--ember);color:#fff;border-color:var(--ink)}
+.opt.roll span{color:#FBE3D7}
+.opt.roll::before{content:"";grid-row:span 2;width:24px;height:24px;border:3px solid #fff;border-radius:5px;transition:transform .2s}
+.opt.roll:hover::before{transform:rotate(90deg)}
+.opt.roll b{font-size:19px}
+.setup{flex:1 1 100%;display:flex;flex-direction:column;gap:8px;min-width:0}
+.setup .ttl{font-family:var(--f-sans);font-weight:700;font-size:14px}
+.setup .row{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:2px solid var(--ink);background:#fff;padding:6px 10px;cursor:pointer;font-family:var(--f-sans);font-size:13.5px;text-align:left;min-width:0;max-width:100%}
+.chip small{display:block;color:var(--muted);font-size:12px}
+.chip.on{background:var(--ink);color:#fff} .chip.on small{color:#D6CDBF}
+.chip.bargain.on{background:var(--ember);border-color:var(--ember)}
+.chip:disabled{opacity:.4;cursor:not-allowed}
+.setup .sum{font-family:var(--f-sans);font-size:13px;color:var(--muted)}
+
+/* sheet: a brass gauge-board */
+.sheet{position:sticky;top:calc(12px + env(safe-area-inset-top,0px));background:var(--soot-2);border:1.5px solid #3D352E;min-width:0;color:var(--ledger)}
+.sheet summary{list-style:none;cursor:pointer;padding:9px 14px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 10px;align-items:baseline;border-bottom:1px solid #3D352E}
+.sheet summary::-webkit-details-marker{display:none}
+.sheet .nm{font-family:var(--f-display);font-weight:800;font-size:21px;text-transform:uppercase;color:#F6EFE3}
+.sheet .mini{font-family:var(--f-sans);font-size:12px;color:var(--brass);white-space:nowrap}
+.sheet-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:12px}
+.sec{font-family:var(--f-sans);font-size:10.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--brass);border-bottom:1px solid #3D352E;padding-bottom:2px;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
+.attrs{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.attr h5{margin:0 0 3px;font-family:var(--f-sans);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#F6EFE3;background:#3D352E;padding:2px 5px;display:flex;justify-content:space-between}
+.act{display:flex;justify-content:space-between;font-family:var(--f-sans);font-size:12.5px;color:#BDB2A3;padding:0 2px}
+.act.has{color:#F6EFE3}
+.act i{font-style:normal;color:var(--ember-2);letter-spacing:.1em}
+.boxes{display:flex;gap:3px;flex-wrap:wrap}
+.boxes b{width:17px;height:17px;border:1.5px solid #8C8073;display:inline-block}
+.boxes b.on{background:var(--ember-2);border-color:var(--ember-2)}
+.boxes.tr b.on{background:#9C8CC2;border-color:#9C8CC2}
+.harmrow{display:grid;grid-template-columns:20px 1fr 1fr 58px;gap:3px;font-family:var(--f-sans);font-size:12px;margin-bottom:3px;align-items:stretch}
+.harmrow.three{grid-template-columns:20px 2fr 58px}
+.harmrow > span{border:1px solid #5A5047;padding:2px 5px;min-height:22px;color:#F6EFE3;overflow-wrap:anywhere}
+.harmrow > span.n{background:#3D352E;text-align:center;font-weight:700}
+.harmrow > span.p{color:#9D9284;border:0;font-size:11px}
+.kv{display:flex;flex-wrap:wrap;gap:6px}
+.tok{font-family:var(--f-sans);font-size:12px;border:1px solid #5A5047;padding:2px 7px;color:#E4DCCF}
+.tok b{color:var(--brass)}
+.sheet-clocks{display:flex;flex-wrap:wrap;gap:10px}
+.sclock{display:flex;align-items:center;gap:6px;font-family:var(--f-sans);font-size:12px;color:#E4DCCF}
+.sclock svg{width:34px;height:34px;flex:none}
+.small-note{font-family:var(--f-sans);font-size:12px;color:#BDB2A3;margin:0}
+.empty-sheet{font-style:italic;color:#BDB2A3;font-size:15px}
+
+.endcard{border:2px solid var(--ink);background:#fff;padding:16px 18px;display:flex;flex-direction:column;gap:10px;max-width:66ch}
+.endcard h3{font-family:var(--f-display);font-weight:900;font-size:30px;text-transform:uppercase;line-height:1;margin:0}
+.product{display:grid;grid-template-columns:110px minmax(0,1fr);gap:14px;align-items:start;background:var(--soot);color:var(--ledger);padding:14px}
+.product .cov{background:#1A1714;border:1px solid #3D352E;aspect-ratio:8.5/11;display:flex;flex-direction:column;justify-content:flex-end;padding:8px;font-family:var(--f-display);font-weight:900;font-size:15px;line-height:.9;text-transform:uppercase;color:#F6EFE3;overflow:hidden;overflow-wrap:anywhere;background-image:radial-gradient(ellipse at 50% 115%, rgba(196,81,31,.6), transparent 60%)}
+.product .cov small{font-family:var(--f-sans);font-size:7px;font-weight:700;letter-spacing:.14em;color:var(--brass);margin-bottom:auto;line-height:1.2}
+.product ul{margin:.3em 0 .6em;padding-left:1.1em;font-size:15px}
+.buy{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.buybtn{display:inline-block;text-decoration:none;background:var(--ember-2);color:#fff;font-weight:700;padding:10px 16px;border:0;cursor:pointer;font-size:16px;font-family:var(--f-sans)}
+.buybtn[aria-disabled="true"]{background:#5A5047;color:#E4DDD1;cursor:not-allowed}
+.buy small{font-family:var(--f-sans);font-size:13px;color:#C2B7A8}
+.learned{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:4px 14px;font-size:15px}
+.learned li::before{content:"✓ ";font-weight:700;color:var(--ok)}
+.learned li.no{color:var(--muted)} .learned li.no::before{content:"○ ";color:var(--muted)}
+.fine{font-family:var(--f-sans);font-size:12.5px;color:var(--muted);line-height:1.5;margin:0}
+.foot{font-family:var(--f-sans);font-size:13px;margin-top:22px;max-width:92ch;line-height:1.55;color:#C2B7A8}
+
+@media (max-width: 900px){
+  .table{grid-template-columns:minmax(0,1fr)}
+  .sheet{order:-1;top:env(safe-area-inset-top,0px);z-index:6}
+  .sheet-body{max-height:60vh;overflow:auto}
+  #log{padding:14px 14px 6px}
+  .product{grid-template-columns:1fr}
+  .product .cov{max-width:120px}
+  body{font-size:16.5px}
+}
+@media (prefers-reduced-motion: reduce){ .tumble{animation:none} }
+</style>
+</head>
+<body>
+<div class="proto"><span><a href="../../" style="color:inherit">← All demos</a> · <b>FREE DEMO</b> · Act One of three</span><span>Not an official Blades in the Dark product</span></div>
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">A solo heist for Forged in the Dark</p>
+      <h1>The Cinderhouse Score</h1>
+      <p class="tag">In nine days the gas goes out in the Sump. Every debt that will do it is punched into one copper roll inside Cinderhouse. Tonight you steal the key that opens its doors.</p>
+    </div>
+    <span class="actchip">Free: Act One · about 20 minutes</span>
+  </header>
+  <div class="table">
+    <main class="story" aria-live="polite">
+      <div class="story-head">
+        <span class="scene" id="sceneName">Before you begin</span>
+        <span class="toggles">
+          <label class="toggle"><input type="checkbox" id="rulesToggle" checked> Show rules</label>
+          <label class="toggle"><input type="checkbox" id="autoToggle"> Auto-roll</label>
+        </span>
+      </div>
+      <div id="log"></div>
+      <div id="choices"></div>
+    </main>
+    <details class="sheet" id="sheet" open>
+      <summary><span class="nm" id="sumName">Your scoundrel</span><span class="mini" id="sumMini">not chosen yet</span></summary>
+      <div class="sheet-body" id="sheetBody"><p class="empty-sheet">Your scoundrel appears here: actions and attributes, stress, trauma, harm, load, coin, heat, and the clocks you're racing.</p></div>
+    </details>
+  </div>
+  <p class="foot">This work is based on Blades in the Dark (found at http://www.bladesinthedark.com/), product of One Seven Design, developed and authored by John Harper, and licensed for our use under the <a href="https://creativecommons.org/licenses/by/3.0" target="_blank" rel="noopener">Creative Commons Attribution 3.0 Unported license</a> (http://creativecommons.org/licenses/by/3.0/). Rules text quoted in this demo (marked CC BY) is from the Blades in the Dark SRD, with em dashes replaced and page references removed. Blades in the Dark™ is a trademark of One Seven Design. This is not an official Blades in the Dark product and is not endorsed by One Seven Design. The adventure "The Cinderhouse Score", the city of Vesk, and its characters are © 2026 RPG Demo Library. All rights reserved. Read the free SRD at <a href="https://bladesinthedark.com/" target="_blank" rel="noopener">bladesinthedark.com</a>.</p>
+</div>
+
+<script>
+(() => {
+const DATA = {"rules":{"dice":["Rolling the dice","<p><em>Blades in the Dark</em> uses six-sided dice. You roll several at once and read the <strong>single highest result</strong>.</p>\n<ul><li>If the highest die is a <strong>6</strong>, it’s a <strong>full success</strong>: things go well. If you roll more than one <strong>6</strong>, it’s a <strong>critical success</strong>: you gain some additional advantage.</li><li>If the highest die is a <strong>4 or 5</strong>, that’s a <strong>partial success</strong>: you do what you were trying to do, but there are consequences: trouble, harm, reduced effect, etc.</li><li>If the highest die is <strong>1-3</strong>, it’s a <strong>bad outcome</strong>. Things go poorly. You probably don’t achieve your goal and you suffer complications, too.</li></ul>\n<p><em>If you ever need to roll but you have zero (or negative) dice, roll two dice and take the single lowest result. You can’t roll a <strong>critical</strong> when you have zero dice.</em></p>"],"position":["Position","<p>Once the player chooses their action, the GM sets the <strong>position</strong> for the roll. The position represents how dangerous or troublesome the action might be. There are three positions: <strong>controlled</strong>, <strong>risky</strong>, and <strong>desperate</strong>. To choose a position, the GM looks at the profiles for the positions below and picks one that most closely matches the situation at hand.</p>\n<p><strong>By default, an action roll is risky.</strong> You wouldn’t be rolling if there was no risk involved. If the situation seems more dangerous, make it desperate. If it seems less dangerous, make it controlled.</p>"],"effect":["Effect level","<p>The GM assesses the likely <strong>effect level</strong> of this action, given the factors of the situation. Essentially, the effect level tells us “how much” this action can accomplish: will it have <strong>limited</strong>, <strong>standard</strong>, or <strong>great</strong> effect?</p>\n"],"push":["Pushing yourself","<p>You can use stress to push yourself for greater performance. For each bonus you choose below, take <strong>2 stress</strong> (each can be chosen once for a given action):</p>\n<ul><li>Add <strong>+1d</strong> to your roll. (This may be used for an action roll or downtime roll or any other kind of roll where extra effort would help you)</li><li>Add <strong>+1 level</strong> to your effect.</li><li>Take action when you’re incapacitated.</li></ul>"],"bargain":["The Devil's Bargain","<p>PCs in <em>Blades</em> are reckless scoundrels addicted to destructive vices: they don’t always act in their own best interests. To reflect this, the GM or any other player can offer you a bonus die if you accept a Devil’s Bargain. Common Devil’s Bargains include:</p>\n<ul><li>Collateral damage, unintended harm.</li><li>Sacrifice coin or an item.</li><li>Betray a friend or loved one.</li><li>Offend or anger a faction.</li><li>Start and/or tick a troublesome clock.</li><li>Add heat to the crew from evidence or witnesses.</li><li>Suffer harm.</li></ul>\n<p>The Devil’s Bargain occurs regardless of the outcome of the roll. You make the deal, pay the price, and get the bonus die.</p>"],"gather":["Gathering information","<p>The flow of information from the GM to the players about the fictional world is very important in a roleplaying game. By default, the GM tells the players what their characters perceive, suspect, and intuit. But there’s just too much going on to say <em>everything</em>: it would take forever and be boring, too. The players have a tool at their disposal to more fully investigate the fictional world.</p>\n<p>When you want to know something specific about the fictional world, your character can <strong>gather information</strong>. The GM will ask you <strong>how</strong> your character gathers the info (or how they learned it in the past).</p>\n<p>If it’s common knowledge, the GM will simply answer your questions. If there’s an obstacle to the discovery of the answer, an action roll is called for. If it’s not common knowledge but there’s no obstacle, a simple fortune roll determines the quality of the information you gather.</p>\n<p>Each attempt to gather information takes time. If the situation allows, you can try again if you don’t initially get all the info that you want. But often, the opportunity is fleeting, and you’ll only get one chance to roll for that particular question.</p>"],"engagement":["Engagement roll","<p>Once the players choose a plan and provide its detail, the GM cuts to the action: describing the scene as the crew starts the operation and encounters their first obstacle. But how is this established? The way the GM describes the starting situation can have a huge impact on how simple or troublesome the operation turns out to be. Rather than expecting the GM to simply “get it right” each time, we use a dice roll instead. This is the <strong>engagement roll</strong>.</p>\n<p>The engagement roll is a <strong>fortune roll</strong>, starting with <strong>1d for sheer luck</strong>. Modify the dice pool for any major advantages or disadvantages that apply.</p><p>The outcome of the engagement roll determines the <strong>position</strong> for the PCs’ initial actions when we cut to the score in progress. A 1-3 means a desperate position. A 4/5 is a risky position. A 6 yields a controlled position. And a critical carries the action beyond the initial obstacle, deeper into the action of the score.</p>"],"flashback":["Flashbacks","<p>The rules don’t distinguish between actions performed in the present moment and those performed in the past. When an operation is underway, you can invoke a <strong>flashback</strong> to roll for an action in the past that impacts your current situation. Maybe you convinced the district Watch sergeant to cancel the patrol tonight, so you make a Sway roll to see how that went.</p>\n<p>The GM sets a <strong>stress cost</strong> when you activate a flashback action.</p>\n<ul><li>0 Stress: An ordinary action for which you had easy opportunity. _The Cutter <em>Consorted</em> with her friend to agree to arrive at the dice game ahead of time, to suddenly spring out as a surprise ally._</li><li>1 Stress: A complex action or unlikely opportunity. _The Hound <em>Finessed</em> his pistols into a hiding spot near the card table so he could retrieve them after the pat-down at the front door._</li><li>2 (or more) Stress: An elaborate action that involved special opportunities or contingencies. <em>The Whisper has already Studied the history of the property and learned of a ghost that is known to haunt its ancient canal dock: a ghost that can be compelled to reveal the location of the hidden vault.</em></li></ul>"],"clocks":["Danger clocks","<p>The GM can use a clock to represent a progressive danger, like suspicion growing during a seduction, the proximity of pursuers in a chase, or the alert level of guards on patrol. In this case, when a complication occurs, the GM ticks one, two, or three segments on the clock, depending on the consequence level. When the clock is full, the danger comes to fruition: the guards hunt down the intruders, activate an alarm, release the hounds, etc.</p>"],"racing":["Racing clocks","<p>Create two opposed clocks to represent a race. The PCs might have a progress clock called “Escape” while the constables have a clock called “Cornered.” If the PCs finish their clock before the constables fill theirs, they get away. Otherwise, they’re cornered and can’t flee. If both complete at the same time, the PCs escape to their lair, but the hunting officers are outside!</p>"],"resist":["Resistance","<p>When your PC suffers a consequence that you don’t like, you can choose to resist it. Just tell the GM, “No, I don’t think so. I’m resisting that.” Resistance is always automatically effective: the GM will tell you if the consequence is reduced in severity or if you avoid it entirely. Then, you’ll make a <strong>resistance roll</strong> to see how much stress your character suffers as a result of their resistance.</p>\n<p>You make the roll using one of your character’s <strong>attributes</strong> (Insight, Prowess, or Resolve). The GM chooses the attribute, based on the nature of consequences:</p>\n<ul><li>Insight: Consequences from deception or understanding.</li><li>Prowess: Consequences from physical strain or injury.</li><li>Resolve: Consequences from mental strain or willpower.</li></ul>\n<p>Your character suffers <strong>6 stress</strong> when they resist, <strong>minus the highest die result from the resistance roll</strong>. So, if you rolled a 4, you’d suffer 2 stress. If you rolled a 6, you’d suffer zero stress. If you get a critical result, you also <strong>clear 1 stress</strong>.</p>"],"armor":["Armor","<p>If you have a type of <strong>armor</strong> that applies to the situation, you can mark an armor box to reduce or avoid a consequence, instead of rolling to resist.</p>"],"harm":["Harm","<p>This consequence represents a long-lasting debility (or death). When you suffer harm, record the specific injury on your character sheet equal to the level of harm you suffer. If you suffer <strong>lesser harm</strong>, record it in the bottom row. If you suffer <strong>moderate harm</strong>, write it in the middle row. If you suffer <strong>severe harm</strong>, record it in the top row. See examples of harm and the harm tracker, below.</p>\n<p>Your character suffers the penalty indicated at the end of the row if any or all harm recorded in that row applies to the situation at hand. So, if you have “Drained” and “Battered” harm in the bottom row, you’ll suffer reduced effect when you try to run away from the constables. When you’re impaired by harm in the top row (severe harm, level 3), your character is incapacitated and can’t do anything unless you have help from someone else or <strong>push yourself</strong> to perform the action.</p>"],"trauma":["Trauma","<p>When a PC marks their last stress box, they suffer a level of trauma. When you take trauma, circle one of your <strong>trauma conditions</strong> like <em>Cold</em>, <em>Reckless</em>, <em>Unstable</em>, etc. </p>\n<p>When you suffer trauma, you’re taken out of action. You’re “left for dead” or otherwise dropped out of the current conflict, only to come back later, shaken and drained. When you return, <strong>you have zero stress</strong> and your vice has been satisfied for the next downtime.</p>"],"payoff":["Payoff","<p>After a score, the PCs take stock of their income from the operation. A successful score generates both rep and coin.</p><ul><li>2 coin: A minor job; several full purses.</li><li>4 coin: A small job; a strongbox.</li><li>6 coin: A standard score; decent loot.</li><li>8 coin: A big score; serious loot.</li><li>10+ coin: A major score; impressive loot.</li></ul>"],"heat":["Heat","<p>The city is full of prying eyes and informants. Anything you do might be witnessed, and there’s always evidence left behind. To reflect this, your crew acquires heat as they commit crimes. After a score or conflict with an opponent, your crew takes heat according to the nature of the operation:</p>\n<ul><li>0 heat: Smooth &amp; quiet; low exposure.</li><li>2 heat: Contained; standard exposure.</li><li>4 heat: Loud &amp; chaotic; high exposure.</li><li>6 heat: Wild; devastating exposure.</li></ul>\n<p>Add +1 heat for a high-profile or well-connected target. Add +1 heat if the situation happened on hostile turf. Add +1 heat if you’re at war with another faction. Add +2 heat if killing was involved (whether the crew did the killing or not: bodies draw attention).</p>"],"entangle":["Entanglements","<p>Your crew didn’t just spring into existence tonight. You have a complex history of favors, commitments, debts, and promises that got you where you are today. To reflect this, after each score, you roll dice to find out which <strong>entanglement</strong> comes calling. An entanglement might be a rival crew looking to throw their weight around (and demand some coin), an Investigator of the City Watch making a case against your crew (but ready for a bribe), or even the attention of a vengeful ghost.</p>\n<p>After payoff and heat are determined, the GM generates an entanglement for the crew using the lists below. Find the column that matches the crew’s current heat level. Then roll a number of dice equal to their wanted level, and use the result of the roll to select which sort of entanglement manifests. <em>If wanted level is zero, roll two dice and keep the lowest result.</em></p>"],"activities":["Downtime activities","<p>Between scores, your crew spends time at their liberty, attending to personal needs and side projects. These are called <strong>downtime activities</strong> (see the list below). During a downtime phase, each PC has time for <strong>two downtime activities</strong>. <em>When you’re at war, each PC has time for only one.</em></p>\n<ul><li>Acquire Asset</li><li>Long-Term Project</li><li>Recover</li><li>Reduce Heat</li><li>Train</li><li>Indulge Vice</li></ul>"],"vice":["Indulging your vice","<p>When you indulge your vice, you clear some stress from your character’s stress track. Say how your character indulges their vice, including which <strong>purveyor of vice</strong> they use to satisfy their needs. This indulgence takes time, so it can only be done when the crew has <strong>downtime</strong>. Alternately, you may choose to release your character to be “lost in their vice” during a game session, allowing them to indulge off-camera while you play a different PC. A gang member, friend, or contact of the crew might be created as an alternate character to play, thus fleshing out the landscape of PCs.</p>\n<p>You roll to find out how much stress relief your character receives. A vice roll is like a resistance roll in reverse: rather than gaining stress levels, you clear stress levels. The effectiveness of your indulgence depends upon your character’s worst attribute rating. It’s their weakest quality (Insight, Prowess, or Resolve) that is most in thrall to vice.</p>\n<p>Make an <strong>attribute roll</strong> using your character’s lowest attribute rating (if there’s a tie, that’s fine: simply use that rating). <strong>Clear stress equal to the highest die result.</strong></p>"],"overindulge":["Overindulgence","<p>If your vice roll clears more stress levels than you had marked, you overindulge. A vice is not a reliable, controllable habit. It’s a risk, and one that can drive your character to act against their own best interests.</p>\n<p>When you overindulge, you make a bad call because of your vice: in acquiring it or while under its influence. To bring the effect of this bad decision into the game, select an overindulgence from the list:</p>\n<ul><li>Attract Trouble. Select or roll an additional <strong>entanglement</strong>.</li><li>Brag about your exploits. <strong>+2</strong> heat.</li><li>Lost. Your character vanishes for a few weeks. Play a different character until this one returns from their bender. When your character returns, they’ve also healed any harm they had.</li><li>Tapped. Your current purveyor cuts you off. Find a new source for your vice.</li></ul>"],"recover":["Recover","<p>When you recover, you seek treatment and heal your harm. You might visit a physicker who can stitch your wounds and soothe your mind with anatomical science or a witch who specializes in healing charms and restorative alchemy. If you don’t have a contact or fellow PC who can provide treatment, you can use the <strong>acquire asset</strong> activity to gain access to a healer, who can provide service for the whole crew.</p>\n<p>Recovery is like a long-term project. Your healer rolls (Tinker for a PC with the Physicker special ability or the <strong>quality</strong> level of an NPC) and then you mark a number of segments on your <strong>healing clock</strong>. 1-3: one segment, 4/5: two segments, 6: three segments, critical: five segments.</p>"],"reduceheat":["Reduce heat","<p>Say what your character does to reduce the heat level of the crew and make an action roll. Maybe you Consort with your friend who’s a officer and she arranges for a few incriminating Watch reports to disappear. Or maybe you Command the fear of the local citizens so they’re afraid to snitch.</p>\n<p>Reduce heat according to the result: 1-3: one, 4/5: two, 6: three, critical: five.</p>"],"train":["Train","<p>When you spend time in training, <strong>mark 1 xp</strong> on the xp track for an <strong>attribute</strong> or <strong>playbook</strong> advancement. If you have the appropriate crew Training upgrade unlocked, mark <strong>+1 xp</strong> (2 total).. <em>You can train a given xp track only once per downtime.</em></p>"],"Infiltrator":["Infiltrator","<p>You are not affected by <strong>quality</strong> or <strong>Tier</strong> when you bypass security measures.</p>\n<blockquote>This ability lets you contend with higher-Tier enemies on equal footing. When you’re cracking a safe, picking a lock, or sneaking past elite guards, your effect level is never reduced due to superior Tier or quality level of your opposition.</blockquote>\n<blockquote>Are you a renowned safe cracker? Do people tell stories of how you slipped under the noses of two Chief Inspectors, or are your exceptional talents yet to be discovered?</blockquote>"],"Saboteur":["Saboteur","<p>When you Wreck, your work is much quieter than it should be and the damage is very well-hidden from casual inspection.</p>\n<blockquote>You can drill holes in things, melt stuff with acid, even use a muffled explosive, and it will all be very quiet and extremely hard to notice.</blockquote>"],"Subterfuge":["Subterfuge","<p>You may expend your <strong>special armor</strong> to resist a consequence from suspicion or persuasion, or to <strong>push yourself</strong> for subterfuge.</p>\n<blockquote>When you use this ability, tick the special armor box on your playbook sheet. If you “resist a consequence” of the appropriate type, you avoid it completely. If you use this ability to push yourself, you get one of the benefits (+1d, +1 effect, act despite severe harm) but you don’t take 2 stress. Your special armor is restored at the beginning of downtime.</blockquote>"]}};
+const PRODUCT_ID = 'cinderhouse-score';
+let autoRoll = false;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = s => document.querySelector(s);
+const logEl = $('#log'), choicesEl = $('#choices');
+const d6 = () => 1 + Math.floor(Math.random()*6);
+const sleep = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pick = a => a[Math.floor(Math.random()*a.length)];
+
+try { if (localStorage.getItem('fitd-rules') === 'off') { $('#rulesToggle').checked = false; document.body.classList.add('norules'); } } catch(e){}
+try { if (localStorage.getItem('fitd-auto') === 'on') { $('#autoToggle').checked = true; autoRoll = true; } } catch(e){}
+$('#rulesToggle').addEventListener('change', e => { document.body.classList.toggle('norules', !e.target.checked); try { localStorage.setItem('fitd-rules', e.target.checked ? 'on' : 'off'); } catch(err){} });
+$('#autoToggle').addEventListener('change', e => { autoRoll = e.target.checked; try { localStorage.setItem('fitd-auto', autoRoll ? 'on' : 'off'); } catch(err){} });
+
+/* ---------- log ---------- */
+function add(cls, html){ const el = document.createElement('div'); if (cls) el.className = cls; el.innerHTML = html; logEl.appendChild(el); requestAnimationFrame(() => el.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'})); return el; }
+const nar = h => add('line', h);
+const npc = (who, h) => add('line npc', `<span class="who">${who}</span>${h}`);
+const you = h => add('line you', h);
+const rule = h => add('rule', h);
+const shown = new Set();
+function srd(key){ if (shown.has(key) || !DATA.rules[key]) return; shown.add(key); const [t, h] = DATA.rules[key]; add('', `<details class="srd"><summary><span>${t}</span><small>READ THE RULE · CC BY</small></summary><div class="mt">${h}</div></details>`); }
+function scene(num, name){ $('#sceneName').textContent = name; add('scenebreak', `<small><i>${num}</i>Act One</small>${name}`); }
+function choose(opts){
+  return new Promise(res => {
+    choicesEl.innerHTML = '';
+    opts.forEach(o => {
+      const b = document.createElement('button'); b.className = 'opt' + (o.cls ? ' ' + o.cls : '');
+      b.innerHTML = `<b>${o.label}</b>${o.sub ? `<span>${o.sub}</span>` : ''}`; if (o.disabled) b.disabled = true;
+      b.addEventListener('click', () => { choicesEl.innerHTML = ''; if (o.say !== false) you(o.say || o.label); res(o.id); });
+      choicesEl.appendChild(b);
+    });
+    requestAnimationFrame(() => choicesEl.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'}));
+    const first = choicesEl.querySelector('button:not(:disabled)'); if (first && matchMedia('(pointer:fine)').matches) first.focus({preventScroll:true});
+  });
+}
+const cont = (label='Continue') => choose([{id:'c', label, cls:'primary', say:false}]);
+
+/* ---------- dice ---------- */
+const PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function dieEl(){ const e = document.createElement('div'); e.className = 'die ghost'; for (let i=0;i<9;i++) e.appendChild(document.createElement('i')); e.setAttribute('aria-label','die, not rolled yet'); return e; }
+function face(e, v){ [...e.children].forEach((p,i) => p.style.visibility = (PIPS[v]||[]).includes(i) ? 'visible' : 'hidden'); e.setAttribute('aria-label','die showing '+v); }
+// Rolls a pool. n<=0 means roll two and keep the lowest (no crit). Returns {top, crit, row, vals}
+async function rollPool(label, n, {btn, sub, row, auto=false} = {}){
+  const zero = n <= 0; const count = zero ? 2 : n;
+  row = row || add('rollrow', `<span class="lbl">${label}</span>`);
+  const wrap = document.createElement('div'); wrap.className = 'dice'; row.appendChild(wrap);
+  const els = []; for (let i=0;i<count;i++){ const e = dieEl(); wrap.appendChild(e); els.push(e); }
+  if (!auto && !autoRoll) await choose([{id:'r', label: btn || (zero ? 'Roll 2 dice, keep the lowest' : `Roll ${count} ${count === 1 ? 'die' : 'dice'}`), sub: sub || label.replace(/<[^>]+>/g,''), cls:'primary roll', say:false}]);
+  const vals = els.map(() => d6());
+  els.forEach(e => { e.classList.remove('ghost'); e.classList.add('tumble'); face(e, d6()); });
+  for (let t=0;t<(reduced?1:8);t++){ await sleep(60); els.forEach(e => face(e, d6())); }
+  els.forEach((e,i) => { e.classList.remove('tumble'); face(e, vals[i]); });
+  const top = zero ? Math.min(...vals) : Math.max(...vals);
+  const crit = !zero && vals.filter(v => v === 6).length >= 2;
+  let marked = false;
+  els.forEach((e,i) => { if (!marked && vals[i] === top){ marked = true; e.classList.add('top', top === 6 ? 't6' : top >= 4 ? 't45' : 't13'); } else e.classList.add('dim'); });
+  if (crit) els.forEach((e,i) => { if (vals[i] === 6){ e.classList.remove('dim'); e.classList.add('t6'); } });
+  await sleep(200);
+  return {top, crit, row, vals};
+}
+const tier = r => r.crit ? 'crit' : r.top === 6 ? 'six' : r.top >= 4 ? 'mixed' : 'bad';
+const TIERNAME = {crit:'Critical success', six:'Full success', mixed:'Partial success', bad:'Bad outcome'};
+const TIERCLS = {crit:'ok', six:'ok', mixed:'mix', bad:'bad'};
+function stamp(row, cls, text){ const s = document.createElement('span'); s.className = 'result ' + cls; s.textContent = text; row.appendChild(s); }
+
+/* ---------- characters ---------- */
+const ATTR = {Insight:['Hunt','Study','Survey','Tinker'], Prowess:['Finesse','Prowl','Skirmish','Wreck'], Resolve:['Attune','Command','Consort','Sway']};
+const PCS = {
+  ness:{name:'Ness Callow', alias:'Soot', title:'the climber', ability:'Infiltrator', vice:'Gambling', purveyor:'Lucky Arbo\'s bone-dice tables under the Spill', friend:'Pell Marrish, locksmith',
+    acts:{Finesse:2, Prowl:2, Survey:1, Tinker:1, Sway:1}, free:['Fine lockpicks'],
+    blurb:'Sump-born, raised by chimney sweeps. You know every flue and gutter from the Brine to the Rim. Your ability, <b>Infiltrator</b>, means quality and Tier never reduce your effect when you bypass security.'},
+  hask:{name:'Hask Orrin', alias:'Brother Hask', title:'the saboteur', ability:'Saboteur', vice:'Faith', purveyor:'Deacon Amsel at the Chapel of the Long Breath', friend:'Tilly Fenn, vent-tender',
+    acts:{Wreck:2, Tinker:2, Study:1, Skirmish:1, Attune:1}, free:['Vent-tender\'s wrench'],
+    blurb:'A former Breathwarden vent-tender, expelled for a theft you didn\'t commit. Your ability, <b>Saboteur</b>, makes your Wreck actions much quieter than they should be.'},
+  ilse:{name:'Ilse Varro', alias:'Silk', title:'the face', ability:'Subterfuge', vice:'Luxury', purveyor:'Madame Corvanne\'s Glass Salon on the Rim', friend:'Tobin Quarrel, lamp-boy',
+    acts:{Sway:2, Consort:2, Study:1, Survey:1, Finesse:1}, free:['Forged inspector\'s seal'],
+    blurb:'A ruined merchant\'s daughter with a notary\'s eye for paper and a smile that opens doors. Your ability, <b>Subterfuge</b>, lets you expend special armor to shrug off suspicion, or push yourself for a lie without paying stress.'},
+};
+const ITEMS = {'Burglary gear':1, 'Climbing gear':2, 'Armor':2, 'A blade':1, 'Subterfuge supplies':1, 'Tinkering tools':1};
+const TRAUMAS = ['Cold','Haunted','Obsessed','Paranoid','Reckless','Soft','Unstable','Vicious'];
+let C = null; const used = new Set();
+const clocks = {}; // name -> {size, fill, danger}
+function rating(a){ return C.acts[a] || 0; }
+function attr(n){ return ATTR[n].filter(a => rating(a) > 0).length; }
+function newClock(name, size, danger=false, fill=0){ clocks[name] = {size, fill, danger}; used.add('clock'); render(); }
+function tickClock(name, n){ const k = clocks[name]; if (!k) return 0; const before = k.fill; k.fill = Math.max(0, Math.min(k.size, k.fill + n)); render(); return k.fill - before; }
+const full = name => clocks[name] && clocks[name].fill >= clocks[name].size;
+function clockSVG(size, fill, danger){
+  const r = 44, c = 50; let s = `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="${r}" fill="#fff" stroke="#1F1C19" stroke-width="5"/>`;
+  for (let i=0;i<size;i++){ const a0 = i/size*2*Math.PI - Math.PI/2, a1 = (i+1)/size*2*Math.PI - Math.PI/2;
+    if (i < fill) s += `<path d="M50 50 L${c+r*Math.cos(a0)} ${c+r*Math.sin(a0)} A${r} ${r} 0 0 1 ${c+r*Math.cos(a1)} ${c+r*Math.sin(a1)} Z" fill="${danger ? '#C4511F' : '#3C7F58'}"/>`;
+    s += `<line x1="50" y1="50" x2="${c+r*Math.cos(a0)}" y2="${c+r*Math.sin(a0)}" stroke="#1F1C19" stroke-width="3.5"/>`; }
+  return s + `<circle cx="50" cy="50" r="${r}" fill="none" stroke="#1F1C19" stroke-width="5"/></svg>`;
+}
+function showClock(name){ const k = clocks[name]; if (!k) return; add('clockline', `${clockSVG(k.size, k.fill, k.danger)}<span>${esc(name)}: ${k.fill} of ${k.size}${k.fill >= k.size ? ' · FULL' : ''}</span>`); }
+
+/* ---------- load ---------- */
+const LOADCAP = {light:3, normal:5, heavy:6};
+function loadUsed(){ return C.items.reduce((a,i) => a + (ITEMS[i]||0), 0); }
+function hasItem(i){ return C.free.includes(i) || C.items.includes(i); }
+function canCheck(i){ return hasItem(i) || (C.load && loadUsed() + ITEMS[i] <= LOADCAP[C.load]); }
+function checkItem(i){ if (hasItem(i)) return; C.items.push(i); used.add('load'); rule(`You check off <b>${i}</b> on your sheet (${ITEMS[i]} load). You didn't choose it in advance: you just say you brought it, up to your load.`); render(); }
+
+/* ---------- stress, trauma, harm ---------- */
+async function takeStress(n, why){
+  if (n <= 0) return;
+  used.add('stress');
+  const total = C.stress + n;
+  if (total > 9){
+    C.stress = 9; render();
+    await trauma(why);
+  } else { C.stress = total; render(); }
+}
+async function trauma(why){
+  used.add('trauma');
+  srd('trauma');
+  nar(`That's too much. Your stress boxes are full, ${why ? esc(why) + ', and ' : ''}something in you gives way.`);
+  const opts = TRAUMAS.filter(t => !C.trauma.includes(t)).sort(() => Math.random() - .5).slice(0, 3);
+  const c = await choose(opts.map(t => ({id:t, label:`Take trauma: ${t}`, sub:({Cold:'Not moved by emotional appeals or social bonds.',Haunted:'Lost in reverie, reliving past horrors.',Obsessed:'Enthralled by one thing.',Paranoid:'Danger everywhere; you can\'t trust others.',Reckless:'Little regard for your own safety.',Soft:'You lose your edge.',Unstable:'Volatile: rage, despair, or freezing up.',Vicious:'You seek out chances to hurt people.'})[t]})));
+  C.trauma.push(c); C.stress = 0; render();
+  rule('Trauma: you clear all stress, mark a permanent trauma condition, and you\'re taken out of the current conflict for a while. Four trauma and your scoundrel retires.');
+  nar('You lose a few minutes. When you come back to yourself, you\'re crouched in a corner, shaking, and the night has moved on without you.');
+}
+const HARMSLOTS = {1:2, 2:2, 3:1};
+function harmPenalty(){ return {effect: C.harm[1].length ? -1 : 0, dice: C.harm[2].length ? -1 : 0, need: C.harm[3].length > 0}; }
+async function sufferHarm(level, name){
+  used.add('harm'); srd('harm');
+  let L = level;
+  while (L <= 3 && C.harm[L].length >= HARMSLOTS[L]) L++;
+  if (L > 3){
+    nar('That would be fatal harm. In the full game, your scoundrel could die here. Tonight, the city is kinder: you black out, and Ossa\'s people drag you home.');
+    C.fatal = true; render(); return;
+  }
+  if (L !== level) rule(`That row of your harm track is full, so the harm moves up to level ${L}.`);
+  C.harm[L].push(name); render();
+  add('', `<span class="result n">Level ${L} harm: ${esc(name)}</span>`);
+  rule(['','Level 1 harm: when it applies, you have less effect.','Level 2 harm: when it applies, -1d to your rolls.','Level 3 harm: you\'re impaired. You can only act if you push yourself (2 stress).'][L]);
+}
+// Resistance roll. Returns stress taken.
+async function resist(attrName, what){
+  used.add('resist'); srd('resist');
+  const n = attr(attrName);
+  const r = await rollPool(`Resistance roll: ${attrName} ${n}${n === 0 ? ' (zero dice: roll two, keep the lowest)' : ''}. Take 6 stress minus your highest die.`, n, {btn:`Resist with ${attrName}`});
+  let st = 6 - r.top;
+  if (r.crit){ stamp(r.row, 'ok', 'Critical: clear 1 stress'); C.stress = Math.max(0, C.stress - 1); render(); return 0; }
+  stamp(r.row, st === 0 ? 'ok' : st <= 2 ? 'mix' : 'bad', `${st} stress`);
+  if (st) await takeStress(st, what);
+  return st;
+}
+// A consequence: either harm or clock ticks; player may accept, resist, or use armor.
+async function consequence(c){
+  // c: {kind:'harm', level, name, armorOk} | {kind:'clock', clock, n, why, suspicion}
+  if (c.kind === 'harm'){
+    const opts = [{id:'take', label:`Accept: level ${c.level} harm, "${c.name}"`, say:false}];
+    opts.push({id:'res', label:'Resist it (Prowess)', sub:`Reduce it to ${c.level > 1 ? 'level ' + (c.level-1) : 'nothing'}. Costs 6 stress minus your highest die.`, say:'No. I\'m resisting that.'});
+    if (!C.armorUsed && canCheck('Armor')) opts.push({id:'arm', label:'Mark your armor', sub: hasItem('Armor') ? 'Reduce the harm by one level, no roll' : 'Check Armor (2 load) and mark it: reduce the harm by one level', say:'My coat takes it.'});
+    const ch = await choose(opts);
+    if (ch === 'take') return sufferHarm(c.level, c.name);
+    if (ch === 'arm'){ checkItem('Armor'); C.armorUsed = true; used.add('armor'); srd('armor'); render(); if (c.level > 1) return sufferHarm(c.level - 1, c.lesser || 'Bruised'); nar('The blow lands on padded leather and goes nowhere.'); return; }
+    await resist('Prowess', 'resisting harm');
+    if (c.level > 1) return sufferHarm(c.level - 1, c.lesser || 'Bruised');
+    nar('You take it on the shoulder and roll with it. No harm.');
+    return;
+  }
+  const k = clocks[c.clock];
+  const opts = [{id:'take', label:`Accept: tick ${c.clock} +${c.n}`, sub:c.why, say:false}];
+  opts.push({id:'res', label:`Resist it (${c.attr || 'Insight'})`, sub:`Tick ${c.n > 1 ? c.n - 1 : 0} instead. Costs 6 stress minus your highest die.`, say:'No. I\'m resisting that.'});
+  if (c.suspicion && C.ability === 'Subterfuge' && !C.specialUsed) opts.push({id:'sub', label:'Subterfuge: expend special armor', sub:'Avoid this consequence of suspicion completely', say:'I don\'t even blink.'});
+  const ch = await choose(opts);
+  let n = c.n;
+  if (ch === 'res'){ await resist(c.attr || 'Insight', 'resisting a complication'); n = Math.max(0, n - 1); }
+  if (ch === 'sub'){ C.specialUsed = true; used.add('ability'); srd('Subterfuge'); n = 0; render(); nar('Your story holds. Nobody looks twice.'); }
+  if (n) tickClock(c.clock, n);
+  used.add('consequence');
+  showClock(c.clock);
+}
+
+/* ---------- action roll with position and effect ---------- */
+const POS = ['controlled','risky','desperate'], EFF = ['zero','limited','standard','great','extreme'];
+const worse = p => POS[Math.min(2, POS.indexOf(p)+1)], better = p => POS[Math.max(0, POS.indexOf(p)-1)];
+function setupRoll({label, action, position, effect, bargains=[], note, onChange}){
+  return new Promise(res => {
+    const st = {pushD:false, pushE:false, bargain:null};
+    const hp = harmPenalty();
+    const draw = () => {
+      choicesEl.innerHTML = '';
+      const box = document.createElement('div'); box.className = 'setup';
+      const base = rating(action);
+      const n = base + (st.pushD || st.bargain !== null ? 1 : 0) + hp.dice;
+      const effIdx = Math.min(4, EFF.indexOf(effect) + (st.pushE ? 1 : 0) + hp.effect);
+      if (onChange) onChange(n, effIdx);
+      const chip = (on, html, fn, dis, cls='') => { const b = document.createElement('button'); b.className = 'chip ' + cls + (on?' on':''); b.innerHTML = html; b.disabled = !!dis; b.addEventListener('click', () => { fn(); draw(); }); return b; };
+      const t = document.createElement('div'); t.className = 'ttl'; t.innerHTML = `${label}: ${action} ${base} · ${position} · ${EFF[effIdx]} effect`; box.appendChild(t);
+      const r1 = document.createElement('div'); r1.className = 'row';
+      r1.appendChild(chip(st.pushD, `Push yourself: +1d <small>take 2 stress</small>`, () => { st.pushD = !st.pushD; if (st.pushD) st.bargain = null; }, false));
+      r1.appendChild(chip(st.pushE, `Push yourself: +1 effect <small>take 2 stress</small>`, () => { st.pushE = !st.pushE; }, false));
+      box.appendChild(r1);
+      if (bargains.length){
+        const r2 = document.createElement('div'); r2.className = 'row';
+        bargains.forEach((b, i) => r2.appendChild(chip(st.bargain === i, `Devil's Bargain: +1d <small>${b.text}</small>`, () => { st.bargain = st.bargain === i ? null : i; if (st.bargain !== null) st.pushD = false; }, false, 'bargain')));
+        box.appendChild(r2);
+      }
+      const sum = document.createElement('div'); sum.className = 'sum';
+      const stressCost = (st.pushD ? 2 : 0) + (st.pushE ? 2 : 0) + (hp.need ? 2 : 0);
+      sum.textContent = `${n <= 0 ? 'Zero dice: roll two and keep the lowest.' : `Rolling ${n}d, take the highest.`} ${stressCost ? `Costs ${stressCost} stress. ` : ''}${hp.dice ? 'Harm: -1d. ' : ''}${hp.effect ? 'Harm: less effect. ' : ''}${hp.need ? 'Severe harm: you must push yourself (2 stress) to act at all. ' : ''}${note || ''}`;
+      box.appendChild(sum);
+      const go = document.createElement('button'); go.className = 'opt primary roll';
+      go.innerHTML = `<b>${n <= 0 ? 'Roll 2 dice, keep the lowest' : `Roll ${n} ${n === 1 ? 'die' : 'dice'}`}</b><span>6 = full success · 4/5 = success with a consequence · 1-3 = bad outcome</span>`;
+      go.addEventListener('click', () => { choicesEl.innerHTML = ''; res({...st, n, effIdx, stressCost}); });
+      box.appendChild(go);
+      choicesEl.appendChild(box);
+      requestAnimationFrame(() => choicesEl.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'}));
+    };
+    draw();
+  });
+}
+// Returns {res:'crit'|'six'|'mixed'|'bad', effect:index, ticks}
+async function action({label, action, position, effect='standard', bargains=[], note, say}){
+  used.add('action');
+  if (!shown.has('position')){ srd('position'); srd('effect'); }
+  if (position === 'desperate') used.add('desperate');
+  const row = add('rollrow', `<span class="lbl">${label}: ${action} ${rating(action)}</span>`);
+  const pe = document.createElement('div'); pe.className = 'pe'; row.appendChild(pe);
+  const preview = document.createElement('div'); preview.className = 'dice'; row.appendChild(preview);
+  const showPreview = (n, effIdx) => { preview.innerHTML = ''; for (let i = 0; i < (n <= 0 ? 2 : n); i++) preview.appendChild(dieEl()); pe.innerHTML = `<span class="${position}">${position}</span><span>${EFF[effIdx]} effect</span>`; };
+  showPreview(rating(action) + harmPenalty().dice, Math.min(4, EFF.indexOf(effect) + harmPenalty().effect));
+  let st;
+  if (autoRoll){
+    const hp = harmPenalty();
+    st = {pushD:false, pushE:false, bargain:null, n: rating(action) + hp.dice, effIdx: Math.min(4, EFF.indexOf(effect) + hp.effect), stressCost: hp.need ? 2 : 0};
+  } else st = await setupRoll({label, action, position, effect, bargains, note, onChange: showPreview});
+  if (say) you(say);
+  if (st.pushD || st.pushE){ used.add('push'); srd('push'); }
+  if (st.bargain !== null){ used.add('bargain'); srd('bargain'); }
+  if (st.stressCost){
+    if (C.ability === 'Subterfuge' && !C.specialUsed && /Sway|Consort|Finesse/.test(action) && (st.pushD || st.pushE)){
+      C.specialUsed = true; used.add('ability'); srd('Subterfuge'); render();
+      rule('Subterfuge: you expend your special armor to push yourself for subterfuge, so this push costs no stress.');
+      st.stressCost -= 2;
+    }
+    if (st.stressCost) await takeStress(st.stressCost, 'pushing yourself');
+  }
+  if (st.bargain !== null) await bargains[st.bargain].apply();
+  row.querySelector('.lbl').textContent = `${label}: ${action} ${rating(action)}${st.pushD ? ' + 1d push' : ''}${st.bargain !== null ? ' + 1d bargain' : ''}${harmPenalty().dice ? ' - 1d harm' : ''}`;
+  showPreview(st.n, st.effIdx); preview.remove();
+  const r = await rollPool(label, st.n, {row, auto:true});
+  const res = tier(r);
+  if (position === 'desperate'){ C.xp++; render(); }
+  stamp(row, TIERCLS[res], TIERNAME[res] + (res === 'crit' ? ': +1 effect' : ''));
+  let effIdx = st.effIdx + (res === 'crit' ? 1 : 0);
+  if (res === 'crit') used.add('crit');
+  if (position === 'desperate') rule('Desperate roll: mark 1 xp, whatever happens.');
+  return {res, effect: effIdx, ticks: Math.max(0, Math.min(4, effIdx)), hit: res !== 'bad'};
+}
+
+/* ---------- sheet ---------- */
+function render(){
+  if (!C) return;
+  $('#sumName').textContent = `${C.name} "${C.alias}"`;
+  $('#sumMini').textContent = `Stress ${C.stress}/9 · Heat ${C.heat} · Coin ${C.coin}${C.load ? ' · Load ' + loadUsed() + '/' + LOADCAP[C.load] : ''}`;
+  const actRow = a => `<div class="act ${rating(a) ? 'has' : ''}"><span>${a}</span><i>${'●'.repeat(rating(a))}${'○'.repeat(4 - rating(a))}</i></div>`;
+  const box = (n, on, cls='') => `<div class="boxes ${cls}">${Array.from({length:n}, (_,i) => `<b class="${i<on?'on':''}"></b>`).join('')}</div>`;
+  const hr = L => L === 3 ? `<div class="harmrow three"><span class="n">3</span><span>${esc(C.harm[3][0]||'')}</span><span class="p">need help</span></div>` : `<div class="harmrow"><span class="n">${L}</span><span>${esc(C.harm[L][0]||'')}</span><span>${esc(C.harm[L][1]||'')}</span><span class="p">${L===2?'-1d':'less effect'}</span></div>`;
+  const cl = Object.entries(clocks).filter(([,k]) => !k.hidden);
+  $('#sheetBody').innerHTML = `
+    <div class="attrs">${Object.keys(ATTR).map(a => `<div class="attr"><h5><span>${a}</span><span>${attr(a)}</span></h5>${ATTR[a].map(actRow).join('')}</div>`).join('')}</div>
+    <div><div class="sec"><span>Stress</span><span>${C.stress}/9</span></div>${box(9, C.stress)}</div>
+    <div><div class="sec"><span>Trauma</span><span>${C.trauma.length ? esc(C.trauma.join(', ')) : 'none'}</span></div>${box(4, C.trauma.length, 'tr')}</div>
+    <div><div class="sec"><span>Harm</span><span>${C.fatal ? 'out cold' : ''}</span></div>${hr(3)}${hr(2)}${hr(1)}</div>
+    <div><div class="sec"><span>Special ability</span><span>CC BY</span></div><p class="small-note"><b style="color:#F6EFE3">${C.ability}</b>${C.ability === 'Subterfuge' ? ` · special armor ${C.specialUsed ? 'used' : 'ready'}` : ''}</p></div>
+    <div><div class="sec"><span>Load</span><span>${C.load ? C.load + ' ' + loadUsed() + '/' + LOADCAP[C.load] : 'choose in the plan'}</span></div><div class="kv">${C.free.map(i => `<span class="tok">${esc(i)} <b>0</b></span>`).join('')}${C.items.map(i => `<span class="tok">${esc(i)} <b>${ITEMS[i]}</b>${i === 'Armor' && C.armorUsed ? ' (marked)' : ''}</span>`).join('')}</div></div>
+    <div class="kv"><span class="tok">Coin <b>${C.coin}</b></span><span class="tok">Heat <b>${C.heat}</b></span><span class="tok">Wanted <b>0</b></span><span class="tok">XP <b>${C.xp}</b></span></div>
+    ${cl.length ? `<div><div class="sec"><span>Clocks</span><span></span></div><div class="sheet-clocks">${cl.map(([n,k]) => `<span class="sclock">${clockSVG(k.size, k.fill, k.danger)}${esc(n)} ${k.fill}/${k.size}</span>`).join('')}</div></div>` : ''}
+    <p class="small-note">Vice: ${esc(C.vice)} (${esc(C.purveyor)}). Friend: ${esc(C.friend)}.</p>`;
+}
+
+/* ---------- the adventure ---------- */
+const S = {facts:new Set(), moths:false, plan:null, detail:null, pos:'risky', engCrit:false, flash:0, smoke:false, alarm:false, heatAdd:0, coinAdd:0, cornered:false, tracks:false};
+
+async function start(){
+  nar('<strong>Forged in the Dark</strong> games are about daring scoundrels pulling scores in a city that wants to grind them down. You roll a pool of six-sided dice and read the single highest die. The city plays everyone else. Here, this page plays the city.');
+  srd('dice');
+  rule('6 is a full success. Two 6s is a critical. 4 or 5 is a partial success: you do it, but there\'s a consequence. 1 to 3 is a bad outcome. Your pool is usually one of twelve action ratings, from 0 to 4 dice.');
+  nar('Vesk is a city built inside a sleeping volcano. Its people call it the Kettle. The gas that seeps from the crater floor lights every lamp, and the Breathwardens\' Guild owns all of it. Choose your scoundrel.');
+  const pickId = await choose(Object.entries(PCS).map(([k,p]) => ({id:k, label:`${p.name}, "${p.alias}", ${p.title}`, sub:`${Object.entries(p.acts).map(([a,v]) => a + ' ' + v).join(' · ')} · ${p.ability}`, say:`I'll play ${p.name}.`})));
+  const P = PCS[pickId];
+  C = {...P, key:pickId, acts:{...P.acts}, free:[...P.free], stress:0, trauma:[], harm:{1:[],2:[],3:[]}, items:[], load:null, coin:2, heat:0, xp:0, armorUsed:false, specialUsed:false, fatal:false};
+  render();
+  nar(P.blurb);
+  srd(P.ability);
+  rule('Your attribute ratings (Insight, Prowess, Resolve) count how many actions in each column have at least one dot. You roll attributes to resist consequences.');
+  await cont('Begin Act One');
+  await s1();
+}
+
+async function s1(){
+  scene(1, 'Steam at the Scald');
+  nar('The Scald is the oldest bathhouse in the Sump: three pools of hot Brine water in a tiled hall, steam so thick the lamps wear halos. <strong>Mother Ossa</strong> takes her meetings in the hottest pool. She is seventy, wrapped in a towel like a queen\'s robe, and nobody has ever seen her sweat.');
+  npc('Mother Ossa', '"In nine days the Guild Darkens the Sump: cuts the gas to every house in arrears. Every debt is punched into one copper roll, the Marrow, inside the counting engine at Cinderhouse. No Marrow, no Darkening. But Cinderhouse\'s inner doors want a Lamplighter\'s valve-key, and Lamp-house Nine counts its spares every dawn."');
+  npc('Mother Ossa', '"Pell Marrish made me a fake good enough to pass a sleepy count. Swap it for a real one. Tonight. Two coin, on account."');
+  nar('She slides a warm brass key across the wet tiles. First, learn what you can about Lamp-house Nine.');
+  srd('gather');
+  const how = await choose([
+    {id:'Consort', label:'Chat up the lamp-boys soaking after their shift', sub:`Consort ${rating('Consort')} · controlled · standard effect`, say:'I buy the lamp-boys a round of hot gin.'},
+    {id:'Study', label:'Pore over Pell\'s stolen copy of the plans', sub:`Study ${rating('Study')} · controlled · standard effect`, say:'Let me see those plans.'},
+    {id:'Survey', label:'Watch the Lamp-house from the rooftops opposite', sub:`Survey ${rating('Survey')} · controlled · standard effect`, say:'I\'ll go and look at it myself.'},
+  ]);
+  rule('Gathering information in a safe place is a controlled roll. Your effect decides how much you learn.');
+  const r = await action({label:'Gather information', action:how, position:'controlled', effect:'standard', bargains:[{text:'Ask too loudly: start the Alert clock with 1 tick', apply: async () => { S.preAlert = (S.preAlert||0) + 1; }}]});
+  used.add('gather');
+  const FACTS = {roof:['The roof hatch','The cistern hatch on the roof is never latched. The beacon-trimmer works ten feet from it.'], insp:['The inspector','Breathwarden meter inspectors drop in unannounced. The night sergeant never checks their seals.'], tobin:['Tobin','Lamp-boy Tobin Quarrel works nights, owes Ossa money, and has a key to the bunk-room door.']};
+  let n = r.res === 'crit' ? 3 : r.res === 'six' ? 2 : 1;
+  if (r.res === 'bad'){ S.moths = true; S.preAlert = (S.preAlert||0) + 1; nar('You learn something, but you asked one question too many. Somebody noticed. A grey-cloaked girl slips out of the steam room before you can see her face.'); rule('Bad outcome while controlled: you still get a little, with a consequence. The Alert clock will start with 1 tick, and a rival crew, the Moths, will interfere with your engagement roll (-1d).'); }
+  if (n === 3){ Object.keys(FACTS).forEach(k => S.facts.add(k)); nar('You learn everything worth knowing.'); }
+  while (S.facts.size < n){
+    const left = Object.entries(FACTS).filter(([k]) => !S.facts.has(k));
+    const k = await choose(left.map(([k,f]) => ({id:k, label:`Learn: ${f[0]}`, say:false})));
+    S.facts.add(k);
+  }
+  [...S.facts].forEach(k => nar(`<strong>${FACTS[k][0]}.</strong> ${FACTS[k][1]}`));
+  await cont('Make the plan');
+  await s2();
+}
+
+async function s2(){
+  scene(2, 'The Plan');
+  nar('Lamp-house Nine is a squat brick tower on the Terraces with a gas beacon on its roof, a bunk room for the night shift, and the duty office where <strong>Sergeant Dace Morrow</strong> reads the racing sheets. The key cabinet is behind him.');
+  rule('You don\'t plan every step. You pick a plan type and give its one missing detail. Then the engagement roll decides how much trouble you\'re in when we cut to the action.');
+  const plan = await choose([
+    {id:'stealth', label:'Stealth plan', sub:'Detail: a point of infiltration', say:'We go in quiet.'},
+    {id:'deception', label:'Deception plan', sub:'Detail: the method of the lie', say:'We walk in the front, and lie.'},
+    {id:'social', label:'Social plan', sub:'Detail: a social connection', say:'We go in with someone on the inside.'},
+  ]);
+  S.plan = plan;
+  const DET = {
+    stealth:[{id:'roof', label:'The roof hatch', sub: S.facts.has('roof') ? 'You know it\'s unlatched: +1d' : 'Unknown risk'}, {id:'chute', label:'The coal chute', sub:'Filthy, slow, no bonus'}, {id:'gate', label:'The front gate at shift change', sub:'Bold: +1d'}],
+    deception:[{id:'insp', label:'Pose as a Breathwarden meter inspector', sub:`Bold: +1d${S.facts.has('insp') ? ', and you know they never check seals: +1d' : ''}`}, {id:'oil', label:'Deliver a crate of lamp oil', sub:'Safe, no bonus'}],
+    social:[{id:'tobin', label:'Tobin the lamp-boy', sub: S.facts.has('tobin') ? 'You know he owes Ossa: +1d' : 'You\'ve heard his name'}, {id:'sister', label:'Morrow\'s sister at the pie stall', sub:'She might talk, no bonus'}],
+  };
+  const det = await choose(DET[plan].map(d => ({...d, say:`Detail: ${d.label.toLowerCase()}.`})));
+  S.detail = det;
+  srd('engagement');
+  rule('Choose your load now: how much you carry. You don\'t pick items yet. During the score, check them off as you need them, up to your limit.');
+  const ld = await choose([
+    {id:'light', label:'Light load (3)', sub:'Fast, inconspicuous. You look like a citizen.', say:'Light. I travel light.'},
+    {id:'normal', label:'Normal load (5)', sub:'You look like a scoundrel, ready for trouble.', say:'Normal load.'},
+    {id:'heavy', label:'Heavy load (6)', sub:'Slower and conspicuous: sneaking is one position worse.', say:'Heavy. I want options.'},
+  ]);
+  C.load = ld; render();
+  // engagement pool
+  const mods = [];
+  if ((det === 'roof' && S.facts.has('roof')) || (det === 'insp' && S.facts.has('insp')) || (det === 'tobin' && S.facts.has('tobin'))) mods.push([1, 'the detail hits a weakness']);
+  if (det === 'gate' || det === 'insp') mods.push([1, 'a bold plan']);
+  if (C.key === 'ness') mods.push([1, 'Pell sharpens the fake key']);
+  if (C.key === 'hask' && plan === 'stealth') mods.push([1, 'Tilly Fenn knows the patrol times']);
+  if (C.key === 'ilse' && plan === 'social') mods.push([1, 'Tobin is your friend']);
+  if (S.moths) mods.push([-1, 'the Moths are interfering']);
+  const n = 1 + mods.reduce((a,m) => a + m[0], 0);
+  add('line', `<span class="who">Engagement roll</span>1d for sheer luck${mods.map(m => ` ${m[0] > 0 ? '+' : '-'}1d (${m[1]})`).join('')} = <strong>${n <= 0 ? '0d' : n + 'd'}</strong>`);
+  const r = await rollPool(`Engagement roll: ${n <= 0 ? '0d (roll two, keep the lowest)' : n + 'd'}`, n, {btn:'Make the engagement roll'});
+  used.add('engagement');
+  const res = tier(r);
+  S.pos = res === 'bad' ? 'desperate' : res === 'mixed' ? 'risky' : 'controlled';
+  S.engCrit = res === 'crit';
+  stamp(r.row, TIERCLS[res], res === 'crit' ? 'Critical: past the first obstacle' : `Start ${S.pos}`);
+  rule(`The engagement roll set your starting position: <b>${S.pos}</b>.${S.engCrit ? ' A critical carries you past the first obstacle, deeper into the score.' : ''} It doesn't mean you planned badly or well. It means the Lamp-house is ${S.pos === 'desperate' ? 'more alert than you hoped' : S.pos === 'risky' ? 'about what you expected' : 'asleep on its feet'}.`);
+  await cont('Cut to the action');
+  await s3();
+}
+
+const BARGAINS_CAB = () => [
+  {text:'Leave a smear of ash on the cabinet: tick Alert +1 now', apply: async () => { tickClock('Lamp-house Alert', 1); showClock('Lamp-house Alert'); }},
+  {text:'Snap the gas meter\'s seal: +1 heat after the score', apply: async () => { S.heatAdd++; }},
+  {text:'Pocket the sergeant\'s racing winnings: +1 coin, +1 heat', apply: async () => { S.heatAdd++; S.coinAdd++; }},
+];
+
+async function flashback(){
+  S.flash++; used.add('flashback'); srd('flashback');
+  const opts = [];
+  if (!S.fbEar) opts.push({id:'ear', label:'Flashback: a word in the right ear', sub:'0 stress. Ossa\'s bath-girls reported a gas leak at the Spill. Improve your position one step.', cls:'fb'});
+  if (!S.fbWax) opts.push({id:'wax', label:'Flashback: wax in the lock', sub:'1 stress. Last month you pressed wax into the cabinet lock. Roll Finesse or Tinker, controlled.', cls:'fb'});
+  if (!S.fbSmoke) opts.push({id:'smoke', label:'Flashback: insurance', sub:'2 stress. Yesterday you hid a smoke pot in the chimney. +1d when you leave.', cls:'fb'});
+  opts.push({id:'none', label:'Never mind', say:false});
+  const c = await choose(opts);
+  if (c === 'none'){ S.flash--; return; }
+  if (c === 'ear'){ S.fbEar = true; S.pos = better(S.pos); nar('Earlier tonight, a breathless bath-girl ran into the Lamp-house shouting about a gas leak at the Spill. Half the night shift grabbed their poles and went. Right now, the place is quieter than it should be.'); rule(`A flashback for an ordinary action you had easy opportunity for costs 0 stress. Your position improves to <b>${S.pos}</b>.`); return; }
+  if (c === 'wax'){
+    S.fbWax = true; await takeStress(1, 'a flashback');
+    nar('Last month. You, in a cleaner\'s smock, dusting the duty office while the sergeant snored. A thumb of warm wax pressed into the cabinet lock.');
+    const a = rating('Tinker') >= rating('Finesse') ? 'Tinker' : 'Finesse';
+    const r = await action({label:'Flashback: wax in the lock', action:a, position:'controlled', effect:'standard'});
+    if (r.hit){ const t = r.res === 'mixed' ? 1 : 2 + (r.res === 'crit' ? 1 : 0); tickClock('Key Cabinet', t); nar(`Pell cut you a blank from the impression. It's not perfect, but it's a start. Key Cabinet +${t}.`); showClock('Key Cabinet'); }
+    else { nar('Someone found wax in the lock the next morning. The sergeant has been twitchy ever since.'); tickClock('Lamp-house Alert', 1); showClock('Lamp-house Alert'); }
+    return;
+  }
+  if (c === 'smoke'){ S.fbSmoke = true; S.smoke = true; await takeStress(2, 'a flashback'); nar('Yesterday afternoon, up a ladder with a bucket and a sweep\'s brush, nobody looking twice. Wedged in the chimney: a clay pot of saltpeter and pitch, with a long fuse.'); rule('An elaborate preparation costs 2 stress. You\'ll take +1d when you leave.'); }
+}
+
+async function s3(){
+  scene(3, 'Lamp-house Nine');
+  newClock('Lamp-house Alert', 6, true, S.preAlert || 0);
+  newClock('Key Cabinet', 4, false, S.engCrit ? 2 : 0);
+  srd('clocks');
+  rule('Two clocks. <b>Lamp-house Alert</b> (6) is a danger clock: consequences fill it, and when it\'s full, the alarm bell rings. <b>Key Cabinet</b> (4) is an obstacle clock: your effect fills it. Limited effect is 1 segment, standard 2, great 3.');
+  showClock('Lamp-house Alert'); showClock('Key Cabinet');
+  if (!S.engCrit){
+    if (S.plan === 'stealth'){
+      nar(S.detail === 'chute' ? 'You come up out of the coal chute into the stable yard, black from head to foot. A Lamplighter, <strong>Bex</strong>, is leaning on a lamp-cart ten feet away, smoking. She hasn\'t seen you. Yet.' : S.detail === 'gate' ? 'You\'re through the front gate in the shuffle of shift change, cap pulled low. Then <strong>Bex</strong>, the beacon-trimmer, stops in the yard and frowns at you. "You\'re not on nights."' : 'You\'re on the roof, flat against the slates. <strong>Bex</strong>, a Lamplighter with a long brass pole, is trimming the beacon flame ten feet from the hatch. If she turns, she\'ll see you against the green glow.');
+    } else if (S.plan === 'deception'){
+      nar(S.detail === 'oil' ? 'You roll a barrel of lamp oil up to the duty desk. <strong>Sergeant Morrow</strong> looks at the barrel, then at you, then at the clock. "Nobody ordered oil."' : 'You\'re at the duty desk in a borrowed grey coat. <strong>Sergeant Morrow</strong> holds your inspector\'s chit up to the lamp, squinting.');
+    } else {
+      nar(S.detail === 'sister' ? 'Morrow\'s sister has sent you round the back with a hot pie "for Dace." The back door opens on the bunk room, and the sergeant\'s old dog, <strong>Biscuit</strong>, lifts its head and growls.' : 'Tobin lets you in through the bunk-room door, whispering apologies. The sergeant\'s old dog, <strong>Biscuit</strong>, lifts its head off its paws and growls low.');
+    }
+    if (S.flash === 0){
+      rule('You\'re in trouble, so this is the moment for a <b>flashback</b>: an action in the past that helps right now. You can call one now and one later.');
+      const fb = await choose([{id:'fb', label:'Call a flashback', sub:'0 to 2 stress, depending on how elaborate', cls:'fb', say:'Hang on. Earlier tonight...'}, {id:'no', label:'No flashback. Deal with it.', say:false}]);
+      if (fb === 'fb') await flashback();
+    }
+    await opening();
+  } else {
+    nar('Your plan works so well that the opening problem never happens. You\'re in the duty office, the sergeant is snoring, and the key cabinet is right in front of you. You\'ve already started on the lock.');
+  }
+  if (!S.alarm) await cabinet();
+  await s4();
+}
+
+async function opening(){
+  let tries = 0;
+  while (true){
+    tries++;
+    const O = {
+      stealth:[{id:'Prowl', label:'Slip past her in the dark', say:'I keep low and wait for her to turn.'}, {id:'Finesse', label:'Ease the way open behind her back', say:'I work the latch without a sound.'}, {id:'Skirmish', label:'Put her down quietly', say:'Hand over her mouth. Down she goes.'}, {id:'Sway', label:'Talk your way past', say:'"Sergeant sent me up, love. Gas check."'}],
+      deception:[{id:'Sway', label:'Bury him in impatience and Guild jargon', say:'"Pressure readings, Sergeant. Tonight. Or the Guild hears why not."'}, {id:'Consort', label:'Chat about the latest Rim scandal until he forgets the chit', say:'"Did you hear about Councillor Vey\'s daughter?"'}, {id:'Finesse', label:'Slide a coin under the chit', say:'I let a coin catch the lamplight.'}],
+      social:[{id:'Consort', label:'Let Tobin calm the dog, and chat while he does', say:'"Good boy, Biscuit. Tobin, tell him I\'m a friend."'}, {id:'Finesse', label:'Produce a sausage from your coat', say:'I always carry a sausage.'}, {id:'Sway', label:'Convince Tobin to take the blame for the noise', say:'"If anyone asks, Tobin, it was you and the dog."'}],
+    }[S.plan];
+    let pos = S.pos;
+    const heavy = C.load === 'heavy' && S.plan === 'stealth';
+    const c = await choose(O.map(o => ({id:o.id, label:o.label, sub:`${o.id} ${rating(o.id)} · ${heavy && /Prowl|Finesse/.test(o.id) ? worse(pos) + ' (heavy load)' : pos} · standard`, say:o.say})));
+    if (heavy && /Prowl|Finesse/.test(c)){ pos = worse(pos); rule('Heavy load: you\'re conspicuous, so sneaking is one position worse.'); }
+    if (c === 'Prowl' && S.detail === 'roof' && canCheck('Climbing gear') && !hasItem('Climbing gear')){
+      const cg = await choose([{id:'y', label:'Check Climbing gear (2 load)', sub:'+1 effect on this roll'}, {id:'n', label:'No, just my hands', say:false}]);
+      if (cg === 'y') checkItem('Climbing gear');
+    }
+    const eff = (c === 'Prowl' && hasItem('Climbing gear')) ? 'great' : 'standard';
+    const r = await action({label:'Get past the first obstacle', action:c, position:pos, effect:eff, bargains:[{text:'Rush it, careless of noise: tick Alert +1 now', apply: async () => { tickClock('Lamp-house Alert', 1); showClock('Lamp-house Alert'); }}]});
+    if (r.res === 'crit' || r.res === 'six'){ nar('Smooth. You\'re through, and into the duty office. The key cabinet is right there.'); if (r.res === 'crit'){ tickClock('Key Cabinet', 1); nar('You even get a look at the lock on the way in. Key Cabinet +1.'); } return; }
+    if (r.res === 'mixed'){
+      const n = {controlled:1, risky:2, desperate:3}[pos];
+      nar(c === 'Skirmish' ? 'She goes down, but not before her pole clatters on the slates.' : 'You get through, but not cleanly. Somewhere a door opens, and a voice asks "Who\'s there?"');
+      await consequence({kind:'clock', clock:'Lamp-house Alert', n, why:'Someone heard something', suspicion: S.plan !== 'stealth', attr: c === 'Skirmish' ? 'Prowess' : 'Insight'});
+      if (full('Lamp-house Alert')) return alarm();
+      nar('But you\'re in the duty office, and the cabinet is in front of you.');
+      return;
+    }
+    // bad outcome
+    if (pos === 'controlled'){ nar('You hesitate, and the moment passes. No harm done, but now you\'ll have to push it.'); rule('Bad outcome from a controlled position: you falter. You can press on, but now it\'s risky.'); S.pos = 'risky'; continue; }
+    if (tries >= 3){ nar('Third time, it doesn\'t matter how. You\'re through, bruised and breathing hard.'); await consequence({kind:'harm', level:1, name:'Winded'}); return; }
+    const ch = await choose([
+      {id:'harm', label:`Push through anyway: level ${pos === 'desperate' ? 2 : 1} harm`, sub:'You get past, but it hurts'},
+      {id:'clock', label:`Back off and try again: tick Alert +${pos === 'desperate' ? 4 : 3}`, sub:'And from a worse position'},
+    ]);
+    if (ch === 'harm'){ await consequence({kind:'harm', level: pos === 'desperate' ? 2 : 1, name: pos === 'desperate' ? 'Wrenched Shoulder' : 'Scraped Raw', lesser:'Scraped Raw'}); if (C.fatal) return alarm(); nar('You\'re through, into the duty office.'); return; }
+    await consequence({kind:'clock', clock:'Lamp-house Alert', n: pos === 'desperate' ? 4 : 3, why:'They\'re on edge now', suspicion: S.plan !== 'stealth'});
+    if (full('Lamp-house Alert')) return alarm();
+    S.pos = worse(S.pos);
+  }
+}
+
+async function alarm(){
+  S.alarm = true; used.add('alarm');
+  nar('<strong>The alarm bell rings.</strong> The Alert clock is full. Boots on the stairs, lamps flaring white. In the chaos you rip the cabinet open and grab a key. Any key. Now get out.');
+  rule('When a danger clock fills, the danger it tracks comes to pass. You still got a key, but the score just got loud.');
+}
+
+async function cabinet(){
+  const desp = () => clocks['Lamp-house Alert'].fill >= 4;
+  const infil = C.ability === 'Infiltrator';
+  if (!shown.has('cab')){
+    shown.add('cab');
+    nar('The key cabinet is Breathwarden lockwork: brass and steel, quality 3. That\'s better than anything you own.');
+    rule(infil ? 'Normally a quality 3 lock would limit your effect. But your Infiltrator ability means quality and Tier never reduce your effect when you bypass security. Standard effect.' : 'Quality: the cabinet is quality 3, better than your tools, so your effect against its lock is limited (1 segment per success). Other approaches might do better.');
+  }
+  let rounds = 0;
+  while (!full('Key Cabinet') && !full('Lamp-house Alert') && !C.fatal){
+    rounds++;
+    const posR = desp() ? 'desperate' : 'risky';
+    const opts = [
+      {id:'tinker', label:'Pick the lock', sub:`Tinker ${rating('Tinker')} · ${posR} · ${infil ? 'standard' : 'limited'}${hasItem('Fine lockpicks') ? ' · fine lockpicks' : hasItem('Burglary gear') ? '' : ' · checks Burglary gear (1)'}`, disabled: !hasItem('Fine lockpicks') && !canCheck('Burglary gear'), say:'I go to work on the lock.'},
+      {id:'finesse', label:'Lift the sergeant\'s ring of keys', sub:`Finesse ${rating('Finesse')} · risky · great effect · a bad outcome wakes him`, say:'He\'s right there. So are his keys.'},
+      {id:'wreck', label:'Pry the hinges off', sub:`Wreck ${rating('Wreck')} · ${posR} · great · ${C.ability === 'Saboteur' ? 'Saboteur: quiet' : 'loud: Alert +2 even on a 6'}${hasItem('Burglary gear') || hasItem('Vent-tender\'s wrench') ? '' : ' · checks Burglary gear (1)'}`, disabled: !hasItem('Burglary gear') && !hasItem('Vent-tender\'s wrench') && !canCheck('Burglary gear'), say:'Hinges are the weak point. Always.'},
+      {id:'study', label:'Search the duty book for the spare key', sub:`Study ${rating('Study')} · controlled · limited`, say:'Sergeants always write down where they hide things.'},
+    ];
+    if (S.flash < 2 && rounds > 1) opts.push({id:'fb', label:'Call a flashback', sub:'Something you did earlier, just in case', cls:'fb', say:'Wait. I planned for this.'});
+    const c = await choose(opts);
+    if (c === 'fb'){ await flashback(); continue; }
+    if (c === 'tinker' && !hasItem('Fine lockpicks')) checkItem('Burglary gear');
+    if (c === 'wreck' && !hasItem('Vent-tender\'s wrench')) checkItem('Burglary gear');
+    const A = {tinker:'Tinker', finesse:'Finesse', wreck:'Wreck', study:'Study'}[c];
+    const pos = c === 'study' ? 'controlled' : c === 'finesse' ? (desp() ? 'desperate' : 'risky') : posR;
+    const eff = c === 'tinker' ? (infil ? 'standard' : 'limited') : c === 'study' ? 'limited' : 'great';
+    if (c === 'wreck' && C.ability === 'Saboteur'){ srd('Saboteur'); used.add('ability'); }
+    if (c === 'tinker' && infil){ srd('Infiltrator'); used.add('ability'); }
+    const r = await action({label:{tinker:'Pick the cabinet lock', finesse:'Lift the keys', wreck:'Pry the hinges', study:'Search the duty book'}[c], action:A, position:pos, effect:eff, bargains:BARGAINS_CAB()});
+    if (r.hit){ const t = tickClock('Key Cabinet', r.ticks); nar(`${{tinker:'Pins lift, one by one.', finesse:'The ring slides off his belt without a jingle.', wreck:'A hinge pin squeals and gives.', study:'A note in the margin: "spare under the inkwell." You find it.'}[c]} Key Cabinet +${t}.`); showClock('Key Cabinet'); }
+    if (c === 'wreck' && C.ability !== 'Saboteur'){ rule('Wrecking is loud. Even on a success, tick the Alert clock 2.'); tickClock('Lamp-house Alert', 2); showClock('Lamp-house Alert'); if (full('Lamp-house Alert')) break; }
+    if (c === 'wreck' && C.ability === 'Saboteur' && r.hit) rule('Saboteur: your Wreck is much quieter than it should be. No noise, no automatic Alert ticks.');
+    if (r.res === 'mixed'){
+      const n = pos === 'desperate' ? 3 : pos === 'controlled' ? 1 : 2;
+      nar(pick(['Biscuit the dog barks once in the bunk room, then again.', 'Morrow snorts in his sleep and mutters a horse\'s name.', 'A lamp-boy on the stairs stops and listens.']));
+      await consequence({kind:'clock', clock:'Lamp-house Alert', n, why:'They\'re stirring', suspicion: S.plan !== 'stealth'});
+    } else if (r.res === 'bad'){
+      if (c === 'finesse'){ nar('Your fingers catch the ring. It jingles. Morrow\'s eyes snap open.'); await consequence({kind:'clock', clock:'Lamp-house Alert', n:3, why:'The sergeant is awake', suspicion:true}); if (!full('Lamp-house Alert')) nar('He blinks at you, groggy. You have seconds before he puts it together.'); }
+      else if (c === 'wreck' || pos === 'desperate'){ nar('The cabinet door springs loose and swings straight into your face.'); await consequence({kind:'harm', level: pos === 'desperate' ? 3 : 2, name: pos === 'desperate' ? 'Broken Hand' : 'Cabinet Door to the Face', lesser: pos === 'desperate' ? 'Cabinet Door to the Face' : 'Bruised Cheek'}); }
+      else { nar(pick(['A pick snaps off in the lock with a crack like a knuckle.', 'You knock the inkwell over. It rolls, and rolls, and hits the floor.'])); await consequence({kind:'clock', clock:'Lamp-house Alert', n: c === 'study' ? 2 : 3, why:'Noise in the duty office'}); }
+    }
+    if (rounds >= 8 && !full('Key Cabinet')){ nar('Time\'s up. You get the cabinet open the ugly way, and you get the key.'); clocks['Key Cabinet'].fill = 4; render(); }
+  }
+  if (C.fatal || full('Lamp-house Alert')) { if (!S.alarm) await alarm(); return; }
+  nar('The cabinet swings open. Twelve brass valve-keys on twelve hooks. You lift one, hang Pell\'s fake in its place, and close the door. It looks exactly as it did.');
+  used.add('swap');
+}
+
+async function s4(){
+  scene(4, 'Out Through the Grey');
+  nar('The second bell rings as you leave. The wind turns and the ash begins to fall, soft as flour. In ten minutes it\'ll show every footprint in the street.');
+  if (!S.alarm){
+    const alertN = clocks['Lamp-house Alert'].fill;
+    const pos = alertN <= 3 ? 'controlled' : 'risky';
+    const c = await choose([
+      {id:'Prowl', label:'Over the roofs', sub:`Prowl ${rating('Prowl')} · ${pos}`, say:'Up and over.'},
+      {id:'Finesse', label:'Out the door among the lamp-carts', sub:`Finesse ${rating('Finesse')} · ${pos}`, say:'I walk out like I belong.'},
+      {id:'Sway', label:'Bluff past whoever\'s awake', sub:`Sway ${rating('Sway')} · ${pos}`, say:'"Night, lads. Mind the ash."'},
+    ]);
+    const bargains = S.smoke ? [] : [{text:'Leave the back door swinging: +1 heat', apply: async () => { S.heatAdd++; }}];
+    if (S.smoke){ used.add('flashback'); rule('Your flashback smoke pot: the chimney coughs black smoke over the street. +1d on this roll.'); C.acts[c] = (C.acts[c]||0) + 1; }
+    const r = await action({label:'Slip away', action:c, position:pos, effect:'standard', bargains});
+    if (S.smoke) C.acts[c] -= 1, render();
+    if (r.hit && r.res !== 'mixed'){ nar('Gone. By the time the ash settles, there\'s nothing on the street but the lamplight.'); }
+    else if (r.res === 'mixed'){ nar('Someone sees a shape in the ash and shouts. You\'re already around the corner.'); await consequence({kind:'clock', clock:'Lamp-house Alert', n:1, why:'A witness in the ash'}); if (full('Lamp-house Alert')){ S.alarm = true; nar('Behind you, the alarm bell finally rings. You\'re clear, but the score is loud now.'); } }
+    else { nar('You leave tracks straight down the Sour Steps to the Sump. The Lamplighters will follow them in the morning.'); const ch = await choose([{id:'take', label:'Accept: +1 heat after the score', say:false}, {id:'res', label:'Resist (Insight): scuff them out in time', sub:'Avoid it completely. Costs 6 stress minus your highest die.', say:'Not if I scuff them first.'}]); if (ch === 'take') S.tracks = true; else { await resist('Insight', 'scuffing your tracks'); nar('Every print smeared into grey mush. Nobody\'s following that.'); } }
+  } else {
+    srd('racing');
+    nar('Lamplighters pour out of the bunk room. The beacon flares white, and every lamp on the street turns to follow you.');
+    rule('A race: your <b>Escape</b> clock (4) against the Lamplighters\' <b>Cornered</b> clock (4). A 6 fills Escape by your effect. A 4/5 fills Escape, and Cornered by 1. A bad outcome fills Cornered by 2.');
+    newClock('Escape', 4, false); newClock('Cornered', 4, true);
+    let smokeUsed = false;
+    while (!full('Escape') && !full('Cornered')){
+      const c = await choose([
+        {id:'Prowl', label:'Across the roofs', sub:`Prowl ${rating('Prowl')} · risky`, say:'Up the drainpipe!'},
+        {id:'Wreck', label:'Crack a gas-pipe and wall the street with green fire', sub:`Wreck ${rating('Wreck')} · risky`, say:'Stand back.'},
+        {id:'Sway', label:'Talk an ash-cart driver into hiding you', sub:`Sway ${rating('Sway')} · risky`, say:'"Five minutes under your sacks. Please."'},
+        {id:'Finesse', label:'Down the Sour Steps faster than anyone should', sub:`Finesse ${rating('Finesse')} · risky`, say:'I take the steps four at a time.'},
+      ]);
+      const bonus = S.smoke && !smokeUsed; if (bonus){ smokeUsed = true; C.acts[c] = (C.acts[c]||0) + 1; rule('Your flashback smoke pot pours black smoke over the street: +1d on this roll.'); }
+      const r = await action({label:'Escape', action:c, position:'risky', effect:'standard', bargains:[{text:'Knock a Lamplighter into the Brine: +2 heat', apply: async () => { S.heatAdd += 2; }}]});
+      if (bonus){ C.acts[c] -= 1; render(); }
+      if (c === 'Wreck' && C.ability === 'Saboteur' && r.hit){ srd('Saboteur'); used.add('ability'); }
+      if (r.hit) tickClock('Escape', r.ticks);
+      if (r.res === 'mixed') tickClock('Cornered', 1);
+      if (r.res === 'bad') tickClock('Cornered', 2);
+      nar(r.res === 'bad' ? 'Whistles on both sides. They\'re closing in.' : r.res === 'mixed' ? 'You gain ground, but a lamp swings round and finds you.' : 'You put a street of steam between you and them.');
+      showClock('Escape'); showClock('Cornered');
+    }
+    if (full('Cornered')){
+      S.cornered = true;
+      nar('A dead-end alley. Lamplighters at the mouth. A baton swings.');
+      await consequence({kind:'harm', level:2, name:'Lamplighter\'s Baton', lesser:'Bruised Ribs'});
+      const k = await choose([{id:'give', label:'Throw them the key to buy a second', sub:'You get away, but without the key'}, {id:'res', label:'Resist (Resolve): hold onto it', sub:'Costs 6 stress minus your highest die', say:'Over my dead body.'}]);
+      if (k === 'give'){ S.lostKey = true; nar('The key spins away into the ash. While they scramble for it, you\'re over the wall.'); }
+      else { await resist('Resolve', 'keeping the key'); nar('You take the hit, keep the key, and go over the wall.'); }
+    } else nar('You vanish into the steam of the Sump. Behind you, the Lamp-house bell is still ringing.');
+  }
+  await cont('Back to the Scald');
+  await s5();
+}
+
+const ENT = {
+  low:{bad:['Arrears','A debt-bailiff is nailing a red notice to your door. Pay 1 coin, or your vice purveyor won\'t see you this downtime.','coin1vice'], mid:['Rivals','The Moths lean on your vice purveyor. Pay 1 coin, or lose access this downtime.','coin1vice'], six:['Cooperation','Ossa asks a small favor: carry a sealed letter to the Chapel of the Long Breath. You do it. No cost, this time.','none']},
+  med:{bad:['Usual suspects','Lamplighters grab your friend for questioning. Fortune roll 2d: 1-3 is +2 heat, 4/5 they take a beating. Or pay 1 coin.','suspects'], mid:['Ash-prints','An informant sells your description to the Lamplighters. Pay 2 coin, or +1 heat.','coin2heat'], six:['Questioning','A contact is questioned. Fortune roll 2d: 1-3 is +2 heat, 4/5 is +1 heat. Or pay 2 coin.','questioning']},
+};
+async function s5(){
+  scene(5, 'Downtime at the Scald');
+  clocks['Lamp-house Alert'] && (clocks['Lamp-house Alert'].hidden = true);
+  ['Key Cabinet','Escape','Cornered'].forEach(k => clocks[k] && (clocks[k].hidden = true)); render();
+  nar(S.lostKey ? 'Ossa listens to the whole story without a word. Then she sighs, reaches under the towel, and produces a second fake. "Pell made two. Go back in a week." She pays you anyway.' : 'Ossa doesn\'t look up when you set the key on the tiles. She weighs it in her palm, then hands it to a girl who runs it straight to Pell\'s workshop for copying.');
+  srd('activities');
+  rule('Downtime runs in order: payoff, heat, entanglements, then two downtime activities.');
+  // payoff
+  srd('payoff');
+  C.coin += 2 + S.coinAdd; used.add('payoff'); render();
+  nar(`<strong>Payoff:</strong> 2 coin for a minor job${S.coinAdd ? ', plus the sergeant\'s winnings' : ''}. You meant to stay quiet, so no rep. You have ${C.coin} coin.`);
+  // heat
+  srd('heat');
+  const a = clocks['Lamp-house Alert'].fill;
+  const base = S.alarm ? 4 : a > 3 ? 2 : 0;
+  const heat = base + 1 + S.heatAdd + (S.tracks ? 1 : 0);
+  C.heat = heat; used.add('heat'); render();
+  nar(`<strong>Heat:</strong> ${base} (${S.alarm ? 'loud and chaotic' : base ? 'contained' : 'smooth and quiet'}) +1 (Lamplighter turf)${S.heatAdd ? ` +${S.heatAdd} (bargains)` : ''}${S.tracks ? ' +1 (tracks)' : ''} = <b>${heat}</b>.`);
+  // entanglement
+  srd('entangle');
+  rule('Your wanted level is 0, so the entanglement roll is two dice, keep the lowest. Read the column for your heat on the Kettle Entanglements table.');
+  const er = await rollPool('Entanglement roll: wanted level 0 (two dice, keep the lowest)', 0, {btn:'Roll for entanglements'});
+  used.add('entangle');
+  const col = heat <= 3 ? ENT.low : ENT.med;
+  const e = col[er.top <= 3 ? 'bad' : er.top <= 5 ? 'mid' : 'six'];
+  stamp(er.row, 'n', e[0]);
+  nar(`<strong>${e[0]}.</strong> ${e[1]}`);
+  await entangle(e[2]);
+  // activities
+  rule('Now two downtime activities. After any downtime roll, you can spend coin to raise the result one level per coin.');
+  const done = [];
+  for (let i = 0; i < 2; i++){
+    const opts = [
+      {id:'vice', label:'Indulge your vice', sub: S.viceBlocked ? 'Your purveyor won\'t see you this downtime' : `${C.vice}: roll your lowest attribute, clear stress`, disabled: !!S.viceBlocked},
+      {id:'recover', label:'Recover', sub: (C.harm[1].length + C.harm[2].length + C.harm[3].length) ? 'Old Wenna, Ossa\'s physicker, quality 2' : 'You aren\'t hurt', disabled: !(C.harm[1].length + C.harm[2].length + C.harm[3].length)},
+      {id:'heat', label:'Reduce heat', sub: C.heat ? 'An action roll: clear 1, 2, 3, or 5 heat' : 'You have no heat', disabled: !C.heat},
+      {id:'train', label:'Train', sub:'Mark 1 xp'},
+    ].filter(o => o.id === 'vice' || !done.includes(o.id));
+    const c = await choose(opts);
+    done.push(c); used.add('downtime');
+    if (c === 'vice') await vice();
+    if (c === 'recover') await recover();
+    if (c === 'heat') await reduceHeat();
+    if (c === 'train'){ srd('train'); C.xp++; render(); nar('You spend an afternoon on the Scald\'s roof, practicing. Mark 1 xp.'); }
+  }
+  nar('At dawn, Pell sends word. The key is copied, the copy is perfect, and Lamp-house Nine counted its keys without a murmur. But there\'s a postscript in his cramped hand:');
+  npc('Pell Marrish', '"This key has thirteen notches. Cinderhouse has twelve doors on any plan I\'ve ever seen. Come and see me."');
+  nar('And when you get home, there\'s a grey moth pinned to your door with a sewing needle.');
+  await cont('End of Act One');
+  await ending();
+}
+async function spendCoin(res){
+  const order = ['bad','mixed','six','crit'];
+  let i = order.indexOf(res);
+  while (C.coin > 0 && i < 3){
+    const c = await choose([{id:'spend', label:`Spend 1 coin: raise to ${TIERNAME[order[i+1]].toLowerCase()}`, sub:`You have ${C.coin} coin`}, {id:'keep', label:'Keep the result', say:false}]);
+    if (c !== 'spend') break;
+    C.coin--; i++; used.add('coin'); render();
+  }
+  return order[i];
+}
+async function entangle(kind){
+  if (kind === 'none') return;
+  if (kind === 'coin1vice' || kind === 'coin2heat'){
+    const cost = kind === 'coin1vice' ? 1 : 2;
+    const c = await choose([{id:'pay', label:`Pay ${cost} coin`, disabled: C.coin < cost}, {id:'no', label: kind === 'coin1vice' ? 'Refuse: no vice this downtime' : 'Refuse: +1 heat'}]);
+    if (c === 'pay'){ C.coin -= cost; } else if (kind === 'coin1vice') S.viceBlocked = true; else C.heat++;
+    render(); return;
+  }
+  const c = await choose([{id:'pay', label:`Pay ${kind === 'suspects' ? 1 : 2} coin`, disabled: C.coin < (kind === 'suspects' ? 1 : 2)}, {id:'roll', label:'Let it play out: fortune roll 2d'}]);
+  if (c === 'pay'){ C.coin -= kind === 'suspects' ? 1 : 2; render(); return; }
+  const r = await rollPool('Fortune roll: does your friend keep quiet? (2d)', 2, {btn:'Make the fortune roll'});
+  used.add('fortune');
+  if (r.top <= 3){ C.heat += 2; stamp(r.row, 'bad', '+2 heat'); }
+  else if (r.top <= 5){ if (kind === 'suspects') { stamp(r.row, 'mix', 'Your friend takes a beating'); nar('They kept quiet, but it cost them.'); } else { C.heat += 1; stamp(r.row, 'mix', '+1 heat'); } }
+  else stamp(r.row, 'ok', 'Not a word');
+  render();
+}
+async function vice(){
+  used.add('vice'); srd('vice');
+  const low = Math.min(...Object.keys(ATTR).map(attr));
+  const an = Object.keys(ATTR).find(a => attr(a) === low);
+  nar(`You go to ${esc(C.purveyor)}.`);
+  const r = await rollPool(`Indulge vice: your lowest attribute, ${an} ${low}. Clear stress equal to your highest die.`, low, {btn:'Indulge your vice'});
+  let res = tier(r);
+  const clear = r.top;
+  stamp(r.row, 'n', `Clear ${clear} stress`);
+  if (clear > C.stress){
+    used.add('overindulge'); srd('overindulge');
+    nar(`You only had ${C.stress} stress to clear. You overindulge.`);
+    C.stress = 0; render();
+    const c = await choose([
+      {id:'brag', label:'Brag about the job', sub:'+2 heat'},
+      {id:'tapped', label:'Tapped', sub:'Your purveyor cuts you off. Find a new one before Act Two.'},
+      {id:'trouble', label:'Attract trouble', sub:'The Moths take note of you. In Act Two, they start out hostile.'},
+    ]);
+    if (c === 'brag'){ C.heat += 2; nar('By midnight, half the Sump knows someone robbed Lamp-house Nine. Some of them know who.'); }
+    if (c === 'tapped') nar('You wake up with a headache and a bill. Your purveyor won\'t take you back.');
+    if (c === 'trouble') nar('Wren Aldous was at the next table. She heard everything.');
+  } else { C.stress -= clear; nar(`It helps. Clear ${clear} stress.`); }
+  render();
+}
+async function recover(){
+  used.add('recover'); srd('recover');
+  if (!clocks['Healing']) newClock('Healing', 4, false);
+  const r = await rollPool('Recover: Old Wenna, quality 2. Fill your healing clock.', 2, {btn:'Roll for recovery'});
+  let res = await spendCoin(tier(r));
+  const t = {bad:1, mixed:2, six:3, crit:5}[res];
+  stamp(r.row, TIERCLS[res], `Healing +${t}`);
+  tickClock('Healing', t); showClock('Healing');
+  if (full('Healing')){
+    clocks['Healing'].fill = 0;
+    C.harm = {1:[...C.harm[2]], 2:[...C.harm[3]], 3:[]};
+    nar('Old Wenna\'s needle and her foul green poultice do their work. Every harm on your sheet drops by one level.');
+    render();
+  } else nar('Wenna stitches what she can. You\'ll need more time.');
+}
+async function reduceHeat(){
+  used.add('reduceheat'); srd('reduceheat');
+  const c = await choose([
+    {id:'Consort', label:'Lean on a friend to lose a Lamplighter report', sub:`Consort ${rating('Consort')}`},
+    {id:'Sway', label:'Spread a story that it was the Moths', sub:`Sway ${rating('Sway')}`},
+    {id:'Survey', label:'Lie low and watch who\'s asking questions', sub:`Survey ${rating('Survey')}`},
+  ]);
+  const r = await rollPool(`Reduce heat: ${c} ${rating(c)}`, rating(c), {btn:'Roll to reduce heat'});
+  used.add('action');
+  const res = await spendCoin(tier(r));
+  const n = {bad:1, mixed:2, six:3, crit:5}[res];
+  stamp(r.row, TIERCLS[res], `-${n} heat`);
+  C.heat = Math.max(0, C.heat - n); render();
+}
+
+async function ending(){
+  $('#sceneName').textContent = 'End of Act One';
+  const ALL = [['action','Action rolls: pool, take the highest'],['desperate','A desperate roll (and its xp)'],['gather','Gathering information'],['engagement','Plan, detail, engagement roll'],['load','Load: checking items as you go'],['clock','Progress and danger clocks'],['flashback','A flashback'],['push','Pushing yourself'],['bargain','A Devil\'s Bargain'],['resist','Resistance rolls'],['harm','Harm'],['trauma','Trauma'],['ability','Your special ability'],['crit','A critical'],['payoff','Payoff and heat'],['entangle','Entanglements'],['vice','Indulging your vice'],['coin','Spending coin on a downtime roll']];
+  const store = (window.RDL_STORE && window.RDL_STORE.products && window.RDL_STORE.products[PRODUCT_ID]) || {};
+  const live = !!store.checkout;
+  add('endcard', `
+    <h3>Act One complete.</h3>
+    <p style="margin:0">${esc(C.name)} has ${S.lostKey ? 'lost the key, but Ossa has a spare fake and a second chance' : 'a copied Lamplighter\'s key with one notch too many'}, ${C.stress} stress, ${C.heat} heat, and ${C.coin} coin. In eight days, the Darkening. The score continues in the full adventure.</p>
+    <div class="product">
+      <div class="cov"><small>A solo heist for Forged in the Dark</small>The Cinderhouse Score</div>
+      <div>
+        <strong style="font-family:var(--f-display);font-size:22px;text-transform:uppercase">The Cinderhouse Score: the complete heist (PDF)</strong>
+        <ul>
+          <li>Acts Two and Three: the Hushway, the Breathing Hall, the Tally-engine, and the night the city's breath goes wrong</li>
+          <li>Five endings, from a burning in the Sump to a house on the Rim</li>
+          <li>Three ready-to-play scoundrels, a city primer for Vesk, and new foes and factions</li>
+          <li>Kettle tables: oracle, trouble, Devil's Bargains, entanglements, and more</li>
+          <li>Open rules reference from the SRD, so you need nothing else to play</li>
+          <li>Printable scoundrel and score sheets · 39 pages</li>
+        </ul>
+        <div class="buy">
+          ${live ? `<a class="buybtn" href="${esc(store.checkout)}" target="_blank" rel="noopener">Buy the PDF · ${esc(store.price || '')}</a>` : `<span class="buybtn" aria-disabled="true">PDF coming soon${store.price ? ' · ' + esc(store.price) : ''}</span>`}
+          <small>${live ? 'Instant download. Secure checkout by Lemon Squeezy.' : 'The store opens soon.'}</small>
+        </div>
+      </div>
+    </div>
+    <ul class="learned">${ALL.map(([k,t]) => `<li class="${used.has(k)?'':'no'}">${t}</li>`).join('')}</ul>
+    <p class="fine">Get the full game, Blades in the Dark by John Harper, from One Seven Design, and read the free SRD at <a href="https://bladesinthedark.com/" target="_blank" rel="noopener">bladesinthedark.com</a>. This adventure is not an official Blades in the Dark product.</p>`);
+  const c = await choose([{id:'again', label:'Play Act One again', cls:'primary', say:false}]);
+  if (c === 'again') location.reload();
+}
+
+if (matchMedia('(max-width: 900px)').matches) $('#sheet').open = false;
+start();
+})();
+</script>
+</body>
+</html>

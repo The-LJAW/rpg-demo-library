@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Thunder on the Silver Meridian: Fate Demo</title>
+<meta name="description" content="Play Act One of Thunder on the Silver Meridian, a pulp solo adventure for Fate Condensed, free in your browser. Real Fate dice, aspects, and fate points.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Limelight&family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Sans+Condensed:wght@400;600;700&display=swap">
+<script src="../../store.js"></script>
+<style>
+/* Look: a night express in 1936. Midnight navy outside the windows, a polished aluminum dining-car panel for the story, copper trim and one electric teal bolt. */
+:root{
+  --night:#0E1626; --night-2:#16223A; --steel:#EEF1F4; --steel-2:#DFE4EA; --ink:#141B29; --muted:#566074;
+  --teal:#127C8A; --bolt:#36C2D2; --copper:#B0582A; --copper-lt:#E3A36F; --ok:#2E7D4F; --mix:#B8781B; --bad:#A63A2A;
+  --f-display:"Limelight", Georgia, serif; --f-body:"Crimson Pro", Georgia, serif; --f-sans:"IBM Plex Sans Condensed", "Arial Narrow", Arial, sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--night);color:var(--steel);font-family:var(--f-body);font-size:18px;line-height:1.48;
+  background-image:radial-gradient(ellipse at 80% -10%, #22385C 0%, transparent 55%), repeating-linear-gradient(90deg, rgba(255,255,255,.025) 0 1px, transparent 1px 36px)}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--bolt);outline-offset:2px}
+.proto{background:#080D18;color:#9FB3C8;font-family:var(--f-sans);font-size:13px;padding-block:7px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));display:flex;gap:6px 16px;flex-wrap:wrap;justify-content:space-between}
+.proto b{color:#fff}
+.wrap{max-width:1160px;margin:0 auto;padding-block:22px 60px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+.masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px 24px;flex-wrap:wrap;margin-bottom:18px;position:relative}
+.eyebrow{font-family:var(--f-sans);font-weight:600;font-size:12.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--bolt);margin:0 0 8px}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(34px,6vw,60px);line-height:1;margin:0;color:#F4EFE2;text-shadow:0 3px 0 #050A14}
+h1 span{display:block;font-size:.42em;color:var(--copper-lt);letter-spacing:.12em;text-transform:uppercase;margin:4px 0}
+.tag{font-style:italic;color:#C9D3DE;margin:10px 0 0;max-width:56ch}
+.actchip{font-family:var(--f-sans);font-size:13px;border:1px solid var(--copper-lt);color:var(--copper-lt);padding:6px 12px;border-radius:2px;white-space:nowrap}
+.bolt{position:absolute;right:4%;top:-18px;width:60px;color:var(--bolt);opacity:.85;pointer-events:none}
+
+.table{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start}
+.story{background:var(--steel);color:var(--ink);border-radius:3px;min-width:0;box-shadow:0 0 0 1px #000, 0 0 0 4px #8F9BAA, 0 18px 40px rgba(0,0,0,.5)}
+.story-head{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;padding:10px 18px;border-bottom:3px double var(--ink);background:linear-gradient(#F7F9FB,#E4E9EE)}
+.story-head .scene{font-family:var(--f-display);font-size:20px;line-height:1.1}
+.toggles{display:flex;gap:4px 14px;flex-wrap:wrap}
+.toggle{font-family:var(--f-sans);font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--muted)}
+.toggle input{accent-color:var(--teal)}
+#log{padding:18px 20px 8px;display:flex;flex-direction:column;gap:12px}
+.line{max-width:66ch}
+.who{font-family:var(--f-sans);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:1px}
+.npc{border-left:4px solid var(--copper);padding-left:12px;font-style:italic}
+.npc .who{font-style:normal}
+.you{align-self:flex-end;background:var(--night-2);color:#fff;padding:7px 13px;border-radius:2px;max-width:min(54ch,90%);font-weight:600;border-left:4px solid var(--bolt)}
+.rule{font-family:var(--f-sans);font-size:14.5px;line-height:1.45;background:#DCEFF1;border-left:4px solid var(--teal);padding:7px 11px;max-width:66ch}
+.rule::before{content:"RULE  ";font-weight:700;letter-spacing:.08em;color:var(--teal)}
+body.norules .rule{display:none}
+.scenebreak{font-family:var(--f-display);font-size:26px;line-height:1.1;border-top:2px solid var(--ink);padding-top:10px;margin-top:8px}
+.scenebreak small{display:flex;align-items:center;gap:8px;font-family:var(--f-sans);font-weight:700;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--copper)}
+.scenebreak small i{display:inline-grid;place-items:center;width:24px;height:24px;background:var(--night-2);color:#fff;font-style:normal;letter-spacing:0;transform:skewX(-10deg)}
+.asp{font-weight:700;font-variant:small-caps;letter-spacing:.02em;color:var(--teal)}
+
+details.move{max-width:66ch;border:1.5px solid var(--ink);border-radius:2px;background:#FAFBFC}
+details.move summary{cursor:pointer;padding:6px 11px;font-family:var(--f-sans);font-weight:700;font-size:16px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+details.move summary small{font-weight:600;font-size:11px;letter-spacing:.1em;color:var(--muted);white-space:nowrap}
+details.move .mt{padding:0 12px 10px;font-size:15.5px}
+details.move .mt p{margin:.4em 0} details.move .mt ul,details.move .mt ol{margin:.2em 0;padding-left:1.2em}
+details.move .mt .subtitle{font-family:var(--f-sans);font-weight:600;color:var(--copper)}
+details.move .fd{width:1.2em;height:1.2em;font-size:.8em;vertical-align:-.1em;border-width:1.5px;display:inline-grid}
+body.norules details.move{display:none}
+
+.rollrow{display:flex;flex-direction:column;gap:8px;border:2px solid var(--ink);border-radius:2px;padding:10px 12px;max-width:66ch;background:#fff}
+.rollrow .lbl{font-family:var(--f-sans);font-size:14px}
+.dice{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.dice .sep{font-family:var(--f-sans);font-weight:700;font-size:15px;color:var(--muted);margin:0 4px}
+.fd{display:inline-grid;place-items:center;width:42px;height:42px;border:2.5px solid var(--ink);border-radius:7px;background:#fff;font-family:var(--f-sans);font-weight:700;font-size:28px;line-height:1;color:var(--ink)}
+.fd.p{background:#E1F3F5;color:var(--teal)} .fd.m{background:#F8E7DE;color:var(--copper)}
+.fd.foe{width:32px;height:32px;font-size:21px;border-width:2px;border-color:#6B7385}
+.ghost{opacity:.4;border-style:dashed}
+.tumble{animation:tumble .12s linear infinite}
+@keyframes tumble{50%{transform:rotate(12deg) translateY(-2px)}}
+.score{font-family:var(--f-sans);font-weight:600;font-size:15px}
+.result{font-family:var(--f-sans);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:2px;color:#fff;align-self:flex-start}
+.result.ok{background:var(--ok)} .result.mix{background:var(--mix)} .result.bad{background:var(--bad)} .result.n{background:var(--night-2)}
+
+#choices{position:sticky;bottom:0;background:var(--steel-2);border-top:3px double var(--ink);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:10px}
+#choices:empty{display:none}
+.opt{flex:1 1 220px;text-align:left;border:2px solid var(--ink);background:#fff;padding:9px 12px;cursor:pointer;border-radius:2px;box-shadow:3px 3px 0 var(--ink)}
+.opt:hover{background:#F2F6F8}
+.opt:active{transform:translate(3px,3px);box-shadow:none}
+.opt b{display:block;font-weight:700;line-height:1.25}
+.opt span{display:block;font-family:var(--f-sans);font-size:13px;color:var(--muted);margin-top:2px}
+.opt.primary{background:var(--night-2);color:#fff}
+.opt.primary span{color:#B9C8D8}
+.opt.fp{background:#FFF1E6;border-color:var(--copper)}
+.opt:disabled{opacity:.45;cursor:not-allowed}
+.opt.roll{flex:1 1 100%;display:grid;grid-template-columns:auto 1fr;column-gap:14px;align-items:center;padding:12px 16px}
+.opt.roll::before{content:"+";grid-row:span 2;width:30px;height:30px;display:grid;place-items:center;border:2px solid #B9C8D8;border-radius:5px;font-family:var(--f-sans);font-weight:700;font-size:20px;color:var(--bolt);transition:transform .2s}
+.opt.roll:hover::before{transform:rotate(90deg)}
+.opt.roll b{font-size:19px}
+
+/* sheet */
+.sheet{position:sticky;top:calc(12px + env(safe-area-inset-top,0px));background:var(--night-2);border:1.5px solid #34466A;border-radius:3px;min-width:0;color:var(--steel)}
+.sheet summary{list-style:none;cursor:pointer;padding:9px 14px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 10px;align-items:baseline;border-bottom:1px solid #34466A}
+.sheet summary::-webkit-details-marker{display:none}
+.sheet .nm{font-family:var(--f-display);font-size:19px;color:#F4EFE2}
+.sheet .mini{font-family:var(--f-sans);font-size:12px;color:var(--copper-lt);white-space:nowrap}
+.sheet-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:12px}
+.sec{font-family:var(--f-sans);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--bolt);border-bottom:1px solid #34466A;padding-bottom:2px;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
+.fpline{display:flex;align-items:center;gap:10px;font-family:var(--f-sans);font-size:12px;color:#9FB3C8}
+.fpline b{font-family:var(--f-display);font-size:30px;color:var(--copper-lt);line-height:1}
+.tok{display:inline-block;width:16px;height:16px;border-radius:50%;background:var(--copper-lt);border:2px solid #7A3D1C;margin-right:2px;vertical-align:middle}
+.alist{list-style:none;margin:0;padding:0;font-size:15px;display:flex;flex-direction:column;gap:3px}
+.alist li{display:flex;justify-content:space-between;gap:8px;line-height:1.25}
+.alist small{font-family:var(--f-sans);font-size:10.5px;color:#8FA3B8;white-space:nowrap;text-transform:uppercase;letter-spacing:.06em}
+.alist .dots{color:var(--bolt);font-family:var(--f-sans);font-size:12px;white-space:nowrap}
+.alist .foeown{color:#E59A8A}
+.skills{font-family:var(--f-sans);font-size:13px;display:grid;grid-template-columns:auto 1fr;gap:2px 8px}
+.skills b{color:var(--copper-lt)}
+.stunts{list-style:none;margin:0;padding:0;font-size:14px;display:flex;flex-direction:column;gap:3px}
+.stunts li{cursor:help;border-bottom:1px dotted #34466A}
+.trk{display:flex;align-items:center;gap:4px;font-family:var(--f-sans);font-size:12px;margin:3px 0}
+.trk b{width:64px;font-weight:600}
+.trk span{width:20px;height:20px;border:1.5px solid #8FA3B8;border-radius:2px;display:grid;place-items:center;font-size:11px}
+.trk span.on{background:var(--copper-lt);border-color:var(--copper-lt);color:var(--night)}
+.cons{font-size:14px;display:grid;grid-template-columns:auto 1fr;gap:2px 8px}
+.cons small{font-family:var(--f-sans);color:#8FA3B8;font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding-top:2px}
+.empty-sheet{font-style:italic;color:#9FB3C8;font-size:15px}
+
+.endcard{border:2px solid var(--ink);background:#fff;padding:16px 18px;display:flex;flex-direction:column;gap:10px;max-width:66ch}
+.endcard h3{font-family:var(--f-display);font-weight:400;font-size:26px;line-height:1.05;margin:0}
+.product{display:grid;grid-template-columns:110px 1fr;gap:14px;align-items:start;background:var(--night);color:var(--steel);padding:14px;border-radius:2px}
+.product .cov{background:var(--night-2);border:1px solid #34466A;aspect-ratio:8.5/11;display:flex;flex-direction:column;justify-content:flex-end;padding:8px;font-family:var(--f-display);font-size:13px;line-height:1.05;color:#F4EFE2;position:relative;overflow:hidden}
+.product .cov::before{content:"";position:absolute;right:-6px;top:10px;width:46px;height:60px;background:var(--bolt);clip-path:polygon(58% 0,20% 45%,46% 45%,10% 100%,80% 38%,52% 38%,88% 0)}
+.product .cov small{font-family:var(--f-sans);font-size:7px;letter-spacing:.14em;color:#9FB3C8;margin-bottom:auto;text-transform:uppercase;position:relative}
+.product ul{margin:.3em 0 .6em;padding-left:1.1em;font-size:15.5px}
+.buy{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}
+.buybtn{display:inline-block;text-decoration:none;background:var(--copper-lt);color:var(--night);font-weight:700;padding:10px 16px;border-radius:2px;border:0;cursor:pointer;font-size:16px;font-family:var(--f-sans)}
+.buybtn[aria-disabled="true"]{background:#566074;color:#DFE4EA;cursor:not-allowed}
+.buy small{font-family:var(--f-sans);font-size:13px;color:#9FB3C8}
+.learned{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px 14px;font-size:15.5px}
+.learned li::before{content:"✓ ";font-weight:800;color:var(--ok)}
+.learned li.no{color:var(--muted)} .learned li.no::before{content:"○ ";color:var(--muted)}
+.fine{font-family:var(--f-sans);font-size:12.5px;color:var(--muted);line-height:1.5}
+.foot{font-family:var(--f-sans);font-size:13px;margin-top:22px;max-width:90ch;line-height:1.55;color:#9FB3C8}
+.foot p{margin:0 0 .6em}
+
+@media (max-width: 880px){
+  .table{grid-template-columns:minmax(0,1fr)}
+  .sheet{order:-1;top:env(safe-area-inset-top,0px);z-index:5}
+  .sheet-body{max-height:60vh;overflow:auto}
+  #log{padding:14px 14px 6px}
+  .product{grid-template-columns:1fr}
+  .product .cov{max-width:120px}
+  .bolt{display:none}
+  .fd{width:38px;height:38px;font-size:25px}
+}
+@media (prefers-reduced-motion: reduce){ .tumble{animation:none} }
+</style>
+</head>
+<body>
+<div class="proto"><span><a href="../../" style="color:inherit">← All demos</a> · <b>FREE DEMO</b> · Act One of three</span><span>Not an official Fate product</span></div>
+<div class="wrap">
+  <header class="masthead">
+    <svg class="bolt" viewBox="0 0 100 150" aria-hidden="true"><path d="M58 0 L20 68 L46 68 L10 150 L82 56 L54 56 L88 0 Z" fill="currentColor"/></svg>
+    <div>
+      <p class="eyebrow">A pulp solo adventure for Fate Condensed</p>
+      <h1>Thunder<span>on the</span>Silver Meridian</h1>
+      <p class="tag">Midnight, 1936. The fastest train in the world is carrying a glass sphere that can swallow a thunderstorm, and a black airship is following it over the mountains.</p>
+    </div>
+    <span class="actchip">Free: Act One · about 20 minutes</span>
+  </header>
+  <div class="table">
+    <main class="story" aria-live="polite">
+      <div class="story-head">
+        <span class="scene" id="sceneName">Before you board</span>
+        <span class="toggles">
+          <label class="toggle"><input type="checkbox" id="rulesToggle" checked> Show rules</label>
+          <label class="toggle"><input type="checkbox" id="autoToggle"> Auto-roll</label>
+        </span>
+      </div>
+      <div id="log"></div>
+      <div id="choices"></div>
+    </main>
+    <details class="sheet" id="sheet" open>
+      <summary><span class="nm" id="sumName">Your hero</span><span class="mini" id="sumMini">not chosen yet</span></summary>
+      <div class="sheet-body" id="sheetBody"><p class="empty-sheet">Your hero appears here: aspects, skills, stunts, fate points, stress, consequences, and the aspects in play.</p></div>
+    </details>
+  </div>
+  <div class="foot">
+    <p>This work is based on Fate Condensed (found at <a href="https://www.faterpg.com/" target="_blank" rel="noopener">https://www.faterpg.com/</a>), a product of Evil Hat Productions, LLC, developed, authored, and edited by PK Sullivan, Lara Turner, Fred Hicks, Richard Bellingham, Robert Hanz, and Sophie Lagacé, and licensed for our use under the <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">Creative Commons Attribution 3.0 Unported license</a>.</p>
+    <p>Rules text in the "Read the rule" panels is from the Fate Condensed SRD, ©2020 Evil Hat Productions, LLC, CC BY 3.0 (page references removed, em dashes set as en dashes). Fate™ is a trademark of Evil Hat Productions, LLC. This is not an official Fate product and is not affiliated with or endorsed by Evil Hat Productions. The adventure "Thunder on the Silver Meridian" and its characters are © 2026 RPG Demo Library. All rights reserved. Read Fate Condensed free at <a href="https://fate-srd.com/fate-condensed" target="_blank" rel="noopener">fate-srd.com</a>.</p>
+  </div>
+</div>
+
+<script>
+(() => {
+const DATA = {"rules":{"roll":{"name":"Taking Action, Rolling the Dice","html":"<ol> <li> Fiction first: Describe what you’re trying to do, <em>then</em> choose the skill and action that fits. </li> <li>Roll four dice.</li> <li> Add up the symbols on the dice: a <span class=\"fd\">+</span> is +1, <span class=\"fd\">−</span> is -1, and <span class=\"fd\"></span> is 0. This will give you a dice result of -4 to 4. </li> <li>Add the dice result to your skill rating.</li> <li> Modify the dice by invoking aspects and using stunts. </li> <li> Declare your total result, called your <b class=\"terminology\">effort</b>. </li> </ol>"},"outcomes":{"name":"Outcomes","html":"<p> Whenever you roll dice, the difference between your effort and the target difficulty or opposition is measured in <b>shifts</b>. A shift has a value of 1. There are four possible outcomes: </p><ul> <li> If your effort is less than the target difficulty or opposition, you <strong>fail</strong>. </li> <li>If your effort is equal to the target, you <strong>tie</strong>.</li> <li> If your effort is one or two shifts more than the target, you <strong>succeed</strong>. </li> <li> If your effort is three or more shifts more than the target, you <strong>succeed with style</strong>. </li> </ul>"},"overcome":{"name":"Overcome","html":"<p class=\"subtitle\"> Overcome to surmount obstacles with your skills. </p> <p> Every character will face untold challenges in the course of the story. The <b>overcome</b> action is how they face and surmount those obstacles. </p> <p> A character good at Athletics can climb over walls and race through crowded streets. A detective with high Investigate can piece together clues others have missed. Someone skilled in Rapport will find it easier to avoid a fight in a hostile bar. </p> <p>Your outcomes when overcoming are:</p> <ul> <li> <strong>If you fail,</strong> discuss with the GM (and the defending player, if any) whether it’s a failure or success at a major cost. </li> </ul> <ul> <li> <strong>If you tie,</strong> it’s success at a minor cost – you’re in a tough spot, the enemy gets a boost, or you may take a hit. Alternatively, you fail but gain a boost. </li> </ul> <ul> <li> <strong>If you succeed,</strong> you meet your goal and the story moves on without hiccups. </li> </ul> <ul> <li> <strong>If you succeed with style,</strong> it’s a success and you also get a boost. </li> </ul>  <p> Overcome actions are often used to determine whether a character can access or notice a particular fact or clue. Keep a close eye on those success-at-a-cost options when that’s the case. If missing a detail would cause your story to stall, take failure off the table, and focus on the cost instead. </p>"},"advantage":{"name":"Create an Advantage","html":"<p class=\"subtitle\"> Create A situation aspect or gain a benefit from an existing aspect. </p> <p> You can use the <b>create an advantage</b> action to change the course of the story. By using your skills to introduce new aspects or add invokes to existing aspects, you can stack the deck for yourself and your teammates. You might change the circumstances (barring a door or creating a plan), discover new information (learning a monster’s weakness through research), or take advantage of something already known (such as a CEO’s taste for scotch). </p> <p> An aspect created (or discovered) by creating an advantage works like any other: It defines the narrative circumstances and can allow, prevent, or impede actions – for instance, you cannot read a spell if the room has been made <strong class=\"aspect\" >Pitch Black</strong>. It can also be invoked or compelled. In addition, creating an advantage gives you one or more <b>free invokes</b> of the created aspect. A free invoke, as the name suggests, lets you invoke an aspect without spending a fate point. You can even let your allies use free invokes you have created. </p> <p> When you roll to create an advantage, specify whether you’re creating a new aspect or taking advantage of an existing one. If the former, are you attaching the aspect to an ally, opponent, or the environment? If you’re attaching it to an opponent, they can take the defend action to oppose you. Otherwise you’ll usually face a difficulty, but the GM can decide if something or someone opposes your efforts with a defend roll instead. </p> <p>Your outcomes when creating a new aspect are:</p> <ul> <li> <strong>If you fail,</strong> you either don’t create the aspect (failure) or you create it but the enemy gets the free invoke (success at a cost). If you succeed at a cost, the final aspect may need to be rewritten to benefit the enemy. This may still be worth it because aspects are true. </li> </ul> <ul> <li> <strong>If you tie,</strong> you don’t create an aspect, but you do get a boost. </li> </ul> <ul> <li> <strong>If you succeed,</strong> you create a situation aspect with one free invoke on it. </li> </ul> <ul> <li> <strong>If you succeed with style,</strong> you create a situation aspect with <em>two</em> free invokes on it. </li> </ul> <p>With an existing known or unknown aspect the outcomes are:</p> <ul> <li> <strong>If you fail,</strong> and the aspect was known, the enemy gets a free invoke. If it was unknown, they may choose to reveal it to get a free invoke. </li> </ul> <ul> <li> <strong>If you tie,</strong> you gain a boost if the aspect was unknown; it stays unknown. If the aspect is known, you get a free invoke on it instead. </li> </ul> <ul> <li> <strong>If you succeed,</strong> gain a free invoke on the aspect, revealing it if unknown. </li> </ul> <ul> <li> <strong>If you succeed with style,</strong> gain two free invokes, revealing it if unknown. </li> </ul>"},"attack":{"name":"Attack","html":"<p class=\"subtitle\">Attack to harm the enemy.</p> <p> The <b>attack</b> action is how you try to take out an opponent – whether you’re looking to kill a loathsome monster, or knock out an innocent guard who doesn’t know the truth about what he’s guarding. An attack can be unloading with a machine gun, throwing a solid punch, or casting a baleful spell. </p> <p> Keep in mind whether or not harming your target is even possible. Not every attack is equal. You can’t just punch a kaiju and hope to hurt it. Determine whether the attack even has a chance of being successful before you start rolling the dice. A number of powerful beings may have specific weaknesses that need to be exploited, or some means of defense you must get through before you can even begin to hurt them. </p> <p>Your outcomes when attacking are:</p> <ul> <li> <strong>If you fail,</strong> you fail to connect – the attack is parried, dodged, or maybe just absorbed by armor. </li> </ul> <ul> <li> <strong>If you tie,</strong> maybe you barely connect, maybe you cause the defender to flinch. Either way, you get a boost. </li> </ul> <ul> <li> <strong>If you succeed,</strong> you deal a hit equal to the difference between your attack’s total and the defense’s effort. The defender must absorb this hit with stress or consequences, or else be taken out. </li> </ul> <ul> <li> <strong>If you succeed with style,</strong> you deal a hit just like a success, but you may reduce the shifts of the hit by one to get a boost. </li> </ul>"},"defend":{"name":"Defend","html":"<p class=\"subtitle\"> Defend to survive an attack or interfere with a foe’s action. </p> <p> Is a monster trying to eat your face? Is a foe pushing you out of the way as they flee your wrath? What about when that cultist tries to stab you in both kidneys? <b>Defend</b>, defend, defend. </p> <p> Defend is the only reactive action in <i class=\"booktitle\">Fate Condensed</i>. You use it to stop something from happening outside your turn, so you’re often facing an opposing roll rather than a set difficulty. Your enemy rolls, and you immediately roll to defend, so long as you’re the target or can justify your opposition (which often makes you the target). Aspects or stunts may provide justification. </p> <p>Your outcomes when defending are:</p> <ul> <li> <strong>If you fail</strong> against an attack, you take a hit, which you must absorb with stress or consequences. Regardless, the enemy succeeds as described for their action. </li> </ul> <ul> <li> <strong>If you tie,</strong> proceed according to the tie result for the opposed action. </li> </ul> <ul> <li> <strong>If you succeed,</strong> you don’t take a hit or you deny the enemy’s action. </li> </ul> <ul> <li> <strong>If you succeed with style,</strong> you don’t take a hit, you deny the enemy’s action, and you even get a boost as you gain the upper hand for a moment. </li> </ul>"},"invoke":{"name":"Invoking Aspects","html":"<p> When you take action but the dice come up short, you don’t have to sit back and accept failure. (Though you totally can. That’s fun too.) The aspects in play give you options and opportunity to succeed. </p><p> When you invoke an aspect, you can either <strong>gain a +2 bonus</strong> to your roll or <strong>reroll all four dice</strong>, or you can add 2 to the difficulty of someone else’s roll, if justifiable. You can invoke multiple aspects on the same roll, but you can’t invoke the same aspect multiple times on the same roll. There is one exception: you can spend as many <em>free invokes</em> on an aspect as you like on the same roll. </p>"},"compel":{"name":"Compels","html":"<p> Aspects can be <b>compelled</b> to complicate the situation and earn fate points. To compel an aspect, the GM or a player offers a fate point to the player whose character is being compelled, and tells them why an aspect is making things more difficult or complicated. If you refuse the compel, you must spend a fate point from your own supply and describe how your character avoids the complication. Yes, this means that if you don’t have any fate points, you can’t refuse a compel! </p>"},"boost":{"name":"Boosts","html":"<p> A <b>boost</b> is a special kind of aspect, representing an extremely temporary or minor situation. You cannot compel a boost or spend a fate point to invoke it. You may invoke it once for free, after which it vanishes. An unused boost vanishes when the advantage it represents no longer exists, which may be a few seconds or the duration of a single action. They never persist beyond the end of a scene, and you can hold off naming one until you’re using it. If you’re in control of a boost, you may pass it to an ally if there’s rationale for it. </p>"},"stress":{"name":"Stress","html":"<p> Simply put, <b>stress</b> is plot armor. It’s a resource used to keep your character up and in the fight when their foes hit them. When you mark stress boxes to absorb a hit, you’re saying things like, “That <em>just</em> missed me,” or “Whoa, that knocked the wind out of me but I’m okay.” That said, it’s a limited resource – most characters only have three boxes for physical stress and three boxes for mental stress, though characters with high Will or Physique have more. </p><p> You’ll find two <b>stress tracks</b> on your character sheet, one for physical harm and one for mental harm. When you take a hit, you can mark empty stress boxes of the appropriate type to absorb it and stay in the fight. Each stress box you mark absorbs one shift. You can mark multiple stress boxes if you need to. </p>"},"consequence":{"name":"Consequences","html":"<p> <b>Consequences</b> are new aspects you write on your character sheet when your character takes a hit, representing the real harm and injury your character suffers. </p><p> When you take a consequence to absorb a hit, write an aspect in an empty consequence slot that describes what harm befalls your character. Use the severity of the consequence as a guide: If you were bitten by star spawn, a mild consequence might be <strong class=\"aspect\" >Nasty Bite</strong>, but a moderate consequence could be <strong class=\"aspect\" >Bite That Won’t Stop Bleeding</strong>, and a severe consequence might be <strong class=\"aspect\" >Crippled Leg</strong>. </p><p> While stress turns a hit into a near miss, taking a consequence means you got hit hard. Why would you take a consequence? Because sometimes stress isn’t enough. Remember, you have to absorb <em>all</em> the shifts of the hit to stay in the fight. You only have so many stress boxes. The good news is that consequences can take pretty big hits. </p><p> Each character starts with three consequence slots – mild, moderate, and severe. Taking a minor consequence absorbs two shifts, a moderate one absorbs four shifts, and a severe one absorbs six shifts. </p>"},"takenout":{"name":"Getting Taken Out","html":"<p> If you can’t absorb all the shifts of a hit with stress and consequences, you’re <b>taken out</b>. </p><p> Getting taken out is bad. Whoever took you out decides what happens. Given dangerous situations and powerful enemies, this could mean you’re dead, but that’s not the only possibility. The outcome must be in keeping with the scope and scale of the conflict at hand – you won’t die of shame if you lose an argument – but changes to your character sheet (and more) are possible. The outcome should also fit within the boundaries your group has established – if your group feels that characters should never get killed without the player’s consent, that’s perfectly valid. </p>"},"concede":{"name":"Conceding","html":"<p> So how do you keep from dying horribly – or worse? You can interrupt any action in a conflict to <b>concede</b> as long as the dice haven’t hit the table yet. Just give in. Tell everyone that you’re done, that you can’t keep going. Your character loses and exits the conflict, but <strong>you gain a fate point</strong> plus an extra one for each consequence they took in the current conflict. </p><p> Also, concession means <em>you</em> declare the terms of your loss and how you exit the conflict. You can escape the monsters and live to fight another day. It is a loss, though. You’ll have to give your foe something they want. You can’t concede and describe how you heroically save the day – that’s not on the table anymore. </p>"},"turnorder":{"name":"Turn Order","html":"<p> Often, you won’t need to know who is acting precisely when, but in contests and conflicts turn order can become important. These scenes take place over a series of <b>exchanges</b>. In an exchange, each involved character can take one overcome, create an advantage, or attack action, and can move once. (Contests work slightly differently; see .) Because defending is a reaction to someone else’s action, characters can defend as many times as they need to during other characters’ turns, so long as they can justify their ability to interfere based on what’s already been established in the story. </p><p> At the start of a scene, the GM and players decide who goes first based on the situation, then the active player picks who goes next. The GM’s characters are selected in the turn order just like the PCs, with the GM deciding who goes next after the NPCs have acted. After everyone has taken a turn, the last player picks who goes next at the start of the next exchange. </p>"},"contest":{"name":"Contests","html":"<p> A <b>contest</b> is when two or more sides are in direct opposition but there isn’t a conflict. This doesn’t mean one side doesn’t <em>want</em> to hurt the other. Contests may involve the group trying to escape or counteract danger (such as an erupting volcano or angry god) before the danger cuts off any chance of victory. </p><p> At the start of a contest, everyone involved declares their intent, what they hope to get out of it. If there are multiple PCs involved, they can be on the same or different sides, depending on their goals – <em>e.g.,</em> in a foot race, each character might be on their own side. <strong>If the PCs can’t or aren’t trying to harm the enemy, the GM can still declare a goal of harming or killing the PCs.</strong> </p><p> Contests take place over a series of exchanges, during which each side will take an overcome action to do something to achieve their goals. Only one character on each side takes the overcome action in each exchange, but their allies can provide teamwork and try to create advantages to assist (which comes with some risk – see below). The overcome actions can be against passive difficulties – if the contestants are facing separate environmental challenges – or compared against one another when they’re in direct competition. </p><p> At the end of each exchange, compare the efforts of each side’s action. The side with the highest effort marks a <b>victory</b>. If the victor succeeds with style – and no one else did – then they mark <strong>two</strong> victories. The first one to three victories wins the contest. (You can always decide instead to run an extended contest requiring more victories, though we recommend no more than five.) </p><p> When there’s a tie for the highest effort, no one marks a victory, and an <b>unexpected twist</b> happens. The GM will introduce a new situation aspect to reflect how the scene, terrain, or situation has changed. </p>"},"teamwork":{"name":"Teamwork","html":"<p> Fate offers three methods for teamwork: combining the same skill from multiple characters on a single roll, stacking free invokes by creating advantages to set up a team member for success, and invoking aspects on an ally’s behalf. </p><p> When you combine skills, figure out who has the highest level in the skill among the participants. Each other participant who has at least Average&nbsp;(+1) in that skill adds a +1 to the highest person’s skill level. Providing support like this uses your action for the exchange. Supporters face the same costs and consequences as the person making the roll. The maximum total bonus a team may provide this way is equal to the highest person’s skill level. </p>"}}};
+const PRODUCT_ID = 'thunder-on-the-silver-meridian';
+let autoRoll = false;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = s => document.querySelector(s);
+const logEl = $('#log'), choicesEl = $('#choices');
+const d = n => 1 + Math.floor(Math.random()*n);
+const df = () => d(3) - 2; // one Fate die: -1, 0, +1
+const sleep = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sgn = n => (n >= 0 ? '+' : '−') + Math.abs(n);
+const LADDER = {8:'Legendary',7:'Epic',6:'Fantastic',5:'Superb',4:'Great',3:'Good',2:'Fair',1:'Average',0:'Mediocre','-1':'Poor','-2':'Terrible'};
+const lad = n => n > 8 ? `Beyond Legendary (${sgn(n)})` : n < -2 ? `Terrible (${sgn(n)})` : `${LADDER[n]} (${sgn(n)})`;
+const A = n => `<span class="asp">${esc(n)}</span>`;
+const cap = s => s[0].toUpperCase() + s.slice(1);
+
+try { if (localStorage.getItem('fate-rules') === 'off') { $('#rulesToggle').checked = false; document.body.classList.add('norules'); } } catch(e){}
+try { if (localStorage.getItem('fate-auto') === 'on') { $('#autoToggle').checked = true; autoRoll = true; } } catch(e){}
+$('#rulesToggle').addEventListener('change', e => { document.body.classList.toggle('norules', !e.target.checked); try { localStorage.setItem('fate-rules', e.target.checked ? 'on' : 'off'); } catch(err){} });
+$('#autoToggle').addEventListener('change', e => { autoRoll = e.target.checked; try { localStorage.setItem('fate-auto', autoRoll ? 'on' : 'off'); } catch(err){} });
+
+/* ---------- official rules text ---------- */
+const shownRules = new Set();
+function showRule(key){
+  if (shownRules.has(key)) return; shownRules.add(key);
+  const r = DATA.rules[key]; if (!r) return;
+  add('', `<details class="move"><summary><span>Read the rule: ${esc(r.name)}</span><small>FATE CONDENSED · CC BY</small></summary><div class="mt">${r.html}</div></details>`);
+}
+
+/* ---------- characters ---------- */
+const PCS = {
+  rosa:{name:'Rosa "Red" Castellane', title:'Ace pilot and the worst gambler on the coast',
+    aspects:[['Barnstorming Ace with Nothing Left to Lose','high concept',['move','grit','shoot']],['Owes Every Bookie in Port Lumen','trouble',[]],['Varga Pulled Me from the Wreck','relationship',['varga','grit']],['Never Met a Machine I Couldn\'t Fly','',['machine']],['Lucky Silver Dollar','',['luck']]],
+    skills:{Drive:4,Athletics:3,Shoot:3,Notice:2,Crafts:2,Physique:2,Fight:1,Rapport:1,Will:1,Provoke:1},
+    stunts:[['Wingwalker','+2 to Athletics to overcome when moving across something that is itself moving.'],['Twin .38s','+2 to Shoot to attack when you act first in an exchange.'],['Barnstormer','Use Drive in place of any skill to overcome when piloting anything, if it would terrify a sane pilot.']],
+    blurb:'You flew mail over these mountains in the winter of \'31. Dr. Varga pulled you out of a burning wreck once and never asked for anything back. Tonight she did.'},
+  quill:{name:'Professor Ambrose Quill', title:'Scholar of dead languages and living fists',
+    aspects:[['Two-Fisted Professor of Ancient Engineering','high concept',['fight','smart']],['Can\'t Leave a Mystery Alone','trouble',['notice']],['Varga\'s Rival, by Letter, for Ten Years','relationship',['varga','smart']],['Former Varsity Heavyweight Champion','',['fight','grit']],['Pockets Full of Notebooks','',['smart']]],
+    skills:{Academics:4,Fight:3,Investigate:3,Physique:2,Lore:2,Will:2,Notice:1,Empathy:1,Rapport:1,Athletics:1},
+    stunts:[['I\'ve Read About This','+2 to Academics to create an advantage when examining a device, document, or inscription.'],['The Old One-Two','+2 to Fight to attack when you have a free invoke or boost on your target.'],['Lecture Hall Voice','Use Academics in place of Provoke to create an advantage by scolding or lecturing, once per scene.']],
+    blurb:'You held the varsity heavyweight belt before you held a chair at Saltmarch College. You and Ilse Varga have argued about lightning by letter for ten years. You have never let her win.'},
+  jinx:{name:'Jinx Moreau', title:'Retired jewel thief, mostly',
+    aspects:[['The Silk Glove, Retired','high concept',['sneak','notice','lie','move']],['Every Cop on the Line Knows My Face','trouble',[]],['Varga Hired Me to Rob Her First','relationship',['varga','notice']],['Steel Nerves in Silk Gloves','',['grit','sneak','social']],['A Lie for Every Occasion','',['lie','social']]],
+    skills:{Stealth:4,Deceive:3,Burglary:3,Athletics:2,Notice:2,Rapport:2,Fight:1,Empathy:1,Shoot:1,Contacts:1},
+    stunts:[['Knife in the Dark','Use Stealth to attack when your target doesn\'t know where you are.'],['Light Fingers','Once per scene, declare you have already pocketed a small item from someone in your zone.'],['Who, Me?','+2 to Deceive to overcome when pretending to be someone you\'re not.']],
+    blurb:'The society pages called you "the Silk Glove." Two weeks ago Dr. Varga paid you to steal the Aurora Cell from her own lab, to prove it could be done. Nine minutes. Now she wants you to make sure nobody else can.'},
+};
+let C = null; const used = new Set();
+let scene = 0;
+const situ = []; // aspects in play: {name, free, boost, foe, by, tags, sceneOnly, temp}
+let foePool = 0;
+const contest = {on:false, you:0, foe:0};
+let linemen = null;
+
+function addAspect(name, {free=0, boost=false, foe=false, by=null, tags=['any'], sceneOnly=false, temp=false} = {}){
+  const ex = situ.find(a => a.name === name);
+  if (ex){ ex.free += free; render(); return ex; }
+  const a = {name, free, boost, foe, by, tags, sceneOnly, temp}; situ.push(a); render(); return a;
+}
+function clearScene(){ for (let i = situ.length - 1; i >= 0; i--) if (situ[i].boost || situ[i].sceneOnly) situ.splice(i, 1); render(); }
+const sk = s => C.skills[s] || 0;
+
+/* ---------- log ---------- */
+function add(cls, html){ const el = document.createElement('div'); if (cls) el.className = cls; el.innerHTML = html; logEl.appendChild(el); requestAnimationFrame(() => el.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'})); return el; }
+const nar = h => add('line', h);
+const npc = (who, h) => add('line npc', `<span class="who">${who}</span>${h}`);
+const you = h => add('line you', h);
+const rule = h => add('rule', h);
+function sceneBreak(num, name){ scene = num; $('#sceneName').textContent = name; add('scenebreak', `<small><i>${num}</i>Act One</small>${name}`); }
+function choose(opts){
+  return new Promise(res => {
+    choicesEl.innerHTML = '';
+    opts.forEach(o => {
+      const b = document.createElement('button'); b.className = 'opt' + (o.cls ? ' ' + o.cls : '');
+      b.innerHTML = `<b>${o.label}</b>${o.sub ? `<span>${o.sub}</span>` : ''}`; if (o.disabled) b.disabled = true;
+      b.addEventListener('click', () => { choicesEl.innerHTML = ''; if (o.say !== false) you(esc(o.say || o.label)); res(o.id); });
+      choicesEl.appendChild(b);
+    });
+    requestAnimationFrame(() => choicesEl.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'}));
+    const first = choicesEl.querySelector('button:not(:disabled)'); if (first && matchMedia('(pointer:fine)').matches) first.focus({preventScroll:true});
+  });
+}
+const cont = (label='Continue') => choose([{id:'c', label, cls:'primary', say:false}]);
+async function waitRoll(label, btn){ if (autoRoll) return; await choose([{id:'r', label: btn || 'Roll four Fate dice', sub: label, cls:'primary roll', say:false}]); }
+
+/* ---------- Fate dice ---------- */
+function dieEl(foe){ const e = document.createElement('div'); e.className = 'fd ghost' + (foe ? ' foe' : ''); e.setAttribute('aria-label','Fate die, not rolled yet'); return e; }
+function face(e, v){ e.textContent = v > 0 ? '+' : v < 0 ? '−' : ''; e.classList.toggle('p', v > 0); e.classList.toggle('m', v < 0); e.setAttribute('aria-label', 'Fate die showing ' + (v > 0 ? 'plus' : v < 0 ? 'minus' : 'blank')); }
+async function tumble(fn){ for (let t=0;t<(reduced?1:9);t++){ fn(); await sleep(55); } }
+async function throwDice(els){
+  const vals = els.map(() => df()); els.forEach(e => e.classList.remove('ghost'));
+  await tumble(() => els.forEach(e => face(e, df())));
+  els.forEach((e,i) => face(e, vals[i]));
+  return vals.reduce((a,b) => a+b, 0);
+}
+
+/* ---------- invoking ---------- */
+function eligible(tags, onFoe){
+  const out = [];
+  C.aspects.forEach(([n,,t]) => { if (t.includes('luck') || t.some(x => tags.includes(x))) out.push({name:n, kind:'char'}); });
+  situ.forEach(a => { if (a.foe) return; if (a.tags.includes('any') || a.tags.some(x => tags.includes(x)) || (onFoe && a.tags.includes(onFoe))) out.push({name:a.name, kind: a.boost ? 'boost' : 'situ', ref:a}); });
+  return out;
+}
+const ACT = {overcome:'Overcome', advantage:'Create an advantage', attack:'Attack', defend:'Defend'};
+const outcome = s => s < 0 ? 'fail' : s === 0 ? 'tie' : s < 3 ? 'success' : 'style';
+const ONAME = {fail:'fail', tie:'tie', success:'success', style:'success with style'};
+const OCLS = {fail:'bad', tie:'mix', success:'ok', style:'ok'};
+
+/* The core roll. vs: {diff:n} for a difficulty, or {foe, skill, rating} for opposition (the foe rolls automatically). */
+async function roll({act, skill, vs, adds=[], tags=[], onFoe=null, foeAspects=[]}){
+  used.add(act); used.add('roll');
+  showRule('roll');
+  showRule(act);
+  const base = sk(skill);
+  const addSum = adds.reduce((a,x) => a + x[0], 0);
+  if (adds.some(a => !/Otis/.test(a[1]))) used.add('stunt');
+  const vsTxt = vs.diff !== undefined ? `difficulty ${lad(vs.diff)}` : `${vs.foe}'s ${vs.skill} ${lad(vs.rating)}`;
+  const row = add('rollrow', `<span class="lbl"><b>${ACT[act]}</b> with ${skill} ${lad(base)}${adds.map(a => ` + ${a[0]} (${esc(a[1])})`).join('')} vs ${vsTxt}</span>`);
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  const mine = [dieEl(), dieEl(), dieEl(), dieEl()]; dice.append(...mine);
+  let theirs = [];
+  if (vs.foe){ const sep = document.createElement('span'); sep.className = 'sep'; sep.textContent = 'vs'; theirs = [dieEl(true), dieEl(true), dieEl(true), dieEl(true)]; dice.append(sep, ...theirs); }
+  await waitRoll(row.querySelector('.lbl').textContent);
+  let sum = await throwDice(mine);
+  let opp = vs.diff;
+  if (vs.foe){ const fs = await throwDice(theirs); opp = vs.rating + fs; }
+  const sc = document.createElement('span'); sc.className = 'score'; row.appendChild(sc);
+  let effort = 0, bonus = 0;
+  const upd = () => { effort = base + sum + addSum + bonus; sc.textContent = `Your effort: ${sgn(sum)} on the dice, ${sgn(base + addSum)} skill${addSum ? ' and stunts' : ''}${bonus ? `, ${sgn(bonus)} invokes` : ''} = ${lad(effort)}${vs.foe ? `  ·  ${vs.foe}: ${lad(opp)}` : ''}`; };
+  upd();
+  // the opposition spends a free invoke, or its fate point, when narrowly behind
+  if (vs.foe){
+    const fi = situ.find(a => a.foe && a.free > 0 && (!a.by || a.by === vs.foe));
+    if (fi && effort - opp >= 0 && effort - opp <= 3){
+      fi.free--; opp += 2; upd(); used.add('foeinvoke');
+      rule(`${vs.foe} uses the opposition's free invoke on ${A(fi.name)}: +2.`);
+      if (!fi.free && fi.temp) situ.splice(situ.indexOf(fi), 1); render();
+    } else if (foePool > 0 && foeAspects.length && effort - opp >= 1 && effort - opp <= 2){
+      foePool--; opp += 2; upd(); used.add('foeinvoke');
+      rule(`The opposition spends its fate point to invoke ${A(foeAspects[0])}: +2 to ${vs.foe}'s roll.`); render();
+    }
+  }
+  // the player's chance to invoke
+  const usedAsp = new Set();
+  while (outcome(effort - opp) !== 'style'){
+    const el = eligible(tags, onFoe);
+    const opts = [];
+    el.forEach(x => {
+      if (x.ref && x.ref.free > 0) opts.push({id:'f:' + x.name, label:`${x.kind === 'boost' ? 'Use boost' : 'Free invoke'}: ${esc(x.name)}`, sub:'+2, costs nothing', cls:'fp', say:`…and ${x.name}!`});
+      else if (x.kind !== 'boost' && C.fp > 0 && !usedAsp.has(x.name)) opts.push({id:'i:' + x.name, label:`Invoke ${esc(x.name)}`, sub:'+2 for 1 fate point', cls:'fp', say:`…and ${x.name}!`});
+    });
+    const paid = el.find(x => x.kind !== 'boost' && !usedAsp.has(x.name));
+    if (sum < 0 && paid && C.fp > 0) opts.push({id:'r:' + paid.name, label:`Invoke ${esc(paid.name)} to reroll`, sub:'Reroll all four dice for 1 fate point', cls:'fp', say:`${paid.name}. Again!`});
+    if (!opts.length) break;
+    if (!used.has('rule-invoke')){ used.add('rule-invoke'); showRule('invoke'); rule('After you roll, you may invoke an aspect that fits: spend a fate point (or a free invoke) for +2 or a reroll. Each aspect only once per roll, but free invokes can stack.'); }
+    const res = outcome(effort - opp);
+    opts.push({id:'keep', label:`Accept the ${ONAME[res]}`, sub:`Effort ${lad(effort)} vs ${lad(opp)}: ${sgn(effort - opp)} shifts`, cls:'primary', say:false});
+    const c = await choose(opts);
+    if (c === 'keep') break;
+    const kind = c.slice(0,1), name = c.slice(2);
+    const ref = situ.find(a => a.name === name && !a.foe);
+    used.add('invoke');
+    if (kind === 'f'){ ref.free--; used.add('free'); if (ref.boost || (!ref.free && ref.temp)) situ.splice(situ.indexOf(ref), 1); bonus += 2; }
+    else if (kind === 'i'){ C.fp--; bonus += 2; }
+    else { C.fp--; used.add('reroll'); mine.forEach(e => e.classList.add('ghost')); await sleep(150); sum = await throwDice(mine); }
+    usedAsp.add(name); render(); upd();
+  }
+  const res = outcome(effort - opp);
+  const st = document.createElement('span'); st.className = 'result ' + OCLS[res]; st.textContent = `${ONAME[res]} (${sgn(effort - opp)} shifts)`; row.appendChild(st);
+  showRule('outcomes');
+  return {res, shifts: effort - opp, effort, opp};
+}
+async function gainBoost(name){ addAspect(name, {free:1, boost:true}); used.add('boost'); showRule('boost'); rule(`You gain a boost, ${A(name)}: one free invoke, then it's gone.`); }
+const hit = r => r.res === 'success' || r.res === 'style';
+
+/* ---------- harm ---------- */
+const SEV = [['mild',2],['moderate',4],['severe',6]];
+async function takeHit(shifts, from, names, by){
+  if (shifts <= 0) return 'ok';
+  const free = C.stress.filter(x => !x).length;
+  showRule('stress');
+  rule(`You take a ${shifts}-shift hit. Mark one-point stress boxes (as many as you like) and/or take consequences: mild absorbs 2, moderate 4, severe 6.`);
+  const opts = [];
+  if (shifts <= free) opts.push({id:'s', label:`Mark ${shifts} stress`, sub:`${free - shifts} box${free - shifts === 1 ? '' : 'es'} left. Stress clears at the end of the scene.`});
+  SEV.forEach(([k,v]) => { if (!C.cons[k] && v + free >= shifts){ const rest = Math.max(0, shifts - v); opts.push({id:'c:' + k, label:`Take a ${k} consequence: ${esc(names[k])}`, sub:`Absorbs ${v}${rest ? `, plus ${rest} stress` : ''}. ${from} gets a free invoke on it.`}); } });
+  if (!opts.length){
+    const val = k => SEV.find(s => s[0] === k)[1];
+    const combo = [['mild','moderate'],['mild','severe'],['moderate','severe'],['mild','moderate','severe']].find(cb => cb.every(k => !C.cons[k]) && cb.reduce((a,k) => a + val(k), 0) + free >= shifts);
+    if (combo){ const tot = combo.reduce((a,k) => a + val(k), 0); opts.push({id:'c:' + combo.join(','), label:`Take ${combo.join(' and ')} consequences`, sub:`Absorbs ${tot}${shifts > tot ? `, plus ${shifts - tot} stress` : ''}.`}); }
+  }
+  if (!opts.length){ used.add('takenout'); showRule('takenout'); nar(`You can't absorb ${shifts} shifts. <strong>You're taken out.</strong>`); return 'out'; }
+  const c = await choose(opts.map(o => ({...o, say:false})));
+  const markStress = n => { for (let i = 0; i < C.stress.length && n > 0; i++) if (!C.stress[i]){ C.stress[i] = true; n--; } };
+  if (c === 's'){ markStress(shifts); used.add('stressbox'); nar(`You mark ${shifts} stress. It just missed you, or it knocked the wind out of you. You're still standing.`); }
+  else {
+    const ks = c.slice(2).split(',');
+    let left = shifts;
+    ks.forEach(k => { C.cons[k] = names[k]; left -= SEV.find(s => s[0] === k)[1]; addAspect(names[k], {free:1, foe:true, by}); });
+    if (left > 0){ markStress(left); used.add('stressbox'); }
+    used.add('consequence'); showRule('consequence');
+    nar(`You take ${ks.map(k => A(names[k])).join(' and ')}. That's an aspect now, and it's true. ${from} holds a free invoke on it.`);
+  }
+  render(); return 'ok';
+}
+
+/* ---------- sheet ---------- */
+function render(){
+  if (!C) return;
+  $('#sumName').textContent = C.name;
+  const fs = C.stress.filter(x => !x).length;
+  $('#sumMini').textContent = `Fate points ${C.fp} · Stress ${fs}/${C.stress.length}${contest.on ? ` · Contest ${contest.you}-${contest.foe}` : ''}`;
+  const mine = situ.filter(a => !a.foe), theirs = situ.filter(a => a.foe);
+  $('#sheetBody').innerHTML = `
+    <div class="fpline"><b>${C.fp}</b><span>${'<i class="tok"></i>'.repeat(Math.min(C.fp, 8))}<br>fate points · refresh ${C.refresh}</span></div>
+    <div><div class="sec"><span>Aspects</span></div><ul class="alist">${C.aspects.map(([n,k]) => `<li><span>${esc(n)}</span>${k ? `<small>${k}</small>` : ''}</li>`).join('')}</ul></div>
+    ${mine.length || theirs.length ? `<div><div class="sec"><span>Aspects in play</span><span>● free invoke</span></div><ul class="alist">${mine.map(a => `<li><span>${esc(a.name)}${a.boost ? ' <small>boost</small>' : ''}</span><span class="dots">${'●'.repeat(a.free)}</span></li>`).join('')}${theirs.map(a => `<li><span class="foeown">${esc(a.name)} <small>theirs</small></span><span class="dots foeown">${'●'.repeat(a.free)}</span></li>`).join('')}</ul></div>` : ''}
+    <div><div class="sec"><span>Skills</span></div><div class="skills">${[4,3,2,1].map(r => `<b>${LADDER[r]} (+${r})</b><span>${Object.keys(C.skills).filter(s => C.skills[s] === r).join(', ')}</span>`).join('')}</div></div>
+    <div><div class="sec"><span>Stunts</span><span>hover to read</span></div><ul class="stunts">${C.stunts.map(([n,t]) => `<li title="${esc(t)}">${esc(n)}</li>`).join('')}</ul></div>
+    <div><div class="sec"><span>Stress</span><span>1 shift per box</span></div><div class="trk"><b>Physical</b>${C.stress.map((x,i) => `<span class="${x ? 'on' : ''}">${i+1}</span>`).join('')}</div></div>
+    <div><div class="sec"><span>Consequences</span></div><div class="cons">${SEV.map(([k,v]) => `<small>${v} ${k}</small><span>${C.cons[k] ? esc(C.cons[k]) : '·'}</span>`).join('')}</div></div>
+    ${contest.on ? `<div><div class="sec"><span>Contest</span><span>first to 3</span></div><div class="trk"><b>You</b>${[0,1,2].map(i => `<span class="${i < contest.you ? 'on' : ''}"></span>`).join('')}</div><div class="trk"><b>Sable</b>${[0,1,2].map(i => `<span class="${i < contest.foe ? 'on' : ''}"></span>`).join('')}</div></div>` : ''}
+    ${linemen ? `<div><div class="sec"><span>Linemen</span><span>2 stress each</span></div>${linemen.map(l => `<div class="trk"><b>${l.short}</b>${l.out ? '<small>taken out</small>' : l.stress.map(x => `<span class="${x ? 'on' : ''}"></span>`).join('')}</div>`).join('')}</div>` : ''}
+    ${foePool ? `<div class="sec"><span>Opposition fate points</span><span>${foePool}</span></div>` : ''}
+    ${C.storm ? `<div><div class="sec"><span>The Gathering Storm</span><span>${C.storm}/6</span></div><div class="trk">${[0,1,2,3,4,5].map(i => `<span class="${i < C.storm ? 'on' : ''}"></span>`).join('')}</div></div>` : ''}`;
+}
+
+/* ---------- the adventure ---------- */
+async function start(){
+  nar('<strong>Fate</strong> is a game of proactive, competent heroes in dramatic stories. You describe what your hero does, roll four Fate dice when it matters, and bend the story with <strong>aspects</strong>: short phrases that are always true. <strong>Fate Condensed</strong> is the whole game in a slim book.');
+  rule('Fate dice have two + faces, two − faces, and two blanks. Roll four, add them up (−4 to +4), and add your skill. Compare that effort to a difficulty or to an opponent\'s roll.');
+  nar('It\'s 1936. Choose who boards the Silver Meridian.');
+  const pick = await choose(Object.entries(PCS).map(([k,p]) => ({id:k, label:p.name, sub:`${p.title}. Best: ${Object.keys(p.skills).filter(s => p.skills[s] >= 3).map(s => `${s} +${p.skills[s]}`).join(', ')}`, say:`I'll play ${p.name}.`})));
+  const P = PCS[pick];
+  const ph = P.skills.Physique || 0;
+  const stressN = 3 + (ph >= 3 ? 3 : ph >= 1 ? 1 : 0);
+  C = {...P, key:pick, fp:3, refresh:3, stress:Array(stressN).fill(false), cons:{mild:null, moderate:null, severe:null}, storm:0, first:false, late:false, hidden:false, cell:false, behind:false, actsFirst:false};
+  render();
+  nar(esc(P.blurb));
+  rule('A Fate Condensed hero has five aspects (high concept, trouble, relationship, two more), a skill pyramid (one Great +4, two Good +3, three Fair +2, four Average +1), three stunts, and a refresh of 3: you start with 3 fate points. Physique sets your physical stress boxes.');
+  await cont('Board the train');
+  await s1();
+}
+
+async function s1(){
+  sceneBreak(1, 'Platform Nine');
+  nar('Rain hammers the glass roof of Port Lumen Union Station. Under it waits the <strong>Silver Meridian</strong>: nine cars of polished aluminum, a streamlined nose, one blazing headlamp. Tomorrow at noon the Halcyon Electrical Exposition opens on the far side of the mountains.');
+  nar('<strong>Dr. Ilse Varga</strong> stands at the foot of car four, fur collar up against the damp, a steel case chained to her left wrist.');
+  npc('Dr. Varga', '"Inside is the Aurora Cell. Glass and copper, the size of a grapefruit. It can drink a lightning bolt and keep it. Tomorrow I show it to the world, so that no one man can ever own it. Tonight, you make sure I live to do that."');
+  nar('A porter in a crisp red cap bumps her elbow, apologizes, and moves on. His shoes are brand new. His hands are not a porter\'s hands.');
+  const c = await choose([
+    {id:'Notice', label:'Watch his hands, his shoes, his coat', sub:`Create an advantage with Notice ${lad(sk('Notice'))} vs Fair (+2)`, say:'I watch where his hands go.'},
+    {id:'Empathy', label:'Read his face as he apologizes', sub:`Create an advantage with Empathy ${lad(sk('Empathy'))} vs Fair (+2)`, say:'I watch his eyes when he says sorry.'}]);
+  rule('Create an advantage makes or discovers an aspect. Success gives you one free invoke on it (two with style). A tie gives you a boost. Fail, and the opposition may get the advantage instead.');
+  const r = await roll({act:'advantage', skill:c, vs:{diff:2}, tags: c === 'Notice' ? ['notice'] : ['notice','social']});
+  if (hit(r)){
+    addAspect('The Porter Is a Plant', {free: r.res === 'style' ? 2 : 1, tags:['linemen','notice']});
+    nar(`He tucks a rubber-handled baton deeper into his coat as he goes. You write down ${A('The Porter Is a Plant')}${r.res === 'style' ? ' with two free invokes' : ' with a free invoke'}. When he makes his move, you'll be ready. <strong>You'll act first when trouble starts.</strong>`);
+    C.first = true;
+  } else if (r.res === 'tie'){ await gainBoost('Something Off About That Porter'); nar('Something is wrong with him. You can\'t say what.'); }
+  else { addAspect('They Know Who We Are', {free:1, foe:true, temp:true}); nar(`He catches you looking, and smiles. The opposition now holds a free invoke on ${A('They Know Who We Are')}.`); }
+  nar('A real porter takes your bags: broad shoulders, gray temples, a sergeant\'s posture. His brass badge reads <strong>Otis Bell</strong>.');
+  npc('Otis Bell', '"Twenty-two years on this line, and I know every rivet. You need anything on board, you ask for me."');
+  nar('At 11:59 the whistle screams, and the Meridian pulls out into the rain.');
+  clearScene();
+  await cont('To the dining car');
+  await s2();
+}
+
+async function s2(){
+  sceneBreak(2, 'The Dining Car');
+  foePool = 1; render();
+  nar('Twelve-forty. Walnut, white linen, little green-shaded lamps. Dr. Varga has locked herself in compartment C. Outside, the mountains rise black against the storm.');
+  nar('A man sits down across from you without asking. Dove-gray suit, dove-gray gloves, a silver tie pin shaped like a crane in flight. He orders nothing.');
+  npc('Mr. Sable', '"Call me Mr. Sable. My employer admires Dr. Varga\'s work. He\'d like to admire it more closely. There\'s five thousand dollars in this envelope, and all you have to do is get very interested in your soup between now and the tunnel."');
+  rule('Solo play: named villains get one fate point per scene to invoke their own aspects. It shows on your sheet as the opposition\'s fate points.');
+  const CP = {
+    rosa:{asp:'Owes Every Bookie in Port Lumen', txt:'Sable lays your gambling markers on the tablecloth, every one of them. He bought your debts this afternoon.', acc:'"Keep them," you say. "For now." He tucks them away like a man pocketing a gun. He\'ll call them in when it hurts most.', after: () => addAspect('Sable Holds My Markers', {foe:true})},
+    quill:{asp:'Can\'t Leave a Mystery Alone', txt:'A woman in the next booth is reading a letter written in a cipher you almost recognize. Almost.', acc:'You lean over to read it, just for a moment. It\'s a very long moment. When the lights die, you\'ll be late.', after: () => { C.late = true; }},
+    jinx:{asp:'Every Cop on the Line Knows My Face', txt:'Inspector Hobbes of the railway police has been staring at you since the soup. He knows the Silk Glove when he sees her.', acc:'Hobbes walks you to the conductor\'s office for "a few questions." When the lights die, you\'ll be late.', after: () => { C.late = true; }},
+  }[C.key];
+  showRule('compel');
+  rule(`A compel: one of your aspects makes your life harder. Accept and take a fate point, or pay a fate point to refuse. This one is on your trouble, ${A(CP.asp)}.`);
+  nar(CP.txt);
+  const cc = await choose([
+    {id:'acc', label:'Accept the compel', sub:'Take a fate point. Things get complicated.', cls:'fp', say:'Fine. Let\'s see where this goes.'},
+    {id:'ref', label:'Refuse the compel', sub: C.fp ? 'Pay a fate point and avoid it' : 'You have no fate points, so you can\'t refuse', disabled: !C.fp, say:'Not tonight.'}]);
+  used.add('compel');
+  if (cc === 'acc'){ C.fp++; nar(CP.acc); CP.after(); render(); }
+  else { C.fp--; render(); nar('You don\'t take the bait. It cost you, but your head is clear.'); }
+
+  const nSkill = C.key === 'quill' ? 'Academics' : 'Provoke';
+  const opts = [
+    {id:'read', label:'Read him', sub:`Create an advantage with Empathy ${lad(sk('Empathy'))} vs Sable's Deceive, Good (+3)`, say:'I study him. What does he actually want?'},
+    {id:'needle', label: C.key === 'quill' ? 'Lecture him (Lecture Hall Voice)' : 'Needle him', sub:`Create an advantage with ${nSkill} ${lad(sk(nSkill))} vs Sable's Will, Fair (+2)`, say: C.key === 'quill' ? '"Young man, bribery is the last refuge of the intellectually bankrupt."' : '"Five thousand? Who\'s your boss, a dime-store villain?"'},
+    {id:'play', label:'Play along', sub:`Overcome with Deceive ${lad(sk('Deceive'))} vs Sable's Empathy, Fair (+2)${C.key === 'jinx' ? ', Who, Me? +2' : ''}`, say:'I reach for the envelope. "What tunnel?"'},
+  ];
+  if (C.key === 'jinx') opts.push({id:'lift', label:'Light Fingers: lift his ticket', sub:'Stunt: once per scene, declare you already pocketed something. No roll.', say:'I smile. My hand is already in his coat.'});
+  const c = await choose(opts);
+  if (c === 'lift'){
+    used.add('stunt');
+    nar(`When Sable stands, his ticket is in your glove. Car four, berth nine: next to Varga's compartment. Pencilled on the back: <em>"Gallows Tunnel. Lights."</em> You write ${A('I Know Their Plan')} with a free invoke, and you'll act first when the lights go out.`);
+    addAspect('I Know Their Plan', {free:1, tags:['linemen','sable']}); C.first = true; C.late = false;
+  } else if (c === 'read'){
+    const r = await roll({act:'advantage', skill:'Empathy', vs:{foe:'Sable', skill:'Deceive', rating:3}, tags:['social','notice'], foeAspects:['Courteous Until the Last Second']});
+    if (hit(r)){ addAspect('The Copper King\'s Knife', {free: r.res === 'style' ? 2 : 1, tags:['sable']}); nar(`The tie pin. The crane. He works for <strong>Augustus Crane</strong>, the Copper King of Crane Consolidated Power. You've discovered Sable's hidden aspect, ${A('The Copper King\'s Knife')}, and you hold a free invoke on it.`); }
+    else if (r.res === 'tie'){ await gainBoost('I Saw Him Blink'); nar('At the word "employer," he blinked. Just once.'); }
+    else sableFail();
+  } else if (c === 'needle'){
+    if (C.key === 'quill'){ used.add('stunt'); rule('Lecture Hall Voice: Quill\'s stunt lets him use Academics instead of Provoke for this, once per scene.'); }
+    const r = await roll({act:'advantage', skill:nSkill, vs:{foe:'Sable', skill:'Will', rating:2}, tags:['social','smart','grit'], foeAspects:['Courteous Until the Last Second']});
+    if (hit(r)){ addAspect('Lost His Composure', {free: r.res === 'style' ? 2 : 1, tags:['sable']}); nar(`For one second the smile goes out like a light, and his gloved hand closes on the butter knife. ${A('Lost His Composure')}. That free invoke will come in handy later.`); }
+    else if (r.res === 'tie'){ await gainBoost('Under His Skin'); nar('A muscle jumps in his jaw. Nothing more.'); }
+    else sableFail();
+  } else {
+    const adds = C.key === 'jinx' ? [[2,'Who, Me?']] : [];
+    const r = await roll({act:'overcome', skill:'Deceive', vs:{foe:'Sable', skill:'Empathy', rating:2}, adds, tags:['lie','social'], foeAspects:['Courteous Until the Last Second']});
+    if (hit(r)){
+      C.first = true; C.late = false;
+      nar('He believes you\'re bought. As he slides the envelope across, he murmurs, "The lights in the Gallows Tunnel are notoriously unreliable." <strong>Now you know when they\'ll strike. You\'ll act first.</strong>');
+      if (r.res === 'style') await gainBoost('He Thinks I\'m Bought');
+    } else if (r.res === 'tie'){ nar('He half believes you. He keeps the envelope, and you keep a small edge.'); await gainBoost('He Thinks I Might Be Bought'); }
+    else sableFail();
+  }
+  nar('Sable rises, buttons his jacket, and walks toward the rear of the train. At 1:14 the Meridian plunges into the Gallows Tunnel: two miles of black rock under Mount Gallow.');
+  clearScene(); foePool = 0; render();
+  await cont('Into the tunnel');
+  await s3();
+}
+function sableFail(){
+  addAspect('They Know Who We Are', {free:1, foe:true, temp:true});
+  npc('Mr. Sable', '"Pity." He tucks the envelope away. The opposition gains a free invoke on <span class="asp">They Know Who We Are</span>.');
+}
+
+async function s3(){
+  sceneBreak(3, 'Lights Out in the Gallows Tunnel');
+  nar('The tunnel swallows the train\'s roar and throws it back doubled. Then every light in the Meridian dies at once. Somewhere ahead, a woman screams. <strong>Car four.</strong>');
+  nar('By the blue fizz of an electric spark you see two men in long black rubber coats working a pry bar into the door of compartment C. Each carries a baton with a copper tip that crackles when it moves. Crane\'s <strong>Linemen</strong>.');
+  addAspect('Pitch-Dark Tunnel', {tags:['sneak','dark'], sceneOnly:true});
+  addAspect('Narrow Sleeper Corridor', {tags:['fight','grit'], sceneOnly:true});
+  rule('Solo play: when the story asks a question, roll the Meridian Oracle. Four Fate dice: +1 or more is yes, 0 is "yes, but," −1 or less is no. Is Otis Bell close enough to help? It\'s likely, so add +1.');
+  const row = add('rollrow', '<span class="lbl"><b>Meridian Oracle:</b> Is Otis Bell nearby? (likely, +1)</span>');
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  const ds = [dieEl(), dieEl(), dieEl(), dieEl()]; dice.append(...ds);
+  await waitRoll('Meridian Oracle (four Fate dice + 1)', 'Ask the oracle');
+  const o = (await throwDice(ds)) + 1; used.add('oracle');
+  const ans = o >= 3 ? 'Yes, and' : o >= 1 ? 'Yes' : o === 0 ? 'Yes, but' : o >= -2 ? 'No' : 'No, and';
+  const os = document.createElement('span'); os.className = 'result ' + (o >= 1 ? 'ok' : o === 0 ? 'mix' : 'bad'); os.textContent = `${sgn(o)}: ${ans}`; row.appendChild(os);
+  let otis = 0;
+  if (o >= 1){ otis = 1; nar(`Otis Bell is right behind you with a railroad lantern. "I've got your back, friend."`); if (o >= 3){ nar('He swings the lantern high, and for a moment the Linemen are blinded.'); await gainBoost('Otis\'s Lantern'); } }
+  else if (o === 0){ otis = 1; nar('Otis is coming, but he\'s at the far end of the car, and the Linemen see him coming. They\'ll act first.'); C.first = false; }
+  else if (o <= -3){ nar('No sign of Otis. And one of the Linemen has already seen you.'); C.first = false; }
+  else nar('No sign of Otis. You\'re on your own.');
+  if (otis){ showRule('teamwork'); rule('Teamwork: an ally with at least Average (+1) in the skill adds +1 to your roll. Otis will add +1 to your first attack.'); }
+  linemen = [{name:'the Lineman with the pry bar', short:'Pry bar', stress:[false,false], out:false},{name:'the Lineman with the spark-stick', short:'Spark-stick', stress:[false,false], out:false}];
+  render();
+  showRule('turnorder');
+  const pcFirst = C.first && !C.late;
+  if (C.late) nar('You arrive late, out of breath. The Linemen are already turning toward you.');
+  rule(`Conflict! Turn order in Fate Condensed: the situation decides who goes first, then whoever acts picks who goes next. ${pcFirst ? 'You saw this coming, so you act first.' : 'They have the jump on you, so the Linemen act first.'} Linemen are minor foes: Fair (+2) Fight, Average (+1) Athletics, two stress boxes, no consequences.`);
+  let exch = 0, lastWasPc = pcFirst;
+  const alive = () => linemen.filter(l => !l.out);
+  const consN = {mild:'Spark-Burned Hand', moderate:'Cracked Ribs', severe:'Concussion'};
+  while (alive().length){
+    exch++;
+    const order = lastWasPc ? ['pc', ...alive()] : [...alive(), 'pc'];
+    C.actsFirst = order[0] === 'pc';
+    for (const who of order){
+      if (!alive().length) break;
+      if (who === 'pc'){
+        const res = await pcTurn(otis); if (res === 'otisUsed') otis = 0;
+      } else if (!who.out){
+        const res = await linemanTurn(who, consN);
+        if (res === 'out' || res === 'conceded') return s3after(res);
+      }
+    }
+    lastWasPc = order[order.length - 1] === 'pc';
+    if (exch === 1 && alive().length) rule(`End of the exchange. ${lastWasPc ? 'You acted last, so you pick who starts the next one: you.' : 'A Lineman acted last, so the opposition picks: the Linemen go first next exchange.'}`);
+    if (exch >= 7 && alive().length){ nar('The last Lineman looks at you, looks at his partner on the floor, and runs. He concedes the fight.'); alive().forEach(l => l.out = true); render(); }
+  }
+  return s3after('won');
+}
+async function pcTurn(otis){
+  const t = linemen.filter(l => !l.out)[0];
+  const tFree = situ.some(a => !a.foe && a.free > 0 && (a.tags.includes('linemen') || a.boost));
+  const opts = [];
+  if (C.hidden && C.key === 'jinx') opts.push({id:'stealth', label:`Knife in the Dark: strike ${t.name} from nowhere`, sub:`Attack with Stealth ${lad(sk('Stealth'))} vs his Athletics, Average (+1)`, say:'I come out of the dark behind him.'});
+  if (sk('Shoot') >= 2) opts.push({id:'shoot', label:`Shoot ${t.name}`, sub:`Attack with Shoot ${lad(sk('Shoot'))} vs his Athletics (+1)${C.key === 'rosa' && C.actsFirst ? ', Twin .38s +2' : ''}`, say:'I fan the hammer in the dark.'});
+  opts.push({id:'fight', label:`Hit ${t.name}`, sub:`Attack with Fight ${lad(sk('Fight'))} vs his Athletics (+1)${C.key === 'quill' && tFree ? ', The Old One-Two +2' : ''}`, say: C.key === 'quill' ? 'Left jab, right cross. Textbook.' : 'I go at him with everything I\'ve got.'});
+  if (!situ.some(a => a.name === 'Lost in the Dark') && !C.hidden) opts.push({id:'dark', label:'Vanish into the dark', sub:`Create an advantage with Stealth ${lad(sk('Stealth'))} vs Fair (+2)`, say:'I drop low and let the dark have me.'});
+  if (!situ.some(a => a.name === 'One at a Time')) opts.push({id:'narrow', label:'Use the narrow corridor', sub:`Create an advantage with Physique ${lad(sk('Physique'))} vs Fair (+2)`, say:'I plant myself where only one can reach me.'});
+  const smart = sk('Academics') >= sk('Crafts') ? 'Academics' : 'Crafts';
+  if (!situ.some(a => a.name === 'Shorting Out in the Damp')) opts.push({id:'short', label:'Study their batons', sub:`Create an advantage with ${smart} ${lad(sk(smart))} vs Fair (+2)${C.key === 'quill' ? ', I\'ve Read About This +2' : ''}`, say:'Rubber coats, copper tips, a wet tunnel. I know that fizz.'});
+  const c = await choose(opts);
+  if (c === 'dark' || c === 'narrow' || c === 'short'){
+    const skill = c === 'dark' ? 'Stealth' : c === 'narrow' ? 'Physique' : smart;
+    const adds = c === 'short' && C.key === 'quill' ? [[2,'I\'ve Read About This']] : [];
+    const name = c === 'dark' ? 'Lost in the Dark' : c === 'narrow' ? 'One at a Time' : 'Shorting Out in the Damp';
+    const r = await roll({act:'advantage', skill, vs:{diff:2}, adds, tags: c === 'dark' ? ['sneak','dark'] : c === 'narrow' ? ['grit','fight'] : ['smart','machine']});
+    if (hit(r)){
+      addAspect(name, {free: r.res === 'style' ? 2 : 1, tags:['linemen'], sceneOnly:true});
+      nar(c === 'dark' ? `You're gone. They swing at shadows. ${A(name)}.` : c === 'narrow' ? `They can only come at you one at a time. ${A(name)}.` : `Water beads on the copper tips. Every swing sputters. ${A(name)}: their batons are weaker now.`);
+      if (c === 'dark') C.hidden = true;
+    } else if (r.res === 'tie') await gainBoost(c === 'dark' ? 'A Moment Unseen' : 'Half a Step Ahead');
+    else { nar('It doesn\'t work, and it costs you. The Linemen get the advantage instead.'); addAspect('Off Balance', {free:1, foe:true, by:'Lineman', temp:true, sceneOnly:true}); }
+    return 'ok';
+  }
+  const skill = c === 'stealth' ? 'Stealth' : c === 'shoot' ? 'Shoot' : 'Fight';
+  const adds = [];
+  if (otis){ adds.push([1,'Otis, teamwork']); used.add('teamwork'); }
+  if (c === 'shoot' && C.key === 'rosa' && C.actsFirst) adds.push([2,'Twin .38s']);
+  if (c === 'fight' && C.key === 'quill' && tFree) adds.push([2,'The Old One-Two']);
+  if (c === 'stealth'){ used.add('stunt'); rule('Knife in the Dark: Jinx\'s stunt lets her attack with Stealth while they don\'t know where she is.'); }
+  const r = await roll({act:'attack', skill, vs:{foe:'Lineman', skill:'Athletics', rating:1}, adds, tags: c === 'shoot' ? ['shoot'] : c === 'stealth' ? ['sneak','dark'] : ['fight','grit'], onFoe:'linemen'});
+  if (c === 'stealth') C.hidden = false;
+  if (r.res === 'fail') nar('He twists aside. Your blow finds only rubber coat.');
+  else if (r.res === 'tie'){ nar('You barely connect. He flinches.'); await gainBoost('He Flinched'); }
+  else {
+    let h = r.shifts;
+    if (r.res === 'style'){ const ch = await choose([{id:'all', label:`Deal the full ${h}-shift hit`, say:false},{id:'boost', label:`Deal ${h-1} shifts and take a boost`, sub:'An option on success with style', say:false}]); if (ch === 'boost'){ h--; await gainBoost('Pressing the Attack'); } }
+    const free = t.stress.filter(x => !x).length;
+    if (h > free){ t.out = true; used.add('takeout'); nar(`${h} shifts: more than his stress can absorb. ${cap(t.name)} goes down hard and stays down. <strong>Taken out.</strong>`); }
+    else { let n = h; for (let i = 0; i < 2 && n; i++) if (!t.stress[i]){ t.stress[i] = true; n--; } nar(`A solid hit. He marks ${h} stress and staggers, but he's still up.`); }
+    render();
+  }
+  return otis ? 'otisUsed' : 'ok';
+}
+async function linemanTurn(l, consN){
+  const skill = sk('Athletics') >= sk('Fight') ? 'Athletics' : 'Fight';
+  const ch = await choose([
+    {id:'def', label:`Defend against ${l.name}`, sub:`He swings his spark-stick. You defend with ${skill} ${lad(sk(skill))}`, say:false},
+    {id:'concede', label:'Concede the fight', sub:'Before the dice hit the table: lose on your own terms and gain fate points', say:'Enough. I\'m out of here.'}]);
+  if (ch === 'concede'){ used.add('concede'); showRule('concede'); const n = 1 + ['mild','moderate','severe'].filter(k => C.cons[k]).length; C.fp += n; render(); nar(`You concede. You take ${n} fate point${n > 1 ? 's' : ''}, and you decide how you exit: you dive through the connecting door and slam it behind you.`); return 'conceded'; }
+  nar(`${cap(l.name)} swings at you. Copper crackles.`);
+  const mod = situ.some(a => a.name === 'Shorting Out in the Damp') ? -1 : 0;
+  if (mod && !used.has('damp')){ used.add('damp'); rule('Shorting Out in the Damp is true, so their batons sputter: the Linemen attack at −1 for the rest of the scene. Aspects are always true.'); }
+  const r = await roll({act:'defend', skill, vs:{foe:'Lineman', skill:'Fight', rating:2 + mod}, tags:['move','grit','fight','sneak'], onFoe:'linemen'});
+  if (r.res === 'style'){ nar('You slip the blow and leave him wide open.'); await gainBoost('Wide Open'); return 'ok'; }
+  if (r.res === 'success'){ nar('You block it. Sparks spray across the corridor.'); return 'ok'; }
+  if (r.res === 'tie'){ nar('It glances off you. He grins, sensing an opening.'); addAspect('Rattled', {free:1, foe:true, by:'Lineman', temp:true, sceneOnly:true}); rule('A tie on an attack gives the attacker a boost: the Lineman holds a free invoke on Rattled.'); return 'ok'; }
+  return await takeHit(-r.shifts, 'The Lineman', consN, 'Lineman');
+}
+async function s3after(res){
+  linemen = null; render();
+  if (res === 'won'){ nar('The last Lineman drops. The train bursts out of the tunnel into the storm, and the lights flicker back on.'); }
+  else if (res === 'out'){
+    nar('The world goes white, then black. You wake on the corridor floor with the lights back on. The Linemen are gone.');
+    C.behind = true;
+    if (!C.cons.mild){ C.cons.mild = 'Head Ringing Like a Bell'; addAspect('Head Ringing Like a Bell', {free:1, foe:true, by:'Sable'}); used.add('consequence'); nar(`Being taken out means the winners decide your fate. You take the mild consequence ${A('Head Ringing Like a Bell')}, and you've lost time: Sable starts the next scene ahead.`); }
+    else nar('Being taken out means the winners decide your fate: you\'ve lost time, and Sable starts the next scene ahead.');
+  }
+  else nar('Through the door you hear the pry bar win, then running feet. When the lights flicker back on, the Linemen are gone.');
+  nar('Compartment C is open. The window is smashed. Dr. Varga is on the floor with blood in her hair and her left wrist bare.');
+  npc('Dr. Varga', '"Sable. Through the window, onto the roof. He has the Cell. <em>Go!</em>"');
+  C.stress = C.stress.map(() => false); C.hidden = false; clearScene();
+  rule('End of scene: clear all your stress boxes. Consequences stay until they heal.');
+  await cont('Climb onto the roof');
+  await s4();
+}
+
+const ROOF = ['Low Bridge!','Lightning Strikes the Rail','Choking Smoke from the Stack','The Train Takes a Hard Curve','Ice on the Roof','The Airship\'s Searchlight'];
+async function s4(){
+  sceneBreak(4, 'The Roof at Ninety Miles an Hour');
+  foePool = 1; render();
+  nar('The wind on the roof of the Silver Meridian is a living thing, and it wants you off. Rain comes sideways. The mountain rushes past close enough to touch. Fifty feet ahead, a dove-gray figure runs for the front of the train with a steel case under his arm.');
+  nar('Above him, something huge and black slides out of the clouds: an <strong>airship</strong>, running dark, <em>Albatross</em> painted on her flank in copper letters. A cable drops from her gondola. On the end swings a copper grapnel, crackling with blue fire. Sable is running for it.');
+  addAspect('Ninety Miles an Hour Through the Mountains', {tags:['move','grit'], sceneOnly:true});
+  showRule('contest');
+  contest.on = true; contest.you = 0; contest.foe = C.behind ? 1 : 0; render();
+  rule(`A contest: you and Sable both roll overcome each exchange. Higher effort marks a victory (two with style). First to three wins. A tie means no victory and an unexpected twist. Sable is also throwing knives: when he wins an exchange, you take a hit equal to his margin.${C.behind ? ' You start behind: Sable already has one victory.' : ''}`);
+  const consN = {mild:'Knife in the Shoulder', moderate:'Deep Gash Along the Ribs', severe:'Bleeding Badly'};
+  let n = 0;
+  while (contest.you < 3 && contest.foe < 3){
+    n++;
+    const opts = [
+      {id:'Athletics', label:'Run him down', sub:`Athletics ${lad(sk('Athletics'))}${C.key === 'rosa' ? ', Wingwalker +2' : ''}`, say:'I sprint along the roof and leap the gap between cars.'},
+      {id:'Physique', label:'Bull through the wind', sub:`Physique ${lad(sk('Physique'))}`, say:'Head down, shoulders square, straight into the gale.'},
+      C.key === 'jinx' ? {id:'Stealth', label:'Get ahead of him unseen', sub:`Stealth ${lad(sk('Stealth'))}, through the dark between the cars`, say:'I drop between the cars and come up ahead of him.'}
+                       : {id:'Shoot', label:'Drive him away from the hook', sub:`Shoot ${lad(sk('Shoot'))}`, say:'I put a bullet between him and that grapnel.'},
+    ];
+    const advOpt = !situ.some(a => a.name === 'A Signal Gantry Coming Up Fast') && n <= 3 ? [{id:'adv', label:'First, look ahead for an edge', sub:`Create an advantage with Notice ${lad(sk('Notice'))} vs Fair (+2), then roll`, say:'I glance down the line. What\'s coming?'}] : [];
+    let c = await choose([...opts, ...advOpt]);
+    if (c === 'adv'){
+      const r = await roll({act:'advantage', skill:'Notice', vs:{diff:2}, tags:['notice']});
+      if (hit(r)){ addAspect('A Signal Gantry Coming Up Fast', {free: r.res === 'style' ? 2 : 1, tags:['sable','move'], sceneOnly:true}); nar(`A steel signal gantry spans the track ahead. Sable hasn't seen it. ${A('A Signal Gantry Coming Up Fast')}.`); }
+      else if (r.res === 'tie') await gainBoost('Eyes on the Track');
+      else {
+        rule('In a contest, a failed advantage costs you: forfeit your roll this exchange, or give Sable a free invoke.');
+        const f = await choose([{id:'forfeit', label:'Forfeit this exchange\'s roll', sub:'Sable marks a victory', say:false},{id:'give', label:'Give Sable a free invoke and roll anyway', say:false}]);
+        if (f === 'forfeit'){ contest.foe++; render(); nar('You lose a step. Sable marks a victory.'); continue; }
+        addAspect('Lost My Footing', {free:1, foe:true, by:'Sable', temp:true, sceneOnly:true});
+      }
+      c = await choose(opts);
+    }
+    const adds = c === 'Athletics' && C.key === 'rosa' ? [[2,'Wingwalker']] : [];
+    const r = await roll({act:'overcome', skill:c, vs:{foe:'Sable', skill:'Athletics', rating:4}, adds, tags: c === 'Shoot' ? ['shoot'] : c === 'Stealth' ? ['sneak'] : ['move','grit'], onFoe:'sable', foeAspects:['The Copper King\'s Knife']});
+    used.add('contest');
+    if (r.shifts > 0){ const v = r.shifts >= 3 ? 2 : 1; contest.you += v; render(); nar(v === 2 ? 'You close the gap in three huge strides. <strong>Two victories.</strong>' : 'You gain on him. <strong>A victory.</strong>'); }
+    else if (r.shifts < 0){
+      const v = -r.shifts >= 3 ? 2 : 1; contest.foe += v; render();
+      nar(`Sable pulls ahead${v === 2 ? ' by yards' : ''} and, without breaking stride, flicks a knife back at you. <strong>Sable marks ${v === 2 ? 'two victories' : 'a victory'}.</strong>`);
+      const h = await takeHit(-r.shifts, 'Sable', consN, 'Sable');
+      if (h === 'out'){ contest.foe = 3; render(); break; }
+    } else {
+      const tw = ROOF[d(6) - 1];
+      addAspect(tw, {tags:['move','grit','sable'], sceneOnly:true}); used.add('twist');
+      nar(`Neither of you gains. Then, an unexpected twist: ${A(tw)}. It's a new aspect on the scene. Anyone can invoke it for a fate point.`);
+    }
+    if (n >= 9 && contest.you < 3 && contest.foe < 3){ contest.foe = 3; render(); nar('The train is running out of roof.'); }
+  }
+  const won = contest.you >= 3;
+  contest.on = false; foePool = 0;
+  if (won){
+    C.cell = true;
+    nar('You hit Sable at the knees just as he grabs the hook. The case skids across the roof and you pin it with your whole body. Sable is yanked up into the storm, empty-handed, gray suit whipping, shouting something the wind tears away.');
+    addAspect('I Hold the Aurora Cell', {tags:['varga']});
+  } else {
+    nar('Sable clips the case to the hook and is hauled up with it, saluting you with two fingers as he rises into the dark.');
+    addAspect('Crane Has the Cell', {foe:true, tags:[]});
+    C.storm = 1;
+    rule('This adventure adds a countdown, the Gathering Storm: six boxes that measure how close Crane is to calling down his storm. Losing the Cell marks the first box.');
+  }
+  render();
+  nar('The airship turns away into the clouds. And two miles ahead, where the rails cross the Corvid Gorge on a spindly iron trestle, <strong>a red flare is burning in the middle of the bridge.</strong>');
+  C.stress = C.stress.map(() => false); clearScene();
+  await cont('End of Act One');
+  await ending();
+}
+
+async function ending(){
+  $('#sceneName').textContent = 'End of Act One';
+  const ALL = [['roll','Rolling four Fate dice + skill'],['overcome','Overcome'],['advantage','Create an advantage'],['attack','Attack'],['defend','Defend'],['invoke','Invoking an aspect'],['free','Spending a free invoke'],['compel','A compel'],['boost','Boosts'],['stunt','Using a stunt'],['stressbox','Stress'],['consequence','Consequences'],['contest','A contest'],['oracle','The solo oracle'],['teamwork','Teamwork'],['concede','Conceding']];
+  const store = (window.RDL_STORE && window.RDL_STORE.products && window.RDL_STORE.products[PRODUCT_ID]) || {};
+  const live = !!store.checkout;
+  add('endcard', `
+    <h3>Act One complete.</h3>
+    <p style="margin:0">${esc(C.name)} stands on the roof of the Silver Meridian ${C.cell ? 'with the Aurora Cell in a death grip' : 'with empty hands, watching an airship vanish into the storm'}, ${C.fp} fate point${C.fp === 1 ? '' : 's'} left, and a burning flare on the bridge ahead. The story continues in the full adventure.</p>
+    <div class="product">
+      <div class="cov"><small>A pulp solo adventure for Fate Condensed</small>Thunder on the Silver Meridian</div>
+      <div>
+        <strong style="font-family:var(--f-display);font-weight:400;font-size:20px">Thunder on the Silver Meridian: the complete adventure (PDF)</strong>
+        <ul>
+          <li>Acts Two and Three: the Corvid Gorge trestle, the airship Albatross, a duel on the catwalk, and the Copper King's Storm-Mast</li>
+          <li>Four endings, including one where the storm wins</li>
+          <li>All three ready-to-play heroes, plus guidance for playing Fate solo</li>
+          <li>New foes and allies with full Fate stats, and eight custom oracle tables</li>
+          <li>A Fate Condensed rules reference, so you need nothing else to play</li>
+          <li>Printable character and track sheets · 40 pages</li>
+        </ul>
+        <div class="buy">
+          ${live ? `<a class="buybtn" href="${esc(store.checkout)}" target="_blank" rel="noopener">Buy the PDF · ${esc(store.price || '')}</a>` : `<span class="buybtn" aria-disabled="true">PDF coming soon${store.price ? ' · ' + esc(store.price) : ''}</span>`}
+          <small>${live ? 'Instant download. Secure checkout by Lemon Squeezy.' : 'The store opens soon.'}</small>
+        </div>
+      </div>
+    </div>
+    <ul class="learned">${ALL.map(([k,t]) => `<li class="${used.has(k)?'':'no'}">${t}</li>`).join('')}</ul>
+    <p class="fine">Fate Condensed is published by Evil Hat Productions. Find it at <a href="https://www.faterpg.com/" target="_blank" rel="noopener">faterpg.com</a> or read the rules free at <a href="https://fate-srd.com/fate-condensed" target="_blank" rel="noopener">fate-srd.com</a>. This adventure is not an official Fate product.</p>`);
+  const c = await choose([{id:'again', label:'Play Act One again', cls:'primary', say:false}]);
+  if (c === 'again') location.reload();
+}
+
+if (matchMedia('(max-width: 880px)').matches) $('#sheet').open = false;
+start();
+})();
+</script>
+</body>
+</html>

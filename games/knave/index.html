@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Dead Baron's Mint: Knave Demo</title>
+<meta name="description" content="Play Act One of The Dead Baron's Mint, a solo adventure for Knave, free in your browser. Real saves, real dice, real item slots.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=Spectral:ital,wght@0,400;0,600;0,800;1,400&family=Work+Sans:wght@400;600;700&display=swap">
+<script src="../../store.js"></script>
+<style>
+/* Layout: torchlight in a dead man's mint. A worn stone page for the story, a quartermaster's ledger for the knave. */
+:root{
+  --night:#17151E; --night-2:#211E2A; --line:#3A3545; --stone:#EFEBE3; --stone-2:#E4DED2; --ink:#1A1820; --muted:#5F5A66;
+  --torch:#C9551F; --torch-2:#E8833A; --verd:#2F6B64; --verd-tint:#DDEAE7; --brass:#C9A24A; --ok:#2F7D4F; --bad:#A63A2A;
+  --f-display:"Uncial Antiqua", Georgia, serif; --f-body:"Spectral", Georgia, serif; --f-sans:"Work Sans", "Helvetica Neue", Arial, sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--night);color:var(--stone);font-family:var(--f-body);font-size:17px;line-height:1.55;
+  background-image:radial-gradient(ellipse at 85% -5%, rgba(232,131,58,.22) 0%, transparent 50%), radial-gradient(ellipse at 0% 100%, rgba(47,107,100,.18) 0%, transparent 55%)}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--torch-2);outline-offset:2px}
+.proto{background:#0E0C13;color:#B9B2C4;font-family:var(--f-sans);font-size:13px;padding-block:7px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));display:flex;gap:6px 16px;flex-wrap:wrap;justify-content:space-between}
+.proto b{color:#fff}
+.wrap{max-width:1160px;margin:0 auto;padding-block:22px 60px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+.masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px 24px;flex-wrap:wrap;margin-bottom:18px}
+.eyebrow{font-family:var(--f-sans);font-weight:700;font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--torch-2);margin:0 0 8px}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(34px,6vw,60px);line-height:1;margin:0;color:#F5EFE3}
+.tag{font-style:italic;color:#CFC8D6;margin:10px 0 0;max-width:56ch}
+.actchip{font-family:var(--f-sans);font-size:13px;border:1px solid var(--torch-2);color:var(--torch-2);padding:6px 12px;border-radius:999px;white-space:nowrap}
+
+.table{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start}
+.story{background:var(--stone);color:var(--ink);border-radius:6px;min-width:0;box-shadow:0 0 0 1px #000, 0 18px 40px rgba(0,0,0,.5)}
+.story-head{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;padding:10px 18px;border-bottom:2px solid var(--ink)}
+.story-head .scene{font-family:var(--f-display);font-size:20px;line-height:1.1}
+.toggles{display:flex;gap:4px 14px;flex-wrap:wrap}
+.toggle{font-family:var(--f-sans);font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--muted)}
+.toggle input{accent-color:var(--torch)}
+#log{padding:18px 20px 8px;display:flex;flex-direction:column;gap:12px}
+.line{max-width:66ch;overflow-wrap:anywhere}
+.who{font-family:var(--f-sans);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:1px;font-style:normal}
+.npc{border-left:4px solid var(--torch-2);padding-left:12px;font-style:italic}
+.you{align-self:flex-end;background:var(--ink);color:#F5EFE3;padding:7px 13px;border-radius:4px;max-width:min(54ch,90%);font-weight:600}
+.rule{font-family:var(--f-sans);font-size:14.5px;line-height:1.45;background:var(--verd-tint);border-left:4px solid var(--verd);padding:7px 11px;max-width:66ch}
+.rule::before{content:"RULE  ";font-weight:700;letter-spacing:.08em;color:var(--verd)}
+body.norules .rule{display:none}
+.scenebreak{font-family:var(--f-display);font-size:27px;line-height:1.1;border-top:2px solid var(--ink);padding-top:10px;margin-top:8px}
+.scenebreak small{display:flex;align-items:center;gap:8px;font-family:var(--f-sans);font-weight:700;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--torch)}
+.scenebreak small i{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--torch);color:#fff;font-style:normal;letter-spacing:0}
+.subscene{font-family:var(--f-display);font-size:20px;color:var(--verd)}
+
+.rollrow{display:flex;flex-direction:column;gap:8px;border:2px solid var(--ink);border-radius:4px;padding:10px 12px;max-width:66ch;background:#fff}
+.rollrow.gm{border-style:dashed;background:#F7F4EE}
+.rollrow .lbl{font-family:var(--f-sans);font-size:14px}
+.rollrow .lbl em{font-style:normal;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-right:6px}
+.dice{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.dice .sep{font-family:var(--f-sans);font-weight:700;font-size:15px;color:var(--muted)}
+.die{width:46px;height:46px;display:grid;place-items:center;position:relative;font-family:var(--f-sans);font-weight:700;font-size:17px;color:#fff}
+.die::before{content:"";position:absolute;inset:0;background:var(--ink)}
+.die span{position:relative}
+.die.d20::before{clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);background:var(--torch)}
+.die.d6::before{inset:4px;border-radius:7px}
+.die.d8::before{clip-path:polygon(50% 0,100% 50%,50% 100%,0 50%);background:var(--verd)}
+.die.d4::before{clip-path:polygon(50% 4%,98% 92%,2% 92%);background:var(--verd)}
+.die.d4 span{top:5px;font-size:15px}
+.die.d12::before{clip-path:polygon(50% 0,80% 10%,100% 38%,100% 65%,80% 92%,50% 100%,20% 92%,0 65%,0 38%,20% 10%);background:#6B4E8A}
+.die.low::before{background:var(--brass)} .die.low span{color:var(--ink)}
+.die.dim{opacity:.4}
+.ghost{opacity:.45} .ghost::before{background:#9A949F !important}
+.tumble{animation:tumble .12s linear infinite}
+@keyframes tumble{50%{transform:rotate(12deg) translateY(-2px)}}
+.score{font-family:var(--f-sans);font-weight:700;font-size:15px}
+.result{font-family:var(--f-sans);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:3px;color:#fff;align-self:flex-start}
+.result.ok{background:var(--ok)} .result.bad{background:var(--bad)} .result.n{background:var(--ink)} .result.mid{background:#9A6A12}
+.abroll{display:grid;grid-template-columns:44px auto 1fr;gap:4px 10px;align-items:center;font-family:var(--f-sans);font-size:14px}
+.abroll .die{width:34px;height:34px;font-size:14px}
+.abroll .dd{display:flex;gap:4px}
+.abroll b{font-size:13px;letter-spacing:.08em}
+.hpbar{font-family:var(--f-sans);font-size:13px;font-weight:700}
+
+#choices{position:sticky;bottom:0;background:var(--stone-2);border-top:2px solid var(--ink);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:10px;border-radius:0 0 6px 6px}
+#choices:empty{display:none}
+.opt{flex:1 1 220px;min-width:0;text-align:left;border:2px solid var(--ink);background:#fff;padding:9px 12px;cursor:pointer;border-radius:4px;box-shadow:3px 3px 0 var(--ink)}
+.opt:hover{background:#FBF4EA}
+.opt:active{transform:translate(3px,3px);box-shadow:none}
+.opt b{display:block;font-weight:800;line-height:1.25}
+.opt span{display:block;font-family:var(--f-sans);font-size:13px;color:var(--muted);margin-top:2px}
+.opt.primary{background:var(--torch);color:#fff}
+.opt.primary span{color:#FCE3D3}
+.opt.risk{background:#FFF1E2;border-color:var(--torch)}
+.opt:disabled{opacity:.45;cursor:not-allowed}
+.opt.roll{flex:1 1 100%;display:grid;grid-template-columns:auto 1fr;column-gap:14px;align-items:center;padding:12px 16px}
+.opt.roll::before{content:"";grid-row:span 2;width:28px;height:28px;background:#FCE3D3;clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);transition:transform .2s}
+.opt.roll:hover::before{transform:rotate(60deg)}
+.opt.roll b{font-size:19px}
+
+/* sheet: a quartermaster's ledger */
+.sheet{position:sticky;top:calc(12px + env(safe-area-inset-top,0px));background:var(--night-2);border:1.5px solid var(--line);border-radius:6px;min-width:0;color:var(--stone)}
+.sheet summary{list-style:none;cursor:pointer;padding:9px 14px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 10px;align-items:baseline;border-bottom:1px solid var(--line)}
+.sheet summary::-webkit-details-marker{display:none}
+.sheet .nm{font-family:var(--f-display);font-size:19px;color:#F5EFE3}
+.sheet .mini{font-family:var(--f-sans);font-size:12px;color:var(--torch-2)}
+.sheet-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:12px}
+.sec{font-family:var(--f-sans);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#A9A2B5;border-bottom:1px solid var(--line);padding-bottom:2px;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
+.abgrid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;text-align:center}
+.abgrid div{border:1.5px solid #4C4658;border-radius:5px;padding:3px 0}
+.abgrid small{display:block;font-family:var(--f-sans);font-size:9.5px;letter-spacing:.08em;color:#A9A2B5}
+.abgrid b{display:block;font-family:var(--f-sans);font-size:19px;line-height:1.1;color:#F5EFE3}
+.abgrid i{display:block;font-style:normal;font-family:var(--f-sans);font-size:10.5px;color:var(--torch-2)}
+.vitals{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;text-align:center;font-family:var(--f-sans)}
+.vitals div{background:#2A2634;border-radius:5px;padding:5px 2px}
+.vitals b{display:block;font-size:20px;color:#F5EFE3;line-height:1.1}
+.vitals small{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:#A9A2B5}
+.vitals .hurt b{color:#F08A6E}
+.slotgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}
+.slotgrid span{font-family:var(--f-sans);font-size:10.5px;line-height:1.2;border:1px dashed #4C4658;border-radius:3px;min-height:30px;padding:3px 4px;color:#6F6880;overflow:hidden;overflow-wrap:anywhere}
+.slotgrid span.f{border-style:solid;border-color:#7A7288;background:#2E2A38;color:#ECE6DA}
+.slotgrid span.cont{color:#8F879D}
+.slotgrid span.brass{background:#5A4A1E;border-color:var(--brass);color:#F3DFA4}
+.wpn{font-family:var(--f-sans);font-size:13px;color:#DCD5E5}
+.wpn b{color:#fff}
+.tarn{display:flex;gap:5px;align-items:center}
+.tarn span{width:20px;height:20px;border-radius:50%;border:2px solid var(--brass)}
+.tarn span.on{background:var(--brass)}
+.tarn small{font-family:var(--f-sans);font-size:12px;color:#A9A2B5;margin-left:6px}
+.spells{list-style:none;margin:0;padding:0;font-family:var(--f-sans);font-size:13px;display:flex;flex-direction:column;gap:3px}
+.spells li{display:flex;justify-content:space-between;gap:8px}
+.spells .used{color:#7A7288;text-decoration:line-through}
+.empty-sheet{font-style:italic;color:#A9A2B5;font-size:15px;margin:0}
+
+.endcard{border:2px solid var(--ink);background:#fff;padding:16px 18px;display:flex;flex-direction:column;gap:10px;max-width:66ch}
+.endcard h3{font-family:var(--f-display);font-weight:400;font-size:27px;line-height:1.05;margin:0}
+.product{display:grid;grid-template-columns:110px minmax(0,1fr);gap:14px;align-items:start;background:var(--night);color:var(--stone);padding:14px;border-radius:4px}
+.product .cov{background:#100E16;border:1px solid var(--line);aspect-ratio:8.5/11;display:flex;flex-direction:column;justify-content:flex-end;padding:8px;font-family:var(--f-display);font-size:14px;line-height:1.05;color:#F5EFE3;background-image:radial-gradient(circle at 70% 30%, rgba(232,131,58,.35), transparent 55%)}
+.product .cov small{font-family:var(--f-sans);font-size:7px;letter-spacing:.14em;color:var(--torch-2);margin-bottom:auto;text-transform:uppercase}
+.product ul{margin:.3em 0 .6em;padding-left:1.1em;font-size:15px}
+.buy{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.buybtn{display:inline-block;text-decoration:none;background:var(--torch-2);color:var(--night);font-weight:800;padding:10px 16px;border-radius:4px;border:0;cursor:pointer;font-size:16px}
+.buybtn[aria-disabled="true"]{background:#5F5A66;color:#E4DED2;cursor:not-allowed}
+.buy small{font-family:var(--f-sans);font-size:13px;color:#B9B2C4}
+.learned{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px 14px;font-size:15px}
+.learned li::before{content:"✓ ";font-weight:800;color:var(--ok)}
+.learned li.no{color:var(--muted)} .learned li.no::before{content:"○ ";color:var(--muted)}
+.fine{font-family:var(--f-sans);font-size:12.5px;color:var(--muted);line-height:1.5;margin:0}
+.foot{font-family:var(--f-sans);font-size:13px;margin-top:22px;max-width:90ch;line-height:1.55;color:#B9B2C4}
+
+@media (max-width: 880px){
+  .table{grid-template-columns:minmax(0,1fr)}
+  .sheet{order:-1;top:env(safe-area-inset-top,0px);z-index:5}
+  .sheet-body{max-height:60vh;overflow:auto}
+  #log{padding:14px 14px 6px}
+  .product{grid-template-columns:minmax(0,1fr)}
+  .product .cov{max-width:120px}
+  .opt{flex-basis:100%}
+}
+@media (prefers-reduced-motion: reduce){ .tumble{animation:none} }
+</style>
+</head>
+<body>
+<div class="proto"><span><a href="../../" style="color:inherit">← All demos</a> · <b>FREE DEMO</b> · Act One of three</span><span>Not an official Knave product</span></div>
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">A solo adventure for Knave</p>
+      <h1>The Dead Baron's Mint</h1>
+      <p class="tag">The coins in Cobble Ash are fresh from the die, bright as fire, and stamped with the face of a baron who died a hundred years ago. Everyone who saves them starts to turn to brass.</p>
+    </div>
+    <span class="actchip">Free: Act One · about 20 minutes</span>
+  </header>
+  <div class="table">
+    <main class="story" aria-live="polite">
+      <div class="story-head">
+        <span class="scene" id="sceneName">Before you begin</span>
+        <span class="toggles">
+          <label class="toggle"><input type="checkbox" id="rulesToggle" checked> Show rules</label>
+          <label class="toggle"><input type="checkbox" id="autoToggle"> Auto-roll</label>
+        </span>
+      </div>
+      <div id="log"></div>
+      <div id="choices"></div>
+    </main>
+    <details class="sheet" id="sheet" open>
+      <summary><span class="nm" id="sumName">Your knave</span><span class="mini" id="sumMini">not chosen yet</span></summary>
+      <div class="sheet-body" id="sheetBody"><p class="empty-sheet">Your knave appears here: six abilities, hit points, armor, item slots, copper, spellbooks, and Tarnish.</p></div>
+    </details>
+  </div>
+  <p class="foot">This work is based on Knave (version 1.0) by Ben Milton (<a href="https://questingbeast.itch.io/knave" target="_blank" rel="noopener">questingbeast.itch.io/knave</a>), licensed under the Creative Commons Attribution 4.0 International License (<a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">creativecommons.org/licenses/by/4.0/</a>). Changes were made: the rules are summarized and adapted in our own words for solo play. This is not an official Knave product and is not affiliated with or endorsed by Ben Milton or Questing Beast. The adventure "The Dead Baron's Mint" and its characters are © 2026 RPG Demo Library. All rights reserved.</p>
+</div>
+
+<script>
+(() => {
+const PRODUCT_ID = 'dead-barons-mint';
+const DEFAULTS = {name:"The Dead Baron's Mint", price:'$4', checkout:''};
+let autoRoll = false;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = s => document.querySelector(s);
+const logEl = $('#log'), choicesEl = $('#choices');
+const d = n => 1 + Math.floor(Math.random()*n);
+const sleep = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pick = a => a[Math.floor(Math.random()*a.length)];
+
+try { if (localStorage.getItem('knv-rules') === 'off') { $('#rulesToggle').checked = false; document.body.classList.add('norules'); } } catch(e){}
+try { if (localStorage.getItem('knv-auto') === 'on') { $('#autoToggle').checked = true; autoRoll = true; } } catch(e){}
+$('#rulesToggle').addEventListener('change', e => { document.body.classList.toggle('norules', !e.target.checked); try { localStorage.setItem('knv-rules', e.target.checked ? 'on' : 'off'); } catch(err){} });
+$('#autoToggle').addEventListener('change', e => { autoRoll = e.target.checked; try { localStorage.setItem('knv-auto', autoRoll ? 'on' : 'off'); } catch(err){} });
+
+/* ---------- log ---------- */
+function add(cls, html){ const el = document.createElement('div'); if (cls) el.className = cls; el.innerHTML = html; logEl.appendChild(el); requestAnimationFrame(() => el.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'})); return el; }
+const nar = h => add('line', h);
+const npc = (who, h) => add('line npc', `<span class="who">${who}</span>${h}`);
+const you = h => add('line you', h);
+const rule = h => add('rule', h);
+const shown = new Set();
+const ruleOnce = (k, h) => { if (!shown.has(k)){ shown.add(k); rule(h); } };
+function scene(num, name){ $('#sceneName').textContent = name; add('scenebreak', `<small>${num ? `<i>${num}</i>` : ''}Act One</small>${name}`); }
+function choose(opts){
+  return new Promise(res => {
+    choicesEl.innerHTML = '';
+    opts.forEach(o => {
+      const b = document.createElement('button'); b.className = 'opt' + (o.cls ? ' ' + o.cls : '');
+      b.innerHTML = `<b>${o.label}</b>${o.sub ? `<span>${o.sub}</span>` : ''}`; if (o.disabled) b.disabled = true;
+      b.addEventListener('click', () => { choicesEl.innerHTML = ''; if (o.say !== false) you(o.say || o.label); res(o.id); });
+      choicesEl.appendChild(b);
+    });
+    requestAnimationFrame(() => choicesEl.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'}));
+    const first = choicesEl.querySelector('button:not(:disabled)'); if (first && matchMedia('(pointer:fine)').matches) first.focus({preventScroll:true});
+  });
+}
+const cont = (label='Continue') => choose([{id:'c', label, cls:'primary', say:false}]);
+async function waitRoll(sub, btn){ if (autoRoll) return; await choose([{id:'r', label: btn || 'Roll the dice', sub, cls:'primary roll', say:false}]); }
+
+/* ---------- dice ---------- */
+function dieEl(sides){ const e = document.createElement('div'); e.className = `die d${sides} ghost`; e.innerHTML = '<span>?</span>'; e.setAttribute('aria-label', 'd' + sides); return e; }
+async function tumble(els){ for (let t=0;t<(reduced?1:9);t++){ els.forEach(([e,s]) => e.firstChild.textContent = d(s)); await sleep(55); } }
+// Roll dice in a row. who: 'you' waits for a click; 'gm' rolls by itself.
+async function roll(label, sides, {who='you', btn, sep}={}){
+  const row = add('rollrow' + (who === 'gm' ? ' gm' : ''), `<span class="lbl"><em>${who === 'gm' ? 'Referee rolls' : 'You roll'}</em>${label}</span>`);
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  const els = sides.map(s => { const e = dieEl(s); dice.appendChild(e); return [e,s]; });
+  if (who === 'you') await waitRoll(label, btn); else await sleep(250);
+  const vals = sides.map(s => d(s));
+  els.forEach(([e]) => e.classList.remove('ghost'));
+  await tumble(els);
+  els.forEach(([e,s],i) => { e.firstChild.textContent = vals[i]; e.setAttribute('aria-label', `d${s} showing ${vals[i]}`); });
+  return {row, vals, els};
+}
+function stamp(row, cls, text){ const s = document.createElement('span'); s.className = 'result ' + cls; s.textContent = text; row.appendChild(s); }
+function scoreLine(row, text){ const s = document.createElement('span'); s.className = 'score'; s.textContent = text; row.appendChild(s); }
+
+/* ---------- knave state ---------- */
+const AB = ['str','dex','con','int','wis','cha'];
+const ABN = {str:'Strength',dex:'Dexterity',con:'Constitution',int:'Intelligence',wis:'Wisdom',cha:'Charisma'};
+const PCS = {
+  brannoc:{name:'Brannoc Tull', title:'the disgraced bailiff', ab:{str:3,dex:1,con:2,int:1,wis:2,cha:1}, hp:7, armor:'Brigandine', helm:false, shield:true, cp:40,
+    weapon:{n:'Mace', die:8, slots:2, ranged:false},
+    items:[['Manacles',1],['Rope, 50 ft',1],['Lantern',1],['Oil flask',1],['Rations',1]], spells:[],
+    blurb:'You used to collect the reeve\'s taxes, until she found out how much you kept. Solve this, and maybe Ottilie forgives you. Find enough coin, and maybe you won\'t care.'},
+  sabine:{name:'Sabine Quill', title:'the forger', ab:{str:1,dex:3,con:1,int:2,wis:2,cha:2}, hp:5, armor:'Gambeson', helm:false, shield:false, cp:25,
+    weapon:{n:'Dagger', die:6, slots:1, ranged:false}, sling:true,
+    items:[['Lockpicks',1],['Forger\'s kit',1],['Hand mirror',1],['Chalk',1],['Torches',1],['Rations',1]], spells:[],
+    blurb:'You forge letters, seals, and the occasional saint\'s relic. Someone in the hills is forging the best coins you\'ve ever seen. You want to know how. You also want the dies.'},
+  mott:{name:'Mott Fennick', title:'the hedge-scholar', ab:{str:1,dex:2,con:2,int:3,wis:1,cha:2}, hp:4, armor:null, helm:true, shield:false, cp:15,
+    weapon:{n:'Staff', die:6, slots:1, ranged:false},
+    items:[['Lantern',1],['Oil flask',1],['Ink and parchment',1],['Bag of salt',1],['Rations',1]], spells:['Leaden Sleep','Ember Tongue'],
+    blurb:'Thrown out of a monastery library for reading the wrong books, you took two of them with you. Old Wenna Cotch is your aunt. Her right hand turned to brass last week.'},
+};
+const ARMOR = {Gambeson:{def:12,slots:1,q:3}, Brigandine:{def:13,slots:2,q:4}, Chain:{def:14,slots:3,q:5}};
+const NAMES = ['Hob Ashlar','Wilka Spurn','Tamsin Glee','Odo Crake','Margery Thorn','Fen Lusk','Ysa Pellow','Corran Weft','Bettris Hale','Gil Underby','Alys Marrow','Dunstan Pike'];
+
+let C = null; const used = new Set(); let xp = 0;
+const slotsMax = () => C.ab.con + 10;
+const slotsUsed = () => C.items.reduce((a,i) => a + i.s, 0);
+const has = n => C.items.some(i => i.n === n);
+const armorDef = () => { let a = C.armor && C.armor.q > 0 ? C.armor.def : 11; if (C.helm) a++; if (C.shield) a++; return a; };
+function removeItem(n){ const i = C.items.findIndex(x => x.n === n); if (i >= 0){ const it = C.items.splice(i,1)[0]; if (it.kind === 'armor') C.armor = null; if (it.kind === 'helm') C.helm = false; if (it.kind === 'shield') C.shield = false; if (it.kind === 'weapon') C.weapon = {n:'Fists', die:4, slots:0, ranged:false, q:3}; if (it.kind === 'sling') C.sling = false; if (it.kind === 'spell') C.spells = C.spells.filter(s => s.n !== it.spell); if (it.n === "Baron's pennies") C.pennies = 0; } render(); }
+function build(P){
+  C = {name:P.name, title:P.title, ab:{...P.ab}, hp:P.hp, maxhp:P.hp, cp:P.cp, pennies:0, tarnish:0, items:[], spells:[], helm:P.helm, shield:P.shield, armor:null, weapon:{...P.weapon, q:3}, sling:!!P.sling};
+  if (P.armor){ C.armor = {n:P.armor, ...ARMOR[P.armor]}; C.items.push({n:P.armor, s:ARMOR[P.armor].slots, kind:'armor'}); }
+  if (P.helm) C.items.push({n:'Helmet', s:1, kind:'helm'});
+  if (P.shield) C.items.push({n:'Shield', s:1, kind:'shield'});
+  C.items.push({n:C.weapon.n, s:C.weapon.slots, kind:'weapon'});
+  if (P.sling) C.items.push({n:'Sling', s:1, kind:'sling'});
+  P.spells.forEach(sp => { C.spells.push({n:sp, used:false}); C.items.push({n:'Spellbook: ' + sp, s:1, kind:'spell', spell:sp}); });
+  P.items.forEach(([n,s]) => C.items.push({n, s}));
+  render();
+}
+
+/* ---------- core rolls ---------- */
+const sgn = n => (n >= 0 ? '+' : '') + n;
+async function save(ab, why, extra=0){
+  used.add('save');
+  ruleOnce('save', 'A save: roll d20 and add the ability bonus that fits. If the total is more than 15 (16 or higher), you succeed. Ties fail.');
+  const bonus = C.ab[ab] + extra;
+  const {row, vals} = await roll(`${ABN[ab]} save: d20 ${sgn(C.ab[ab])}${extra ? ' ' + sgn(extra) : ''}, beat 15 (${why})`, [20], {btn:`Roll a ${ABN[ab]} save`});
+  const t = vals[0] + bonus; const ok = t > 15;
+  scoreLine(row, `${vals[0]} ${sgn(bonus)} = ${t}`); stamp(row, ok ? 'ok' : 'bad', ok ? 'success' : 'failure');
+  return ok;
+}
+async function opposed(ab, defAb, def, who, why){
+  used.add('opposed');
+  ruleOnce('opp', `An opposed save: when you act against someone, roll d20 plus your bonus and beat their defense in the ability that resists you. Defense is always bonus + 10.`);
+  const {row, vals} = await roll(`Opposed save: ${ABN[ab]} d20 ${sgn(C.ab[ab])} vs ${who}'s ${ABN[defAb]} defense ${def} (${why})`, [20], {btn:`Roll ${ABN[ab]} vs ${def}`});
+  const t = vals[0] + C.ab[ab]; const ok = t > def;
+  scoreLine(row, `${vals[0]} ${sgn(C.ab[ab])} = ${t} vs ${def}`); stamp(row, ok ? 'ok' : 'bad', ok ? 'success' : 'failure');
+  return ok;
+}
+const REACT = r => r <= 2 ? 'hostile' : r <= 5 ? 'unfriendly' : r <= 8 ? 'unsure' : r <= 11 ? 'talkative' : 'helpful';
+async function reaction(who){
+  used.add('reaction');
+  ruleOnce('react', 'Reaction roll: when it isn\'t clear how someone feels about you, the referee rolls 2d6. 2 hostile, 3 to 5 unfriendly, 6 to 8 unsure, 9 to 11 talkative, 12 helpful.');
+  const {row, vals} = await roll(`Reaction roll for ${who} (2d6)`, [6,6], {who:'gm'});
+  const t = vals[0] + vals[1]; stamp(row, t >= 9 ? 'ok' : t <= 5 ? 'bad' : 'mid', `${t}: ${REACT(t)}`);
+  return t;
+}
+async function askDice(q, odds, need){
+  used.add('oracle');
+  ruleOnce('oracle', 'Ask the Dice is this adventure\'s solo oracle: ask a yes-or-no question, pick the odds, and roll a d6. Even odds: yes on 4 or higher. A 6 is "yes, and"; a 1 is "no, and".');
+  const {row, vals} = await roll(`Ask the Dice: "${q}" Odds: ${odds} (yes on ${need}+)`, [6], {btn:'Ask the dice'});
+  const v = vals[0]; const yes = v >= need;
+  stamp(row, yes ? 'ok' : 'bad', v === 6 ? 'yes, and' : v === 1 ? 'no, and' : yes ? 'yes' : 'no');
+  return {yes, v};
+}
+async function hurt(n, why){
+  C.hp -= n; render();
+  nar(`${why} <strong>-${n} HP</strong> (${Math.max(C.hp, -9)} left).`);
+  if (C.hp < 0) throw {end:'dead'};
+  if (C.hp === 0) throw {end:'down'};
+}
+
+/* ---------- items ---------- */
+async function addItem(item){
+  used.add('slots');
+  ruleOnce('slots', `Item slots: you can carry as many slots as your Constitution defense (${slotsMax()}). Most items take 1; armor, big weapons, and ingots take more. If it doesn't fit, something has to go.`);
+  for (let guard = 0; guard < 20; guard++){
+    if (slotsUsed() + item.s <= slotsMax()){ C.items.push(item); render(); nar(`You take the <strong>${esc(item.n)}</strong> (${item.s} slot${item.s > 1 ? 's' : ''}). ${slotsUsed()} of ${slotsMax()} slots used.`); return true; }
+    const free = slotsMax() - slotsUsed();
+    const opts = C.items.filter(i => i.kind !== 'brass' && i.s > 0).map((i,k) => ({id:'d' + k, n:i.n, label:`Drop: ${esc(i.n)}`, sub:`frees ${i.s} slot${i.s > 1 ? 's' : ''}`, say:`I leave the ${esc(i.n.toLowerCase())} behind.`}));
+    const c = await choose([{id:'leave', label:`Leave the ${esc(item.n.toLowerCase())}`, sub:`It needs ${item.s} slot${item.s > 1 ? 's' : ''}; you have ${free} free`, cls:'primary'}, ...opts]);
+    if (c === 'leave') return false;
+    removeItem(opts.find(o => o.id === c).n);
+  }
+  return false;
+}
+async function loseItem(n, why){ if (!has(n)) return; removeItem(n); nar(`${why} <strong>You lose the ${esc(n.toLowerCase())}.</strong>`); }
+async function gainPennies(n){
+  C.pennies += n;
+  if (!has("Baron's pennies")){ const ok = await addItem({n:"Baron's pennies", s:1}); if (!ok){ C.pennies = 0; nar('You let the coins fall. They ring on the ground, warm and bright.'); render(); return false; } }
+  render(); return true;
+}
+const WHISPERS = ['<em>"Keep me."</em> The coins feel like they belong in your hand.','You hear the press in your heartbeat. You could find it with your eyes shut.','You know the exact count of every coin in the room, and it\'s soothing.','<em>"Count them."</em> You catch yourself stacking pennies without meaning to.','Your reflection in the coin smiles a moment before you do.','For a flash you see a round iron door, and a slot in a brass mouth just wide enough for a coin.'];
+async function tarnish(why){
+  used.add('tarnish');
+  C.tarnish++; render();
+  nar(`${why} Mark <strong>Tarnish</strong> (${C.tarnish} of 6).`);
+  ruleOnce('tarnish', 'Tarnish is this adventure\'s own rule. Each time you mark it, make a Constitution save. On a failure, a patch of your skin turns to brass and fills an empty item slot. If the track fills, the mint has you.');
+  const ok = await save('con', 'resist the brass');
+  if (!ok){
+    if (slotsUsed() >= slotsMax()){
+      const opts = C.items.filter(i => i.kind !== 'brass' && i.s > 0).map((i,k) => ({id:'d'+k, n:i.n, label:`Drop: ${esc(i.n)}`, say:false}));
+      if (opts.length){ const c = await choose(opts); removeItem(opts.find(o => o.id === c).n); }
+    }
+    C.items.push({n:'Brass', s:1, kind:'brass'}); render();
+    nar('Your fingertips go cold, then numb, then bright. A patch of you is brass now. <strong>One item slot fills with Brass.</strong>');
+  }
+  const {row, vals} = await roll('The Baron Whispers (d6)', [6], {who:'gm'});
+  nar(WHISPERS[vals[0]-1]);
+  if (C.tarnish >= 6) throw {end:'tarnished'};
+}
+
+/* ---------- combat ---------- */
+function foe(name, o){ return {name, hp:o.hp, max:o.hp, armor:o.armor, atk:o.atk, die:o.die, morale:o.morale, wis:o.wis ?? 11, dex:o.dex ?? 11, q:o.q ?? 3, alive:true, asleep:false}; }
+async function moraleCheck(f, why){
+  used.add('morale');
+  ruleOnce('morale', 'Morale: when a group loses half its number, or a lone foe drops to half its hit points, the referee rolls 2d6. Higher than the foe\'s morale and it flees, surrenders, or bargains.');
+  const {row, vals} = await roll(`Morale for ${f.name}: 2d6 vs morale ${f.morale} (${why})`, [6,6], {who:'gm'});
+  const t = vals[0] + vals[1]; const breaks = t > f.morale;
+  stamp(row, breaks ? 'ok' : 'bad', breaks ? `${t}: breaks` : `${t}: holds`);
+  return breaks;
+}
+async function fight(foes, {noun='them', feed=false}={}){
+  used.add('combat');
+  rule('Combat is quick and deadly. At 0 HP you\'re unconscious; below 0 you\'re dead.');
+  let rounds = 0, halfChecked = false;
+  const live = () => foes.filter(f => f.alive && !f.asleep);
+  const halfHpChecked = new Set();
+  while (live().length){
+    rounds++;
+    if (rounds > 10){ nar(`Battered and confused, ${noun} fall back into the dark.`); return 'routed'; }
+    used.add('init');
+    ruleOnce('init', 'Initiative: each round the referee rolls a d6. On 1 to 3 your enemies act first; on 4 to 6, you do.');
+    const {row, vals} = await roll(`Initiative, round ${rounds} (d6)`, [6], {who:'gm'});
+    const pcFirst = vals[0] >= 4; stamp(row, pcFirst ? 'ok' : 'bad', pcFirst ? 'you act first' : 'they act first');
+    if (!pcFirst){ await foesAct(live()); }
+    const r = await pcAct(foes, feed);
+    if (r === 'fled' || r === 'fed') return r;
+    // morale
+    const dead = foes.filter(f => !f.alive).length;
+    if (foes.length > 1 && !halfChecked && dead >= foes.length/2 && live().length){
+      halfChecked = true;
+      if (await moraleCheck(live()[0], 'half their number down')){ nar(`The rest throw down their tools and flee into the dark.`); live().forEach(f => f.alive = false); return 'routed'; }
+    }
+    if (foes.length === 1){ const f = foes[0]; if (f.alive && f.hp <= f.max/2 && !halfHpChecked.has(f)){ halfHpChecked.add(f); if (await moraleCheck(f, 'down to half its hit points')){ nar(`The ${f.name} breaks and runs.`); f.alive = false; return 'routed'; } } }
+    if (!live().length) break;
+    if (pcFirst){ await foesAct(live()); }
+  }
+  return 'won';
+}
+async function foesAct(list){
+  for (const f of list){
+    const {row, vals} = await roll(`${f.name} attacks: d20 +${f.atk} vs your armor ${armorDef()}`, [20], {who:'gm'});
+    const v = vals[0], t = v + f.atk;
+    if (v === 20 || t > armorDef()){
+      stamp(row, 'bad', v === 20 ? 'critical hit' : 'hit');
+      const dr = await roll(`${f.name} damage (d${f.die}${v === 20 ? ' + an extra d' + f.die : ''})`, v === 20 ? [f.die, f.die] : [f.die], {who:'gm'});
+      if (v === 20){ used.add('crit'); if (C.armor){ C.armor.q--; nar(`A critical hit: your ${C.armor.n.toLowerCase()} loses 1 quality (${Math.max(0,C.armor.q)} left).`); } rule('Critical hit: on a natural 20, the attack deals an extra damage die and the target\'s armor loses 1 quality.'); }
+      await hurt(dr.vals.reduce((a,b) => a+b, 0), `The ${f.name} hits you.`);
+    } else { stamp(row, 'ok', 'miss'); }
+  }
+}
+async function pcAct(foes, feed){
+  const live = foes.filter(f => f.alive && !f.asleep);
+  const opts = [];
+  live.forEach((f,i) => opts.push({id:'a'+foes.indexOf(f), label:`Attack the ${f.name}${live.length > 1 ? ' #' + (foes.indexOf(f)+1) : ''} with your ${C.weapon.n.toLowerCase()}`, sub:`d20 ${sgn(C.ab.str)} (Strength) vs armor ${f.armor} · d${C.weapon.die} damage · ${f.hp} HP left`, say:pick(['I go for it.','I swing.','I strike.'])}));
+  if (C.sling) live.slice(0,1).forEach(f => opts.push({id:'s'+foes.indexOf(f), label:`Sling a stone at the ${f.name}`, sub:`d20 ${sgn(C.ab.wis)} (Wisdom, ranged) vs armor ${f.armor} · d4 damage`, say:'I whirl the sling.'}));
+  const ember = C.spells.find(s => s.n === 'Ember Tongue' && !s.used);
+  if (ember) opts.push({id:'ember', label:'Read Ember Tongue aloud', sub:`Opposed Intelligence vs Dexterity defense ${live[0].dex} · d6+1 fire damage`, say:'I open the book and breathe fire.'});
+  if (feed && has('Rations')) opts.push({id:'feed', label:'Throw it your rations', sub:'Lose your rations; the hound stops to eat', say:'Here. Eat that instead of me.'});
+  opts.push({id:'flee', label:'Run', sub:'Dexterity save to get away', cls:'risk', say:'I run.'});
+  const c = await choose(opts);
+  if (c === 'feed'){ removeItem('Rations'); nar('The hound falls on the rations and forgets you exist. You back away.'); return 'fed'; }
+  if (c === 'flee'){ const ok = await save('dex', 'escape'); if (ok){ nar('You break away and run until your lungs burn.'); return 'fled'; } nar('You can\'t get clear.'); return null; }
+  if (c === 'ember'){
+    used.add('spell'); ember.used = true; render();
+    ruleOnce('spell', 'Spellbooks: each holds one spell and takes one slot. Hold it in both hands and read it aloud. Each book works once a day. Spells against a creature use an opposed Intelligence save.');
+    const f = live[0];
+    const ok = await opposed('int', 'dex', f.dex, `the ${f.name}`, 'Ember Tongue');
+    if (ok){ const dr = await roll('Ember Tongue damage (d6 + level 1)', [6], {btn:'Roll fire damage'}); const n = dr.vals[0] + 1; damageFoe(f, n, 'Fire pours over it.'); }
+    else nar('It ducks the gout of flame. The book goes quiet in your hands until tomorrow.');
+    return null;
+  }
+  const ranged = c[0] === 's'; const f = foes[Number(c.slice(1))];
+  used.add('attack');
+  ruleOnce('attack', 'Attacks: roll d20 plus Strength (melee) or Wisdom (ranged). Beat the target\'s armor defense to hit, then roll your weapon\'s damage die.');
+  const ab = ranged ? 'wis' : 'str'; const die = ranged ? 4 : C.weapon.die;
+  const {row, vals} = await roll(`Attack: d20 ${sgn(C.ab[ab])} (${ABN[ab]}) vs the ${f.name}'s armor ${f.armor}`, [20], {btn:'Roll to hit'});
+  const v = vals[0], t = v + C.ab[ab];
+  scoreLine(row, `${v} ${sgn(C.ab[ab])} = ${t} vs ${f.armor}`);
+  if (v === 1){ stamp(row, 'bad', 'natural 1'); used.add('crit'); if (!ranged && C.weapon.slots){ C.weapon.q--; render(); } rule('A natural 1: the attacker\'s weapon loses 1 quality. At 0 quality it breaks.'); nar(ranged ? 'The stone flies wild.' : `Your ${C.weapon.n.toLowerCase()} rings off stone and takes a nick.`); if (!ranged && C.weapon.q <= 0){ removeItem(C.weapon.n); nar('It breaks. You\'re down to your fists (d4).'); } return null; }
+  if (v === 20 || t > f.armor){
+    stamp(row, 'ok', v === 20 ? 'critical hit' : 'hit');
+    if (v === 20){ used.add('crit'); rule('Critical hit: an extra damage die, and the target\'s armor loses 1 quality.'); }
+    used.add('damage');
+    const dr = await roll(`Damage: ${v === 20 ? '2' : '1'}d${die}`, v === 20 ? [die, die] : [die], {btn:`Roll d${die} damage`});
+    damageFoe(f, dr.vals.reduce((a,b) => a+b, 0), pick(['A solid hit.','It staggers.','You feel it land.']));
+  } else { stamp(row, 'bad', 'miss'); nar(pick(['It turns the blow.','You miss.','Too slow.'])); }
+  return null;
+}
+function damageFoe(f, n, txt){
+  f.hp -= n;
+  add('', `<span class="result n">${n} damage · ${f.name} ${Math.max(0,f.hp)}/${f.max} HP</span>`);
+  if (f.hp <= 0){ f.alive = false; nar(`${txt} The ${f.name} goes down and stays down.`); } else nar(txt);
+}
+function heal(n){ C.hp = Math.min(C.maxhp, C.hp + n); render(); }
+async function offerWoundwort(){
+  if (!has('Woundwort') || C.hp >= C.maxhp) return;
+  const c = await choose([{id:'eat', label:'Chew the woundwort', sub:'Heal d4 HP, lose the item'},{id:'no', label:'Save it', say:false}]);
+  if (c === 'eat'){ removeItem('Woundwort'); const {vals} = await roll('Woundwort (d4)', [4], {btn:'Roll to heal'}); heal(vals[0]); nar(`Bitter, green, and good. <strong>+${vals[0]} HP.</strong>`); }
+}
+
+/* ---------- sheet ---------- */
+function render(){
+  if (!C) return;
+  $('#sumName').textContent = C.name;
+  $('#sumMini').textContent = `HP ${C.hp}/${C.maxhp} · Armor ${armorDef()} · Slots ${slotsUsed()}/${slotsMax()} · Tarnish ${C.tarnish}`;
+  const cells = []; C.items.forEach(it => { for (let k=0;k<it.s;k++) cells.push(`<span class="f${it.kind === 'brass' ? ' brass' : ''}${k ? ' cont' : ''}">${k ? '(cont.)' : esc(it.n)}</span>`); });
+  while (cells.length < slotsMax()) cells.push('<span>empty</span>');
+  $('#sheetBody').innerHTML = `
+    <div class="sh-label" style="font-style:italic;color:#CFC8D6;margin-top:-4px">${esc(C.title)} · level 1 · ${xp} XP</div>
+    <div><div class="sec"><span>Abilities</span><span>bonus / defense</span></div><div class="abgrid">${AB.map(a => `<div><small>${a.toUpperCase()}</small><b>+${C.ab[a]}</b><i>${C.ab[a]+10}</i></div>`).join('')}</div></div>
+    <div class="vitals"><div class="${C.hp < C.maxhp ? 'hurt' : ''}"><b>${C.hp}/${C.maxhp}</b><small>Hit points</small></div><div><b>${armorDef()}</b><small>Armor</small></div><div><b>${C.cp}</b><small>Copper</small></div></div>
+    <div class="wpn"><b>${esc(C.weapon.n)}</b> d${C.weapon.die} melee${C.sling ? ' · <b>Sling</b> d4 ranged' : ''}${C.weapon.slots ? ` · quality ${C.weapon.q}/3` : ''}${C.armor ? ` · ${esc(C.armor.n)} quality ${Math.max(0,C.armor.q)}` : ''}</div>
+    <div><div class="sec"><span>Item slots</span><span>${slotsUsed()} / ${slotsMax()} (CON defense)</span></div><div class="slotgrid">${cells.join('')}</div>${C.pennies ? `<div class="wpn" style="margin-top:5px">Baron's pennies: <b>${C.pennies}</b></div>` : ''}</div>
+    ${C.spells.length ? `<div><div class="sec"><span>Spellbooks</span><span>once a day each</span></div><ul class="spells">${C.spells.map(s => `<li class="${s.used ? 'used' : ''}"><span>${s.n}</span><small>${s.used ? 'used' : 'ready'}</small></li>`).join('')}</ul></div>` : ''}
+    <div><div class="sec"><span>Tarnish</span><span>adventure rule</span></div><div class="tarn">${[0,1,2,3,4,5].map(i => `<span class="${i < C.tarnish ? 'on' : ''}"></span>`).join('')}<small>${C.tarnish}/6</small></div></div>`;
+}
+
+/* ---------- character creation ---------- */
+async function rollKnave(){
+  used.add('abil');
+  rule('Knave abilities: roll 3d6 for each ability. The <strong>lowest</strong> die is the bonus. The defense is the bonus plus 10.');
+  const row = add('rollrow', '<span class="lbl"><em>You roll</em>3d6 for each ability, keep the lowest die</span>');
+  const grid = document.createElement('div'); grid.style.cssText = 'display:flex;flex-direction:column;gap:6px'; row.appendChild(grid);
+  const rows = AB.map(a => { const r = document.createElement('div'); r.className = 'abroll'; r.innerHTML = `<b>${a.toUpperCase()}</b><div class="dd"></div><span class="out"></span>`; const dd = r.querySelector('.dd'); const els = [6,6,6].map(s => { const e = dieEl(s); dd.appendChild(e); return [e,s]; }); grid.appendChild(r); return {a, r, els}; });
+  await waitRoll('3d6 six times', 'Roll your abilities');
+  const ab = {};
+  for (const x of rows){
+    const vals = [d(6),d(6),d(6)]; x.els.forEach(([e]) => e.classList.remove('ghost'));
+    await tumble(x.els); x.els.forEach(([e],i) => e.firstChild.textContent = vals[i]);
+    const lo = Math.min(...vals); const li = vals.indexOf(lo); x.els.forEach(([e],i) => e.classList.add(i === li ? 'low' : 'dim'));
+    ab[x.a] = lo; x.r.querySelector('.out').textContent = `bonus +${lo} · defense ${lo+10}`;
+  }
+  const best = AB.reduce((m,a) => ab[a] > ab[m] ? a : m, 'str'), worst = AB.reduce((m,a) => ab[a] < ab[m] ? a : m, 'str');
+  rule('You may swap the results of two abilities.');
+  const opts = [{id:'keep', label:'Keep them as rolled', say:false}];
+  ['str','dex','int'].forEach(target => { if (ab[target] < ab[best] && target !== best) opts.push({id:'sw-'+target, label:`Swap ${target.toUpperCase()} and ${best.toUpperCase()}`, sub:`${target.toUpperCase()} becomes +${ab[best]}`, say:false}); });
+  const c = await choose(opts.slice(0,4));
+  if (c.startsWith('sw-')){ const t = c.slice(3); [ab[t], ab[best]] = [ab[best], ab[t]]; nar(`Swapped: ${t.toUpperCase()} +${ab[t]}, ${best.toUpperCase()} +${ab[best]}.`); }
+  const hpR = await roll('Hit points (d8)', [8], {btn:'Roll hit points'});
+  const ar = await roll('Starting armor (d20), then helmet and shield (d20)', [20,20], {btn:'Roll for armor'});
+  const a1 = ar.vals[0], a2 = ar.vals[1];
+  const armor = a1 <= 3 ? null : a1 <= 14 ? 'Gambeson' : a1 <= 19 ? 'Brigandine' : 'Chain';
+  const helm = a2 >= 14 && a2 <= 16 || a2 === 20, shield = a2 >= 17;
+  stamp(ar.row, 'n', `${armor || 'no armor'}${helm ? ' · helmet' : ''}${shield ? ' · shield' : ''}`);
+  rule('Starting armor (d20): 1-3 none, 4-14 gambeson, 15-19 brigandine, 20 chain. Helmet and shield (d20): 1-13 neither, 14-16 helmet, 17-19 shield, 20 both.');
+  const w = await choose([
+    {id:'sword', label:'Sword', sub:'d8, one hand, 2 slots'},
+    {id:'spear', label:'Spear', sub:'d8, one hand, 2 slots'},
+    {id:'dagger', label:'Dagger and sling', sub:'d6 melee and d4 ranged (Wisdom), 1 slot each'},
+    {id:'mace', label:'Mace', sub:'d8, one hand, 2 slots'}]);
+  const W = {sword:{n:'Sword',die:8,slots:2}, spear:{n:'Spear',die:8,slots:2}, dagger:{n:'Dagger',die:6,slots:1}, mace:{n:'Mace',die:8,slots:2}}[w];
+  const nm = NAMES[d(12)-1];
+  build({name:nm, title:'a knave of Cobble Ash', ab, hp:hpR.vals[0], armor, helm, shield, cp:20, weapon:{...W, ranged:false}, sling: w === 'dagger',
+    items:[['Rations',1],['Torches',1],['Rope, 50 ft',1],['Crowbar',1]], spells:[]});
+  nar(`Your knave is <strong>${nm}</strong>: ${hpR.vals[0]} HP, armor ${armorDef()}, ${slotsMax()} item slots. Two days of rations, torches, rope, a crowbar, and 20 copper.`);
+}
+
+/* ---------- the adventure ---------- */
+let hesk = false;
+async function start(){
+  nar('<strong>Knave</strong> is a fast, deadly old-school fantasy game with no classes: who you are depends on what you carry. This demo plays it solo. You make the choices and roll your own dice; the referee\'s rolls (monsters, reactions, morale) happen on their own.');
+  rule('Nearly everything in Knave is a d20 roll plus one of six ability bonuses. Saves need more than 15. Attacks need more than the target\'s armor.');
+  nar('Choose your knave, or roll one up the Knave way.');
+  const c = await choose([
+    ...Object.entries(PCS).map(([k,p]) => ({id:k, label:`${p.name}, ${p.title}`, sub:`${AB.map(a => a.toUpperCase()+' +'+p.ab[a]).join(' · ')} · HP ${p.hp}${p.spells.length ? ' · 2 spellbooks' : ''}`, say:`I'll play ${p.name}.`})),
+    {id:'roll', label:'Roll up a random knave', sub:'3d6 per ability, keep the lowest · d8 HP · roll for armor', say:'I\'ll roll my own.'}]);
+  if (c === 'roll') await rollKnave();
+  else { build(PCS[c]); nar(esc(PCS[c].blurb)); }
+  rule(`Your sheet shows each ability as a bonus and a defense. Your item slots equal your Constitution defense: ${slotsMax()}.`);
+  await cont('Begin Act One');
+  try {
+    await s1(); await s2(); await s3(); await s4();
+    await ending('done');
+  } catch (e){
+    if (e && e.end) await ending(e.end); else throw e;
+  }
+}
+
+const RUMORS = ['"The baron hanged his own brother for clipping coins." (Not quite: it was his cousin.)','"Hesk Varrow paid off every debt he had this month. In bright pennies."','"There\'s smoke over Vell Crag at night. Someone\'s living up there."','"Put a baron\'s penny under your tongue and it tells you lies." (It tells you the truth, in his voice.)','"The miller\'s boy went up to the hills a fortnight back. Said he\'d found work."','"The baron put his face on every coin so he\'d be counted forever."'];
+async function s1(){
+  scene(1, 'The Fresh Penny');
+  nar('The Pennyweight\'s common room is full and quiet. In the middle of it, <strong>Old Wenna Cotch</strong> sits with her right hand flat on a table. The hand is brass from the wrist down, with the fine lines of her knuckles still on it. When she taps a fingernail on the table, it rings.');
+  npc('Wenna', '"I saved them. Forty bright pennies in a jar under the bread oven. I was going to buy a cow."');
+  nar('<strong>Reeve Ottilie Brand</strong> sets a single coin beside the hand: a crowned crag on one side, a fat smiling face on the other. Baron Orrin Vell, dead a hundred years. The edge is so new it could cut you.');
+  npc('Ottilie', '"Two hundred copper, real copper, to whoever finds who\'s striking these. Find them. Stop them. I don\'t care how."');
+  nar('The coins came first through <strong>Hesk Varrow</strong>, the moneylender, who sits in the corner booth with his hands in his sleeves.');
+  const r = await reaction('Hesk Varrow');
+  if (r >= 9){ nar('Hesk is sweating. He wants to tell someone. He waves you over before you\'ve even sat down.'); hesk = true; }
+  else {
+    nar(r <= 5 ? 'Hesk looks at you like a bad debt.' : 'Hesk watches you come over and says nothing.');
+    const c = await choose([
+      {id:'charm', label:'Charm him', sub:`Charisma save (+${C.ab.cha})`, say:'"Hesk. Nobody\'s blaming you. Yet."'},
+      {id:'lean', label:'Lean on him', sub:`Opposed: your Strength (+${C.ab.str}) vs his Wisdom defense 12`, say:'I sit down close. Very close.'},
+      {id:'round', label:'Buy a round and listen', sub:'2 copper · roll on Rumors in Cobble Ash, no route from Hesk', say:'"A round for the room."', disabled: C.cp < 2}]);
+    if (c === 'charm') hesk = await save('cha', 'charm Hesk');
+    else if (c === 'lean') hesk = await opposed('str', 'wis', 12, 'Hesk', 'intimidate');
+    else {
+      C.cp -= 2; render(); used.add('table');
+      const {vals} = await roll('Rumors in Cobble Ash (d6)', [6], {btn:'Roll a rumor'});
+      npc('A drinker', RUMORS[vals[0]-1]);
+    }
+  }
+  if (hesk){
+    xp += 50; render();
+    npc('Hesk', '"I found a purse of them on Gallow Moor. Followed the trail to the old mint at Vell Crag. Take the Drover\'s Cut, it saves half a day. And at the gate, say <em>full weight, fair stamp</em>. That\'s what they want to hear."');
+    nar('He slides a bright penny across the table. "For luck."');
+    const c = await choose([{id:'take', label:'Pocket the penny', sub:'1 baron\'s penny (1 slot) · mark Tarnish', cls:'risk', say:'I take it.'},{id:'leave', label:'Leave it on the table', say:'"Keep your luck."'}]);
+    if (c === 'take'){ if (await gainPennies(1)) await tarnish('It\'s warm. Warmer than your hand.'); }
+  } else nar('Hesk only points vaguely at the hills. "Vell Crag. The old mint. Don\'t say I sent you." You\'ll go the long way.');
+  await cont('Head for the moor');
+}
+
+const MOOR = ['Penny-crows','Sucking bog','The coiner on the gibbet','Nan Brisk, peddler','Gibbet hound','Quiet heather'];
+async function s2(){
+  scene(2, 'Over Gallow Moor');
+  nar('The road ends at a broken gate and the moor starts: brown heather, black water, and a sky low enough to touch. Every mile or so stands a gibbet from the baron\'s time. He hanged coin-clippers. He hanged a great many people.');
+  const legs = hesk ? 1 : 2;
+  rule(`The walk takes ${legs === 1 ? 'one leg, thanks to the Drover\'s Cut' : 'two legs'}. Each leg, you roll a d6 on the adventure\'s Gallow Moor table.`);
+  const seen = new Set();
+  for (let leg = 1; leg <= legs; leg++){
+    used.add('table');
+    const {row, vals} = await roll(`Gallow Moor, leg ${leg} of ${legs} (d6)`, [6], {btn:'Roll on the Gallow Moor table'});
+    let v = vals[0]; if (seen.has(v)) v = 6; seen.add(v);
+    stamp(row, 'n', `${v}: ${MOOR[v-1]}`);
+    await moor(v);
+  }
+  add('subscene', '2a · The Weir Scree');
+  nar('The last stretch climbs a slope of loose slate where the old mill-race once ran. It moves under your boots like something alive.');
+  if (!(await save('dex', 'keep your feet'))){ const {vals} = await roll('Falling damage (d4)', [4], {who:'gm'}); await hurt(vals[0], 'You slide, tumble, and fetch up against a boulder.'); }
+  else nar('You skip across the slate and haul yourself up onto the crag road.');
+  await cont('Climb to the gate');
+}
+async function moor(v){
+  if (v === 1){
+    nar('A ragged flock of <strong>penny-crows</strong> drops out of the cloud, screaming, and goes for anything that shines.');
+    if (!(await save('dex', 'fend off the crows'))){
+      if (has("Baron's pennies")) await loseItem("Baron's pennies", 'They find the bright coins first and tear the purse away.');
+      else { const loose = C.items.filter(i => !['armor','weapon','helm','shield','brass','spell'].includes(i.kind)); if (loose.length) await loseItem(pick(loose).n, 'Beaks and claws everywhere.'); else nar('They find nothing worth stealing and lose interest.'); }
+    } else nar('You swing your pack and they scatter, cursing in crow.');
+  } else if (v === 2){
+    nar('The heather is a crust over black mud, and you\'re in it to the thigh.');
+    if (!(await save('str', 'haul yourself out'))){ if (has('Rations')) await loseItem('Rations', 'You drag yourself free, but the bog keeps your pack strap.'); else nar('You crawl out filthy and shaking.'); }
+    else nar('You haul yourself out, filthy but whole.');
+  } else if (v === 3){
+    nar('A hanged man in a smith\'s apron turns on a gibbet. His veins shine brass under grey skin. A fat purse hangs at his belt: <strong>20 baron\'s pennies</strong>.');
+    const c = await choose([{id:'take', label:'Cut the purse loose', sub:'20 baron\'s pennies (1 slot) · mark Tarnish', cls:'risk', say:'Waste not.'},{id:'leave', label:'Leave the dead their due', say:'I walk on.'}]);
+    if (c === 'take'){ if (await gainPennies(20)) await tarnish('The coins are warm, though the man is cold.'); }
+  } else if (v === 4){
+    nar('An old woman with a donkey loaded with pots: <strong>Nan Brisk</strong>, peddler.');
+    const r = await reaction('Nan Brisk');
+    if (r >= 9){ npc('Nan', '"Take this, love. Woundwort. And don\'t pay them in their own coin."'); await addItem({n:'Woundwort', s:1}); }
+    else if (r >= 6){ const c = await choose([{id:'buy', label:'Buy woundwort for 5 copper', sub:'1 slot · chew it to heal d4', disabled: C.cp < 5},{id:'no', label:'No, thank you', say:false}]); if (c === 'buy'){ C.cp -= 5; render(); await addItem({n:'Woundwort', s:1}); } }
+    else nar('She takes one look at you, clicks to her donkey, and hurries on.');
+  } else if (v === 5){
+    nar('A starved, scab-eared <strong>gibbet hound</strong> slinks out from under a gibbet. It has learned that people on the moor are food, one way or another.');
+    const res = await fight([foe('gibbet hound', {hp:4, armor:11, atk:1, die:6, morale:6})], {noun:'the hound', feed:true});
+    if (res === 'won' || res === 'routed') { xp += 50; render(); }
+  } else {
+    nar('Wind and curlews. At an old waymarker cut with the baron\'s crag, you find a cracked offering bowl.');
+    const {vals} = await roll('Copper in the bowl (2d6)', [6,6], {btn:'Roll for copper'});
+    C.cp += vals[0] + vals[1]; render(); nar(`<strong>+${vals[0]+vals[1]} copper.</strong>`);
+  }
+}
+
+async function s3(){
+  await offerWoundwort();
+  scene(3, 'The Gate at Vell Crag');
+  nar('The mint is cut into the crag itself. Its gatehouse is a squat block of black stone with the baron\'s face carved over the arch, smiling. Smoke leaks from cracks in the hillside. From deep inside comes a sound you feel in your teeth: <em>THOOM</em>. A pause. <em>THOOM</em>.');
+  nar('Two <strong>coiners</strong> stand at the gate in leather aprons, holding long iron tongs. Their eyes are gone. In each socket sits a bright baron\'s penny, and the coins turn to follow you.');
+  const r = await reaction('the coiners');
+  let passed = false; let foes = [foe('coiner', {hp:4, armor:12, atk:1, die:4, morale:7}), foe('coiner', {hp:4, armor:12, atk:1, die:4, morale:7})];
+  if (r >= 9){ nar('They take you for a new hand for the furnaces and wave you through without a word. That should worry you.'); passed = true; }
+  else {
+    const opts = [];
+    if (hesk) opts.push({id:'words', label:'Say the words', sub:'"Full weight, fair stamp." No roll', cls:'primary', say:'"Full weight, fair stamp."'});
+    opts.push({id:'sneak', label:'Sneak past along the rock', sub:`Opposed: your Dexterity (+${C.ab.dex}) vs their Wisdom defense 11`, say:'I wait for the smoke to roll down, then go.'});
+    opts.push({id:'bluff', label:'Bluff: you\'re the new furnace hand', sub:`Charisma save (+${C.ab.cha})`, say:'"Grisel sent me. I\'m late."'});
+    if (C.spells.find(s => s.n === 'Leaden Sleep' && !s.used)) opts.push({id:'sleep', label:'Read Leaden Sleep aloud', sub:`Opposed Intelligence (+${C.ab.int}) vs each coiner's Wisdom defense 11`, say:'I open the grey book and read.'});
+    opts.push({id:'fight', label:'Fight them', sub:'Two coiners: HP 4, armor 12, tongs d4, morale 7', cls:'risk', say:'I raise my weapon.'});
+    const c = await choose(opts);
+    if (c === 'words'){ nar('The coin-eyes turn to each other, then back to you. They step aside.'); passed = true; }
+    else if (c === 'sneak'){ passed = await opposed('dex', 'wis', 11, 'the coiners', 'sneak'); nar(passed ? 'You slip through the smoke and in under the arch. Neither coin-eye turns.' : 'A pebble skitters. Both heads turn at once. They raise their tongs.'); }
+    else if (c === 'bluff'){ passed = await save('cha', 'bluff'); nar(passed ? 'One coiner points down the hall with its tongs. You\'re in.' : 'They don\'t believe you. They don\'t say anything at all. They just raise their tongs.'); }
+    else if (c === 'sleep'){
+      used.add('spell'); const sp = C.spells.find(s => s.n === 'Leaden Sleep'); sp.used = true; render();
+      ruleOnce('spell', 'Spellbooks: each holds one spell and takes one slot. Hold it in both hands and read it aloud. Each book works once a day. Spells against a creature use an opposed Intelligence save.');
+      for (const f of foes){ if (await opposed('int', 'wis', 11, 'a coiner', 'Leaden Sleep')){ f.asleep = true; nar('Its tongs clang to the stones. It sinks down, heavy as lead, and sleeps.'); } else nar('It shudders, and stays standing.'); }
+      passed = foes.every(f => f.asleep);
+      if (passed) nar('You step over them and in under the arch.');
+    }
+  }
+  if (!passed){
+    const live = foes.filter(f => !f.asleep);
+    const res = await fight(live, {noun:'the coiners'});
+    if (res === 'fled'){ nar('You run past them, not away: under the arch and into the dark. They don\'t follow. Their place is at the gate.'); }
+    else nar('The gate is yours.');
+  }
+  xp += 50; render();
+  await cont('Go inside');
+}
+
+async function s4(){
+  await offerWoundwort();
+  scene(4, 'The Weighing Hall');
+  nar('Beyond the gate is a long, cold hall where the baron\'s clerks once weighed every coin. A pair of iron scales as tall as a house fills the far end. One pan holds a stone block marked <em>ONE TALENT</em>. The other is empty. The only door out is chained to the beam. Balance the scales and the chain goes slack.');
+  nar('A rack along the wall still holds the baron\'s reference weights, rusted solid, and a single <strong>silver ingot</strong> the clerks missed.');
+  if (await save('int', 'work out the trick')){
+    nar('The scales don\'t weigh. They <em>count</em>: every item counts once for each slot it fills. The rusted reference weights still count. You load them into the pan, and the beam levels. <strong>You give up nothing.</strong>');
+  } else {
+    const {vals} = await roll('How much the scales want (d4 slots)', [4], {who:'gm'});
+    let need = vals[0];
+    nar(`You pile your own gear into the pan until it balances. Give up items worth <strong>${need} slot${need > 1 ? 's' : ''}</strong>.`);
+    ruleOnce('slots', `Item slots: you can carry as many slots as your Constitution defense (${slotsMax()}). Most items take 1; armor, big weapons, and ingots take more.`);
+    used.add('slots');
+    for (let guard = 0; need > 0 && guard < 20; guard++){
+      const opts = C.items.filter(i => i.kind !== 'brass' && i.s > 0).map((i,k) => ({id:'g'+k, n:i.n, s:i.s, label:`Put in: ${esc(i.n)}`, sub:`${i.s} slot${i.s > 1 ? 's' : ''}`, say:false}));
+      if (!opts.length) break;
+      const c = await choose(opts); const o = opts.find(x => x.id === c);
+      removeItem(o.n); need -= o.s; nar(`The ${esc(o.n.toLowerCase())} goes into the pan.`);
+    }
+    nar('The beam levels. Your things drop away into the dark under the floor.');
+  }
+  xp += 50; render();
+  await addItem({n:'Silver ingot', s:2});
+  nar('Under the scales, half-buried in old dust, you find a heavy notched key: <strong>the Iron Tally</strong>.');
+  await addItem({n:'Iron Tally', s:1});
+  // clink check
+  used.add('table');
+  rule('A Clink check: in the mint, the referee rolls a d6 now and then. On a 1, something wanders into you.');
+  const {row, vals} = await roll('Clink check (d6)', [6], {who:'gm'});
+  stamp(row, vals[0] === 1 ? 'bad' : 'ok', vals[0] === 1 ? 'something comes' : 'quiet');
+  if (vals[0] === 1){
+    nar('A sound like a purse being shaken. A knot of loose baron\'s pennies rolls across the floor toward the warmth of you: <strong>clinkers</strong>.');
+    await fight([foe('clinker', {hp:3, armor:13, atk:1, die:4, morale:8})], {noun:'the clinkers'});
+  }
+  const a = await askDice('Is anyone down there still themselves?', 'even', 4);
+  nar(a.yes ? 'Under the hammering you hear someone swearing at the coiners: a woman\'s voice, sharp and very much alive.' + (a.v === 6 ? ' She says a name: <em>Grisel</em>. Her own.' : '') : 'There\'s only the hammering, and it\'s getting faster.' + (a.v === 1 ? ' For a moment you could swear it\'s matching your heartbeat.' : ''));
+  nar('The door opens onto a spiral stair. The air coming up it is hot, and smells of coal and pennies. Below, the great press strikes: <em>THOOM</em>.');
+  await cont('End of Act One');
+}
+
+async function ending(kind){
+  $('#sceneName').textContent = 'End of Act One';
+  choicesEl.innerHTML = '';
+  const ALL = [['abil','3d6, keep the lowest'],['save','Saves: d20 + bonus, beat 15'],['opposed','Opposed saves vs a defense'],['reaction','Reaction rolls'],['slots','Item slots'],['init','Initiative'],['attack','Attack rolls vs armor'],['damage','Weapon damage dice'],['morale','Morale'],['crit','Critical hits and quality'],['spell','Casting from a spellbook'],['oracle','Ask the Dice (solo oracle)'],['table','Random tables'],['tarnish','Tarnish (adventure rule)']];
+  const store = Object.assign({}, DEFAULTS, (window.RDL_STORE && window.RDL_STORE.products && window.RDL_STORE.products[PRODUCT_ID]) || {});
+  const live = !!store.checkout;
+  const head = {done:'Act One complete.', down:'You wake in chains.', dead:'Your knave is dead.', tarnished:'The mint has you.'}[kind];
+  const body = {
+    done:`${esc(C.name)} stands at the top of the spiral stair with ${has('Silver ingot') ? 'a silver ingot, ' : ''}${has('Iron Tally') ? 'the Iron Tally, ' : ''}${C.hp} HP, and ${C.tarnish} Tarnish. Below, something enormous is striking coins. The story continues in the full adventure.`,
+    down:`${esc(C.name)} drops to 0 HP. In Knave, that's unconscious, not dead. Coiners drag you down into the mint. In the full adventure, you wake at 1 HP in the Counting House (scene 9), face to face with the woman who started all this.`,
+    dead:`${esc(C.name)} fell below 0 HP. Knave is quick and deadly: in the full game, you'd roll up a new knave in about two minutes and go back for the body. The mint is still striking.`,
+    tarnished:`${esc(C.name)}'s Tarnish track is full. The world becomes very simple: the furnace, the mold, the press. In the full adventure, a new knave can come looking for you on the furnace floor.`}[kind];
+  add('endcard', `
+    <h3>${head}</h3>
+    <p style="margin:0">${body}</p>
+    <p style="margin:0" class="fine">XP earned: ${xp}. A knave reaches level 2 at 1,000 XP.</p>
+    <div class="product">
+      <div class="cov"><small>A solo adventure for Knave</small>The Dead Baron's Mint</div>
+      <div>
+        <strong style="font-family:var(--f-display);font-weight:400;font-size:20px">${esc(store.name)}: the complete adventure (PDF)</strong>
+        <ul>
+          <li>Acts Two and Three: the furnace floor, the ghost assayer, the flooded treasury, Grisel Penn, and the Brass Baron himself</li>
+          <li>Five endings plus a Tarnished ending, and a way to keep playing</li>
+          <li>Three ready-to-play knaves, a cutaway map of the mint, and the people of Cobble Ash</li>
+          <li>Nine new foes, six original spellbooks, and ten random tables including a solo oracle</li>
+          <li>A full Knave rules summary, so you can play with nothing else</li>
+          <li>Printable character and track sheets · 26 pages</li>
+        </ul>
+        <div class="buy">
+          ${live ? `<a class="buybtn" href="${esc(store.checkout)}" target="_blank" rel="noopener">Buy the PDF · ${esc(store.price || '')}</a>` : `<span class="buybtn" aria-disabled="true">PDF coming soon${store.price ? ' · ' + esc(store.price) : ''}</span>`}
+          <small>${live ? 'Instant download. Secure checkout by Lemon Squeezy.' : 'The store opens soon.'}</small>
+        </div>
+      </div>
+    </div>
+    <ul class="learned">${ALL.map(([k,t]) => `<li class="${used.has(k)?'':'no'}">${t}</li>`).join('')}</ul>
+    <p class="fine">Knave is by Ben Milton: get it at <a href="https://questingbeast.itch.io/knave" target="_blank" rel="noopener">questingbeast.itch.io/knave</a>. This adventure is not an official Knave product.</p>`);
+  const c = await choose([{id:'again', label:'Play Act One again', cls:'primary', say:false}]);
+  if (c === 'again') location.reload();
+}
+
+if (matchMedia('(max-width: 880px)').matches) $('#sheet').open = false;
+start();
+})();
+</script>
+</body>
+</html>

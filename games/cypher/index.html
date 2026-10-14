@@ -1,0 +1,838 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Glass Comet: Cypher System Demo</title>
+<meta name="description" content="Play Act One of The Glass Comet, a solo Weird West adventure compatible with the Cypher System, free in your browser. Real task rolls, Effort, cyphers, and GM intrusions.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rye&family=Old+Standard+TT:ital,wght@0,400;0,700;1,400&family=Courier+Prime:ital,wght@0,400;0,700;1,400&display=swap">
+<script src="../../store.js"></script>
+<style>
+/* Layout: a night on the salt flats. The story is a sheet of sun-bleached newsprint; rules arrive as telegram tape;
+   the character sheet is a lantern-lit ledger beside it. Starglass green is the only bright color. */
+:root{
+  --night:#0E1024; --night-2:#171A33; --line:#2C3052;
+  --sand:#F3EAD6; --sand-2:#E8DCC0; --ink:#211D18; --muted:#6B6257;
+  --glass:#127A63; --glow:#4FE3B0; --rust:#A0401E; --tape:#F6EEC9;
+  --ok:#1E7A4F; --bad:#A0401E; --gm:#3B3F6B;
+  --f-display:"Rye", Georgia, serif; --f-body:"Old Standard TT", Georgia, serif; --f-mono:"Courier Prime", "Courier New", monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background-color:var(--night);color:var(--sand);font-family:var(--f-body);font-size:17.5px;line-height:1.5;
+  background-image:radial-gradient(1.2px 1.2px at 12% 8%,#fff8 50%,transparent 51%),radial-gradient(1px 1px at 37% 4%,#fff6 50%,transparent 51%),radial-gradient(1.3px 1.3px at 68% 11%,#fff9 50%,transparent 51%),radial-gradient(1px 1px at 88% 6%,#fff6 50%,transparent 51%),radial-gradient(1px 1px at 52% 17%,#fff5 50%,transparent 51%),radial-gradient(ellipse at 80% -10%, #1F3B44 0%, transparent 55%);
+  background-attachment:fixed}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--glow);outline-offset:2px}
+.proto{background:#07081A;color:#B9B3C9;font-family:var(--f-mono);font-size:13px;padding-block:7px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));display:flex;gap:6px 16px;flex-wrap:wrap;justify-content:space-between}
+.proto b{color:#fff}
+.wrap{max-width:1160px;margin:0 auto;padding-block:22px 60px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+.masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px 24px;flex-wrap:wrap;margin-bottom:18px}
+.eyebrow{font-family:var(--f-mono);font-weight:700;font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--glow);margin:0 0 8px}
+h1{font-family:var(--f-display);font-weight:400;font-size:clamp(40px,7vw,70px);line-height:.95;margin:0;color:#F6EBD2;text-shadow:0 0 26px rgba(79,227,176,.28)}
+.tag{font-style:italic;color:#DCD2BC;margin:12px 0 0;max-width:56ch}
+.chips{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.actchip{font-family:var(--f-mono);font-size:13px;border:1px solid var(--glow);color:var(--glow);padding:6px 12px;border-radius:2px;white-space:nowrap}
+.compat{font-family:var(--f-mono);font-size:11.5px;color:#B9B3C9;letter-spacing:.04em}
+
+.table{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start}
+.story{background:var(--sand);color:var(--ink);border-radius:2px;min-width:0;box-shadow:0 0 0 1px #000, 0 18px 40px rgba(0,0,0,.5)}
+.story-head{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;padding:10px 18px;border-bottom:3px double var(--ink)}
+.story-head .scene{font-family:var(--f-display);font-size:20px;line-height:1.1}
+.toggles{display:flex;gap:4px 14px;flex-wrap:wrap}
+.toggle{font-family:var(--f-mono);font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--muted)}
+.toggle input{accent-color:var(--glass)}
+#log{padding:18px 20px 8px;display:flex;flex-direction:column;gap:12px}
+.line{max-width:66ch}
+.who{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:1px}
+.npc{border-left:3px solid var(--rust);padding-left:12px;font-style:italic}
+.npc .who{font-style:normal}
+.you{align-self:flex-end;background:var(--night);color:#F6EBD2;padding:7px 13px;border-radius:2px;max-width:min(54ch,90%);font-weight:700}
+.rule{font-family:var(--f-mono);font-size:14px;line-height:1.45;background:var(--tape);border:1px dashed #BFAF7A;border-left:5px solid var(--glass);padding:7px 11px;max-width:66ch}
+.rule::before{content:"RULE STOP ";font-weight:700;letter-spacing:.06em;color:var(--glass)}
+body.norules .rule{display:none}
+.scenebreak{font-family:var(--f-display);font-size:26px;line-height:1.1;border-top:3px double var(--ink);padding-top:10px;margin-top:8px}
+.scenebreak small{display:flex;align-items:center;gap:8px;font-family:var(--f-mono);font-weight:700;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--rust)}
+.scenebreak small i{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--night);color:var(--glow);font-style:normal;letter-spacing:0}
+
+.rollrow{display:flex;flex-direction:column;gap:8px;border:2px solid var(--ink);border-radius:2px;padding:10px 12px;max-width:66ch;background:#FFFBF1}
+.rollrow.gm{border-style:dashed;border-color:var(--gm);background:#F1EFF8}
+.rollrow .lbl{font-family:var(--f-mono);font-size:14px;font-weight:700}
+.steps{list-style:none;margin:0;padding:0;font-family:var(--f-mono);font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:1px}
+.steps li b{color:var(--ink)}
+.steps .dn{color:var(--glass)} .steps .up{color:var(--rust)}
+.dice{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.d20{width:52px;height:56px;display:grid;place-items:center;font-family:var(--f-mono);font-weight:700;font-size:19px;color:#fff;position:relative}
+.d20::before{content:"";position:absolute;inset:0;background:var(--glass);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.d20 span{position:relative}
+.d20.gmd::before{background:var(--gm)}
+.d20.miss::before{background:#8E857A}
+.d6{width:42px;height:42px;border:2px solid var(--ink);border-radius:7px;background:#fff;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:5px}
+.d6 i{width:7px;height:7px;border-radius:50%;background:var(--ink);place-self:center;visibility:hidden}
+.d6.gmd{border-color:var(--gm)} .d6.gmd i{background:var(--gm)}
+.ghost{opacity:.4}
+.d6.ghost{border-style:dashed}
+.tn{font-family:var(--f-mono);font-weight:700;font-size:15px;border:2px solid var(--ink);padding:4px 9px;border-radius:2px}
+.tumble{animation:tumble .12s linear infinite}
+@keyframes tumble{50%{transform:rotate(12deg) translateY(-2px)}}
+.score{font-family:var(--f-mono);font-size:14px}
+.result{font-family:var(--f-mono);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:2px;color:#fff;align-self:flex-start}
+.result.ok{background:var(--ok)} .result.bad{background:var(--bad)} .result.n{background:var(--ink)} .result.gmr{background:var(--gm)}
+.hpline{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-family:var(--f-mono);font-size:13px}
+.hpbar{flex:1 1 140px;min-width:100px;max-width:260px;height:12px;border:1.5px solid var(--ink);background:#fff;position:relative}
+.hpbar i{position:absolute;left:0;top:0;bottom:0;background:var(--rust)}
+.intrusion{border:2px solid var(--rust);background:#FBEDE4;padding:9px 12px;max-width:66ch;border-radius:2px}
+.intrusion .who{color:var(--rust);font-weight:700}
+
+#choices{position:sticky;bottom:0;background:var(--sand-2);border-top:3px double var(--ink);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:10px}
+#choices:empty{display:none}
+.opt{flex:1 1 220px;text-align:left;border:2px solid var(--ink);background:#FFFBF1;padding:9px 12px;cursor:pointer;border-radius:2px;box-shadow:3px 3px 0 var(--ink);min-width:0}
+.opt:hover{background:#FFF4DA}
+.opt:active{transform:translate(3px,3px);box-shadow:none}
+.opt b{display:block;font-weight:700;line-height:1.25}
+.opt span{display:block;font-family:var(--f-mono);font-size:12.5px;color:var(--muted);margin-top:2px}
+.opt.primary{background:var(--night);color:#F6EBD2}
+.opt.primary span{color:#B9D8CC}
+.opt.xp{background:#EAF5F0;border-color:var(--glass)}
+.opt.warn{background:#FBEDE4;border-color:var(--rust)}
+.opt:disabled{opacity:.45;cursor:not-allowed}
+.opt.roll{flex:1 1 100%;display:grid;grid-template-columns:auto 1fr;column-gap:14px;align-items:center;padding:12px 16px}
+.opt.roll::before{content:"";grid-row:span 2;width:28px;height:30px;background:var(--glow);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);transition:transform .2s}
+.opt.roll:hover::before{transform:rotate(60deg)}
+.opt.roll b{font-size:19px}
+
+/* sheet */
+.sheet{position:sticky;top:calc(12px + env(safe-area-inset-top,0px));background:var(--night-2);border:1.5px solid var(--line);border-radius:2px;min-width:0;color:var(--sand)}
+.sheet summary{list-style:none;cursor:pointer;padding:9px 14px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 10px;align-items:baseline;border-bottom:1px solid var(--line)}
+.sheet summary::-webkit-details-marker{display:none}
+.sheet .nm{font-family:var(--f-display);font-size:19px;color:#F6EBD2}
+.sheet .mini{font-family:var(--f-mono);font-size:12px;color:var(--glow);white-space:normal}
+.sheet-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:12px}
+.sent{font-style:italic;font-size:15px;color:#DCD2BC;margin:0}
+.sec{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#9EA3CF;border-bottom:1px solid var(--line);padding-bottom:2px;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
+.pool{display:grid;grid-template-columns:72px 1fr auto;gap:8px;align-items:center;font-family:var(--f-mono);font-size:12.5px;margin:4px 0}
+.pool b{font-family:var(--f-display);font-weight:400;font-size:14px;color:#F6EBD2}
+.bar{height:12px;border:1px solid #4A4F7A;position:relative;background:#0B0D20}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--glow);transition:width .3s}
+.bar.low i{background:#E0864F}
+.pool em{font-style:normal;color:#DCD2BC;white-space:nowrap}
+.stats3{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;text-align:center}
+.stats3 div{border:1px solid #4A4F7A;border-radius:2px;padding:3px 0}
+.stats3 b{display:block;font-family:var(--f-display);font-weight:400;font-size:18px;color:#F6EBD2;line-height:1.2}
+.stats3 small{font-family:var(--f-mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:#9EA3CF}
+.track{display:flex;gap:4px;flex-wrap:wrap}
+.track span{font-family:var(--f-mono);font-size:11px;padding:2px 6px;border:1px solid #4A4F7A;color:#7E83AF;border-radius:2px}
+.track span.on{background:var(--glow);color:var(--night);border-color:var(--glow);font-weight:700}
+.track span.on.hurt{background:#E0864F;border-color:#E0864F}
+.hum{display:flex;gap:4px;flex-wrap:wrap}
+.hum i{width:18px;height:18px;border-radius:50%;border:1.5px solid #4A4F7A}
+.hum i.on{background:var(--glow);border-color:var(--glow);box-shadow:0 0 8px var(--glow)}
+.list{list-style:none;margin:0;padding:0;font-size:14px;display:flex;flex-direction:column;gap:4px}
+.list li{display:flex;justify-content:space-between;gap:8px}
+.list small{font-family:var(--f-mono);font-size:11px;color:#9EA3CF;white-space:nowrap}
+.list .d{display:block;font-family:var(--f-mono);font-size:11.5px;color:#B9B3C9;line-height:1.35}
+.list li.cy{flex-direction:column;gap:0}
+.empty-sheet{font-style:italic;color:#9EA3CF;font-size:15px}
+
+.pcs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;max-width:66ch}
+.endcard{border:2px solid var(--ink);background:#FFFBF1;padding:16px 18px;display:flex;flex-direction:column;gap:10px;max-width:66ch}
+.endcard h3{font-family:var(--f-display);font-weight:400;font-size:28px;line-height:1.05;margin:0}
+.product{display:grid;grid-template-columns:110px 1fr;gap:14px;align-items:start;background:var(--night);color:var(--sand);padding:14px;border-radius:2px}
+.product .cov{background:var(--night-2);border:1px solid var(--line);aspect-ratio:8.5/11;display:flex;flex-direction:column;justify-content:flex-end;padding:8px;font-family:var(--f-display);font-size:16px;line-height:1;color:#F6EBD2;position:relative;overflow:hidden}
+.product .cov::after{content:"";position:absolute;right:10px;top:22px;width:46px;height:3px;background:var(--glow);transform:rotate(-30deg);box-shadow:0 0 10px var(--glow)}
+.product .cov small{font-family:var(--f-mono);font-size:7px;letter-spacing:.12em;color:var(--glow);margin-bottom:auto;text-transform:uppercase}
+.product ul{margin:.3em 0 .6em;padding-left:1.1em;font-size:15px}
+.buy{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}
+.buybtn{display:inline-block;text-decoration:none;background:var(--glow);color:var(--night);font-weight:700;padding:10px 16px;border-radius:2px;border:0;cursor:pointer;font-size:16px}
+.buybtn[aria-disabled="true"]{background:#5D6080;color:#E8DCC0;cursor:not-allowed}
+.buy small{font-family:var(--f-mono);font-size:12.5px;color:#B9B3C9}
+.learned{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px 14px;font-size:15px}
+.learned li::before{content:"✓ ";font-weight:700;color:var(--ok)}
+.learned li.no{color:var(--muted)} .learned li.no::before{content:"○ ";color:var(--muted)}
+.fine{font-family:var(--f-mono);font-size:12.5px;color:var(--muted);line-height:1.5}
+.foot{font-family:var(--f-mono);font-size:12.5px;margin-top:22px;max-width:92ch;line-height:1.6;color:#B9B3C9}
+.foot p{margin:0 0 .6em}
+
+@media (max-width: 880px){
+  .table{grid-template-columns:minmax(0,1fr)}
+  .sheet{order:-1;top:env(safe-area-inset-top,0px);z-index:5}
+  .sheet-body{max-height:60vh;overflow:auto}
+  #log{padding:14px 14px 6px}
+  .product{grid-template-columns:1fr}
+  .product .cov{max-width:120px}
+  .chips{align-items:flex-start}
+}
+@media (prefers-reduced-motion: reduce){ .tumble{animation:none} }
+</style>
+</head>
+<body>
+<div class="proto"><span><a href="../../" style="color:inherit">← All demos</a> · <b>FREE DEMO</b> · Act One of three</span><span>Not an official Cypher System product</span></div>
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">A solo Weird West adventure</p>
+      <h1>The Glass Comet</h1>
+      <p class="tag">Twenty-three nights ago a green comet broke over the Saltpan Flats. Now the well water in Mercy Wells hums, and every night a few more townsfolk walk east toward the crater, singing.</p>
+    </div>
+    <div class="chips"><span class="actchip">Free: Act One · about 20 minutes</span><span class="compat">Compatible with the Cypher System</span></div>
+  </header>
+  <div class="table">
+    <main class="story" aria-live="polite">
+      <div class="story-head">
+        <span class="scene" id="sceneName">Before you begin</span>
+        <span class="toggles">
+          <label class="toggle"><input type="checkbox" id="rulesToggle" checked> Show rules</label>
+          <label class="toggle"><input type="checkbox" id="autoToggle"> Auto-roll</label>
+        </span>
+      </div>
+      <div id="log"></div>
+      <div id="choices"></div>
+    </main>
+    <details class="sheet" id="sheet" open>
+      <summary><span class="nm" id="sumName">Your character</span><span class="mini" id="sumMini">not chosen yet</span></summary>
+      <div class="sheet-body" id="sheetBody"><p class="empty-sheet">Your character appears here: Might, Speed, and Intellect Pools, Edge, Effort, XP, the damage track, cyphers, and the Hum.</p></div>
+    </details>
+  </div>
+  <div class="foot">
+    <p>This product is an independent production and is not affiliated with Monte Cook Games, LLC. It is published under the Cypher System Open License, found at <a href="http://csol.montecookgames.com" target="_blank" rel="noopener">http://csol.montecookgames.com</a>. CYPHER SYSTEM and its logo are trademarks of Monte Cook Games, LLC in the U.S.A. and other countries. All Monte Cook Games characters and character names, and the distinctive likenesses thereof, are trademarks of Monte Cook Games, LLC.</p>
+    <p>This is not an official Cypher System product. Rules in this demo are implemented and explained in our own words, based on the Cypher System Reference Document. The adventure "The Glass Comet", its setting, characters, creatures, and starglass cyphers are © 2026 RPG Demo Library. All rights reserved. Get the Cypher System Rulebook at <a href="https://www.montecookgames.com" target="_blank" rel="noopener">montecookgames.com</a>.</p>
+  </div>
+</div>
+
+<script>
+(() => {
+const PRODUCT_ID = 'glass-comet';
+let autoRoll = false;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = s => document.querySelector(s);
+const logEl = $('#log'), choicesEl = $('#choices');
+const d = n => 1 + Math.floor(Math.random()*n);
+const sleep = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const cap = s => s[0].toUpperCase() + s.slice(1);
+
+try { if (localStorage.getItem('gc-rules') === 'off') { $('#rulesToggle').checked = false; document.body.classList.add('norules'); } } catch(e){}
+try { if (localStorage.getItem('gc-auto') === 'on') { $('#autoToggle').checked = true; autoRoll = true; } } catch(e){}
+$('#rulesToggle').addEventListener('change', e => { document.body.classList.toggle('norules', !e.target.checked); try { localStorage.setItem('gc-rules', e.target.checked ? 'on' : 'off'); } catch(err){} });
+$('#autoToggle').addEventListener('change', e => { autoRoll = e.target.checked; try { localStorage.setItem('gc-auto', autoRoll ? 'on' : 'off'); } catch(err){} });
+
+/* ---------- cyphers (original starglass) ---------- */
+const CYPHERS = {
+  mending:  {name:'Mending shard', text:'Crush it: restore level + 2 points to one Pool.'},
+  thunder:  {name:'Thunderglass', text:'Throw it: explodes for damage equal to its level.'},
+  flash:    {name:'Flashglass', text:'A blind of green light: a foe\'s tasks are hindered for rounds equal to its level.'},
+  stillskin:{name:'Stillskin', text:'Your skin goes glassy: +2 Armor for ten minutes.'},
+  compass:  {name:'Saltpan compass', text:'Points to the biggest starglass for miles: navigation eased by two steps.'},
+  shatter:  {name:'Shatterpoint', text:'Your next attack ignores Armor and deals extra damage equal to its level.'},
+  quiet:    {name:'Quiet stone', text:'Hold it in your mouth: defense rolls against the Hum eased by two steps for an hour.'},
+};
+
+/* ---------- characters ---------- */
+const PCS = {
+  della:{name:'Della Strand', sentence:'a Tough Warrior who Masters Weaponry', type:'Warrior',
+    pools:{might:[12,0], speed:[12,1], intellect:[10,0]}, armor:1, limit:2, tough:true,
+    skills:['Might defense','Speed defense (no armor)','climbing','balancing','rifle repair'], inab:[],
+    abilities:['Combat Prowess (ranged +1)','Overwatch (1 Int)','Trained Without Armor','Physical Skills','Weapon Master (+1)','Weapon Crafter'],
+    weapons:[{id:'rifle', name:'Patience, your rifle', kind:'heavy', stat:'speed', dmg:8, why:'heavy rifle 6, +1 Weapon Master, +1 Combat Prowess'},{id:'knife', name:'Skinning knife', kind:'light', stat:'speed', dmg:2, why:'light weapon 2'}],
+    cyphers:[['mending',3],['thunder',4]], ranged:true,
+    blurb:'For six years you rode shotgun on the Kestrel stage line with a rifle you call Patience. The driver, Hob Tully, taught you cards and never once won.'},
+  cordelia:{name:'Dr. Cordelia Ashby', sentence:'an Inquisitive Adept who Conducts Weird Science', type:'Adept',
+    pools:{might:[9,0], speed:[10,0], intellect:[19,1]}, armor:1, limit:3,
+    skills:['learning new things','geography','history','chemistry','geology'], inab:['noticing danger','initiative'],
+    abilities:['Onslaught (1 Int)','Scan (2 Int)','Ward (+1 Armor)','Push (2 Int)','Lab Analysis (3 Int)','Knowledge Skills'],
+    weapons:[{id:'onslaught', name:'Onslaught: galvanic bolt', kind:'ability', stat:'intellect', dmg:4, cost:1, why:'force bolt 4, costs 1 Intellect'},{id:'derringer', name:'Derringer', kind:'light', stat:'speed', dmg:2, why:'light weapon 2'}],
+    cyphers:[['flash',3],['stillskin',4],['compass',2]],
+    blurb:'A natural philosopher from Philadelphia. You followed the comet west with a carpetbag of instruments and a galvanic coil of your own design.'},
+  jonah:{name:'Jonah Pike', sentence:'a Rugged Explorer who Lives in the Wilderness', type:'Explorer',
+    pools:{might:[15,1], speed:[12,1], intellect:[10,0]}, armor:0, limit:2,
+    skills:['navigation','identifying creatures','climbing','jumping','running','swimming','riding and animals'], inab:['charm and persuasion'],
+    abilities:['Danger Sense (1 Speed)','Find the Way','Block (3 Speed)','Improved Edge','Wilderness Life','Enhanced Might'],
+    weapons:[{id:'revolver', name:'Revolver', kind:'medium', stat:'speed', dmg:4, why:'medium weapon 4'},{id:'hatchet', name:'Hatchet', kind:'light', stat:'might', dmg:2, why:'light weapon 2'}],
+    cyphers:[['mending',2],['shatter',3]],
+    blurb:'Mustanger and tracker. You broke horses with Eli Calloway the summer you were both nineteen. When his horse came home without him, Ruth didn\'t have to ask.'},
+};
+
+let C = null; const used = new Set();
+let hum = 0;
+const foe = {on:false, name:'', level:0, hp:0, max:0, armor:0, dmg:0, hindered:0, stunned:false};
+
+/* ---------- log ---------- */
+function add(cls, html){ const el = document.createElement('div'); if (cls) el.className = cls; el.innerHTML = html; logEl.appendChild(el); requestAnimationFrame(() => el.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'})); return el; }
+const nar = h => add('line', h);
+const npc = (who, h) => add('line npc', `<span class="who">${who}</span>${h}`);
+const you = h => add('line you', h);
+const rule = h => add('rule', h);
+function scene(num, name){ $('#sceneName').textContent = name; add('scenebreak', `<small>${num ? `<i>${num}</i>` : ''}Act One</small>${name}`); }
+function choose(opts){
+  return new Promise(res => {
+    choicesEl.innerHTML = '';
+    opts.forEach(o => {
+      const b = document.createElement('button'); b.className = 'opt' + (o.cls ? ' ' + o.cls : '');
+      b.innerHTML = `<b>${o.label}</b>${o.sub ? `<span>${o.sub}</span>` : ''}`; if (o.disabled) b.disabled = true;
+      b.addEventListener('click', () => { choicesEl.innerHTML = ''; if (o.say) you(o.say); res(o.id); });
+      choicesEl.appendChild(b);
+    });
+    requestAnimationFrame(() => choicesEl.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'}));
+    const first = choicesEl.querySelector('button:not(:disabled)'); if (first && matchMedia('(pointer:fine)').matches) first.focus({preventScroll:true});
+  });
+}
+const cont = (label='Continue') => choose([{id:'c', label, cls:'primary'}]);
+async function waitRoll(sub, btn){ if (autoRoll) return; await choose([{id:'r', label: btn || 'Roll the d20', sub, cls:'primary roll'}]); }
+
+/* ---------- dice ---------- */
+const PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function d20El(gm){ const e = document.createElement('div'); e.className = 'd20 ghost' + (gm ? ' gmd' : ''); e.innerHTML = '<span>?</span>'; return e; }
+function d6El(gm){ const e = document.createElement('div'); e.className = 'd6 ghost' + (gm ? ' gmd' : ''); for (let i=0;i<9;i++) e.appendChild(document.createElement('i')); return e; }
+function face6(e, v){ [...e.children].forEach((p,i) => p.style.visibility = (PIPS[v]||[]).includes(i) ? 'visible' : 'hidden'); e.setAttribute('aria-label','d6 showing '+v); }
+async function tumble(fn){ for (let t=0;t<(reduced?1:9);t++){ fn(); await sleep(55); } }
+async function rollD20Into(diceEl, gm){
+  const e = d20El(gm); diceEl.appendChild(e);
+  const v = d(20); e.classList.remove('ghost'); e.classList.add('tumble');
+  await tumble(() => e.firstChild.textContent = d(20)); e.classList.remove('tumble'); e.firstChild.textContent = v; e.setAttribute('aria-label','d20 showing '+v);
+  return {v, e};
+}
+// GM rolls (oracle, intrusion die): automatic
+async function gmRoll(label, sides){
+  const row = add('rollrow gm', `<span class="lbl">GM roll: ${label}</span>`);
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  let v;
+  if (sides === 6){ const e = d6El(true); dice.appendChild(e); v = d(6); e.classList.remove('ghost'); await tumble(() => face6(e, d(6))); face6(e, v); }
+  else { await sleep(150); v = (await rollD20Into(dice, true)).v; }
+  return {v, row};
+}
+
+/* ---------- pools, damage track ---------- */
+const STATS = ['might','speed','intellect'];
+function trackStep(){ return STATS.filter(s => C.pools[s].cur <= 0).length; } // 0 hale, 1 impaired, 2 debilitated, 3 dead
+const TRACK = ['hale','impaired','debilitated','dead'];
+function noteTrack(before){
+  const after = trackStep();
+  if (after > before){
+    used.add('track');
+    if (after === 1) rule('A Pool hit 0, so you slide one step down the damage track: <b>impaired</b>. Effort now costs 1 extra point per level, and you ignore minor and major effects.');
+    else if (after === 2) rule('A second Pool hit 0: you are <b>debilitated</b>. You can do nothing but crawl. One more step is death.');
+  } else if (after < before){ rule(`Restoring a Pool above 0 moves you back up the damage track: you are <b>${TRACK[after]}</b>.`); }
+}
+function spend(stat, n){ if (n <= 0) return; const before = trackStep(); C.pools[stat].cur = Math.max(0, C.pools[stat].cur - n); render(); noteTrack(before); }
+function restore(stat, n){ const before = trackStep(); const P = C.pools[stat]; const got = Math.min(n, P.max - P.cur); P.cur += got; render(); noteTrack(before); return got; }
+function takeDamage(n, {stat='might', ignoreArmor=false, why=''} = {}){
+  const armor = ignoreArmor ? 0 : C.armor + (C.stillskin ? 2 : 0);
+  const dmg = Math.max(0, n - armor);
+  if (why) nar(why);
+  if (!dmg){ add('', `<span class="result ok">Armor absorbs all ${n} damage</span>`); return 0; }
+  const before = trackStep();
+  let left = dmg;
+  const order = [stat, ...['might','speed','intellect'].filter(s => s !== stat)];
+  for (const s of order){ if (!left) break; const P = C.pools[s]; if (P.cur <= 0) continue; const t = Math.min(P.cur, left); P.cur -= t; left -= t; }
+  if (trackStep() >= 3){ C.pools.intellect.cur = 1; nar('<em>In the full game, that would kill you. The demo lets you cling on with 1 Intellect.</em>'); }
+  render();
+  add('', `<span class="result bad">${dmg} ${stat === 'intellect' && ignoreArmor ? 'Intellect ' : ''}damage${armor && !ignoreArmor ? ` (${n} minus ${armor} Armor)` : ''}</span>`);
+  used.add('damage');
+  noteTrack(before);
+  return dmg;
+}
+function markHum(n=1, why){ hum = Math.min(10, hum + n); render(); if (why) nar(why); add('', `<span class="result gmr">The Hum: ${hum} / 10</span>`); used.add('hum'); }
+const humLevel = () => Math.max(2, Math.ceil(hum/2));
+function gainXP(n, why){ C.xp += n; render(); add('', `<span class="result ok">+${n} XP${why ? ': ' + why : ''}</span>`); }
+
+/* ---------- the task roll ---------- */
+// o: {name, stat, diff, skills:[], assets:[], hinder:[], attack, ability:{name,cost}, freeEffort, defense, noEffort}
+async function task(o){
+  used.add(o.defense ? 'defense' : 'task');
+  const P = C.pools[o.stat], edge = P.edge, impaired = trackStep() >= 1;
+  const skills = (o.skills || []).filter(Boolean), assets = (o.assets || []).filter(Boolean), hinder = (o.hinder || []).filter(Boolean);
+  if (skills.length) used.add('skill'); if (assets.length) used.add('asset');
+  const ease = Math.min(2, skills.length) + Math.min(2, assets.length);
+  const lines = [`<li>Base difficulty <b>${o.diff}</b>${o.why ? ' · ' + o.why : ''}</li>`]
+    .concat(skills.slice(0,2).map(s => `<li class="dn">Eased one step: trained (${esc(s)})</li>`))
+    .concat(assets.slice(0,2).map(s => `<li class="dn">Eased one step: asset (${esc(s)})</li>`))
+    .concat(hinder.map(s => `<li class="up">Hindered one step: ${esc(s)}</li>`));
+  const row = add('rollrow', `<span class="lbl">${o.defense ? 'Defense roll' : 'Task'}: ${esc(o.name)} · ${cap(o.stat)}</span><ul class="steps">${lines.join('')}</ul>`);
+  let diff = Math.max(0, o.diff - ease + hinder.length);
+  const abCost = o.ability ? o.ability.cost : 0;
+  let effEase = false, effDmg = false;
+  // Effort decision
+  if (!o.noEffort && (diff > 0 || o.attack)){
+    const effBase = o.freeEffort ? 0 : 3 + (impaired ? 1 : 0);
+    const costNo = Math.max(0, abCost - edge), costEff = Math.max(0, abCost + effBase - edge);
+    const opts = [{id:'none', label:'No Effort', sub: abCost ? `${o.ability.name} costs ${costNo} ${cap(o.stat)} (${abCost} minus Edge ${edge})` : `Difficulty stays ${diff} (target ${diff*3})`}];
+    if (diff > 0) opts.push({id:'ease', label:`Apply Effort: ease to difficulty ${diff-1}`, sub:`Costs ${costEff} ${cap(o.stat)} (you have ${P.cur})${o.freeEffort ? ' · Find the Way makes this level free' : edge ? ` · Edge ${edge} already subtracted` : ''}${impaired && !o.freeEffort ? ' · +1 for impaired' : ''}`, disabled: P.cur < costEff, cls:'xp'});
+    if (o.attack) opts.push({id:'dmg', label:'Apply Effort to damage: +3 damage', sub:`Costs ${costEff} ${cap(o.stat)} (you have ${P.cur}). The difficulty doesn't change.`, disabled: P.cur < costEff});
+    const c = await choose(opts);
+    if (c === 'ease'){ effEase = true; diff -= 1; used.add('effort'); if (edge && !o.freeEffort) used.add('edge'); spend(o.stat, costEff); add('', `<span class="result n">Effort: -${costEff} ${cap(o.stat)}</span>`); }
+    else if (c === 'dmg'){ effDmg = true; used.add('effort'); if (edge) used.add('edge'); spend(o.stat, costEff); add('', `<span class="result n">Effort for damage: -${costEff} ${cap(o.stat)}</span>`); }
+    else if (costNo) spend(o.stat, costNo);
+    if (c !== 'none' && !used.has('effortRule')){ used.add('effortRule'); rule(`Effort: one level eases a task one step and costs 3 points from that stat's Pool. Your Edge in the stat comes off the total cost of the action, once.`); }
+  } else if (abCost) spend(o.stat, Math.max(0, abCost - edge));
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  if (diff <= 0){
+    add('', '<span class="result ok">Difficulty 0: automatic success, no roll</span>');
+    if (!used.has('zeroRule')){ used.add('zeroRule'); rule('Ease a task to difficulty 0 and you simply succeed. No roll means no chance to fail, and no chance at a special roll either.'); }
+    return {ok:true, nat:0, auto:true, effDmg, diff};
+  }
+  const tn = document.createElement('span'); tn.className = 'tn'; tn.textContent = `Target ${diff*3}`; dice.appendChild(tn);
+  await waitRoll(`${o.name}: d20, need ${diff*3} or higher`);
+  let {v, e} = await rollD20Into(dice);
+  let ok = v >= diff*3;
+  if (!ok) e.classList.add('miss');
+  stamp(row, ok, v);
+  if (!ok && v !== 1 && C.xp >= 1){
+    const c = await choose([{id:'re', label:'Spend 1 XP to reroll', sub:`You have ${C.xp} XP. Keep the better roll.`, cls:'xp'},{id:'no', label:'Accept the failure'}]);
+    if (c === 're'){
+      used.add('reroll'); C.xp -= 1; render();
+      if (!used.has('rerollRule')){ used.add('rerollRule'); rule('Spending 1 XP lets you reroll any die and keep the better result.'); }
+      await waitRoll('Reroll: d20', 'Reroll the d20');
+      const r = await rollD20Into(dice); v = Math.max(v, r.v); ok = v >= diff*3; if (!ok) r.e.classList.add('miss');
+      stamp(row, ok, v);
+    }
+  }
+  if (v === 1){
+    used.add('nat');
+    add('intrusion', `<span class="who">Natural 1: a free GM intrusion</span>Something goes wrong on top of the roll. You catch yourself humming a tune you never learned. No XP for this one, and you can't refuse it.`);
+    rule('A natural 1 means the GM intrudes for free: no XP is awarded.');
+    markHum(1);
+  }
+  let effect = null;
+  if (ok && v >= 19 && !o.attack){
+    if (impaired) rule('Impaired characters ignore minor and major effects.');
+    else { used.add('nat'); effect = v === 20 ? 'major' : 'minor'; add('', `<span class="result ok">Natural ${v}: ${effect} effect</span>`); rule('A natural 19 on a success is a minor effect, and a 20 is a major effect: you succeed with a flourish.'); }
+  }
+  return {ok, nat:v, effDmg, diff, effect};
+}
+function stamp(row, ok, v){ const s = document.createElement('span'); s.className = 'result ' + (ok ? 'ok' : 'bad'); s.textContent = `${v}: ${ok ? 'success' : 'failure'}`; row.appendChild(s); }
+
+/* ---------- GM intrusions ---------- */
+async function intrusionCheck(on, text, effect){
+  const {v, row} = await gmRoll(`intrusion die (d6, intrudes on ${on === 1 ? '1' : '1-' + on})`, 6);
+  if (!used.has('dieRule')){ used.add('dieRule'); rule('Solo play: the intrusion die stands in for the GM\'s judgment. On a low roll, the GM intrudes.'); }
+  if (v > on){ const s = document.createElement('span'); s.className = 'result gmr'; s.textContent = `${v}: no intrusion`; row.appendChild(s); return false; }
+  const s = document.createElement('span'); s.className = 'result bad'; s.textContent = `${v}: GM intrusion`; row.appendChild(s);
+  return offerIntrusion(text, effect);
+}
+async function offerIntrusion(text, effect){
+  add('intrusion', `<span class="who">GM intrusion</span>${text}`);
+  if (!used.has('intrRule')){ used.add('intrRule'); rule('A GM intrusion comes with a reward: accept it and gain 2 XP (in a group you would give 1 of them to another player; solo, you keep both). Or refuse it by spending 1 XP.'); }
+  const c = await choose([
+    {id:'acc', label:'Accept the intrusion', sub:'Gain 2 XP, and it happens', cls:'xp'},
+    {id:'ref', label:'Refuse it', sub: C.xp >= 1 ? `Spend 1 XP (you have ${C.xp})` : 'You need 1 XP to refuse', disabled: C.xp < 1, cls:'warn'}]);
+  if (c === 'ref'){ used.add('refuse'); C.xp -= 1; render(); nar('You shake it off. Not tonight.'); return false; }
+  used.add('intrusion'); gainXP(2, 'GM intrusion');
+  await effect();
+  return true;
+}
+
+/* ---------- cyphers ---------- */
+function cypherList(){ return C.cyphers.map((c,i) => ({...c, i, ...CYPHERS[c.id]})); }
+async function gainCypher(id, level){
+  C.cyphers.push({id, level}); render();
+  add('', `<span class="result ok">Cypher found: ${CYPHERS[id].name} (level ${level})</span>`);
+  if (C.cyphers.length <= C.limit) return;
+  used.add('limit');
+  rule(`Cypher limit: a ${C.type} can carry only ${C.limit} cyphers. In this adventure, too much starglass sings loud enough for the thing in the crater to hear.`);
+  const opts = cypherList().map(c => ({id:'drop'+c.i, label:`Leave behind: ${c.name} (level ${c.level})`, sub:c.text}));
+  opts.push({id:'keep', label:'Keep them all', sub:'Mark the Hum', cls:'warn'});
+  const ch = await choose(opts);
+  if (ch === 'keep'){ markHum(1, 'The shards in your pockets chime against each other. Far to the east, something turns toward the sound.'); return; }
+  const i = Number(ch.slice(4)); const gone = C.cyphers.splice(i,1)[0]; render();
+  nar(`You set the ${CYPHERS[gone.id].name} down on the ground. It goes dark as you walk away.`);
+}
+function hasCypher(id){ return C.cyphers.findIndex(c => c.id === id); }
+function useCypher(i){ const c = C.cyphers.splice(i,1)[0]; render(); used.add('cypher'); if (!used.has('cyRule')){ used.add('cyRule'); rule('Cyphers are one-use powers. Use them freely: you will find more. That is how the Cypher System is meant to be played.'); } return c; }
+async function mend(level){
+  const opts = STATS.map(s => ({id:s, label:`Restore ${cap(s)}`, sub:`${C.pools[s].cur} / ${C.pools[s].max}`, disabled: C.pools[s].cur >= C.pools[s].max}));
+  if (opts.every(o => o.disabled)){ nar('You are already whole. The shard\'s warmth goes to waste.'); return; }
+  const s = await choose(opts);
+  const got = restore(s, level + 2); add('', `<span class="result ok">+${got} ${cap(s)}</span>`);
+}
+
+/* ---------- recovery ---------- */
+const REC = ['one action','ten minutes','one hour','ten hours'];
+async function recovery(){
+  const slot = C.rec;
+  if (slot >= 4) return;
+  const bonus = 1 + (C.tough ? 1 : 0);
+  const row = add('rollrow', `<span class="lbl">Recovery roll (${REC[slot]}): d6 + 1 tier${C.tough ? ' + 1 Tough' : ''}</span>`);
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  const e = d6El(); dice.appendChild(e);
+  await waitRoll('Recovery roll: d6', 'Roll the d6');
+  const v = d(6); e.classList.remove('ghost'); await tumble(() => face6(e, d(6))); face6(e, v);
+  C.rec++; used.add('recovery');
+  let pts = v + bonus; add('', `<span class="result ok">${v} + ${bonus} = ${pts} points</span>`);
+  if (!used.has('recRule')){ used.add('recRule'); rule('Recovery rolls: d6 + your tier, split among your Pools as you like. You get four a day: one action, then ten minutes, one hour, and ten hours.'); }
+  while (pts > 0 && STATS.some(s => C.pools[s].cur < C.pools[s].max)){
+    const s = await choose(STATS.map(st => ({id:st, label:`Put points in ${cap(st)}`, sub:`${C.pools[st].cur} / ${C.pools[st].max} · ${pts} to spend`, disabled: C.pools[st].cur >= C.pools[st].max})));
+    pts -= restore(s, pts);
+  }
+  render();
+}
+
+/* ---------- sheet ---------- */
+function render(){
+  if (!C) return;
+  const t = trackStep();
+  $('#sumName').textContent = C.name;
+  $('#sumMini').textContent = `Might ${C.pools.might.cur} · Speed ${C.pools.speed.cur} · Int ${C.pools.intellect.cur} · XP ${C.xp} · ${cap(TRACK[t])}`;
+  const pool = s => { const P = C.pools[s]; const pct = Math.round(100*P.cur/P.max); return `<div class="pool"><b>${cap(s)}</b><span class="bar${pct<34?' low':''}"><i style="width:${pct}%"></i></span><em>${P.cur}/${P.max} · Edge ${P.edge}</em></div>`; };
+  $('#sheetBody').innerHTML = `
+    <p class="sent">"I am ${esc(C.sentence)}."</p>
+    <div class="stats3"><div><b>1</b><small>Tier</small></div><div><b>1</b><small>Effort</small></div><div><b>${C.armor + (C.stillskin?2:0)}</b><small>Armor</small></div><div><b>${C.xp}</b><small>XP</small></div></div>
+    <div><div class="sec"><span>Pools</span><span>current / max</span></div>${STATS.map(pool).join('')}</div>
+    <div><div class="sec"><span>Damage track</span></div><div class="track">${TRACK.map((n,i) => `<span class="${i===t?'on'+(i?' hurt':''):''}">${n}</span>`).join('')}</div></div>
+    <div><div class="sec"><span>Recovery rolls used</span><span>${C.rec}/4</span></div><div class="track">${REC.map((n,i) => `<span class="${i<C.rec?'on':''}">${n}</span>`).join('')}</div></div>
+    <div><div class="sec"><span>Cyphers</span><span>${C.cyphers.length} / limit ${C.limit}</span></div><ul class="list">${C.cyphers.length ? cypherList().map(c => `<li class="cy"><span>${c.name} <small>level ${c.level}</small></span><span class="d">${c.text}</span></li>`).join('') : '<li><small>none</small></li>'}</ul></div>
+    <div><div class="sec"><span>The Hum</span><span>${hum}/10</span></div><div class="hum">${Array.from({length:10},(_,i)=>`<i class="${i<hum?'on':''}"></i>`).join('')}</div></div>
+    ${foe.on ? `<div><div class="sec"><span>Foe</span><span>level ${foe.level} · target ${foe.level*3}</span></div><div class="pool"><b>${esc(foe.name)}</b><span class="bar"><i style="width:${Math.round(100*foe.hp/foe.max)}%;background:#E0864F"></i></span><em>${foe.hp}/${foe.max}</em></div></div>` : ''}
+    <div><div class="sec"><span>Skills</span><span>trained</span></div><div class="sh-l" style="font-size:14px">${C.skills.map(esc).join(', ')}${C.inab.length ? `<br><small style="font-family:var(--f-mono);font-size:11.5px;color:#E0A27E">Inability (hindered): ${C.inab.map(esc).join(', ')}</small>` : ''}</div></div>
+    <div><div class="sec"><span>Abilities</span></div><div style="font-size:14px">${C.abilities.map(esc).join(' · ')}</div></div>
+    ${C.harmonica ? `<div><div class="sec"><span>Gear of note</span></div><div style="font-size:14px">Eli's harmonica · Ruth's clean canteen</div></div>` : ''}`;
+}
+
+/* ---------- the adventure ---------- */
+async function start(){
+  nar('<strong>The Cypher System</strong> is a roleplaying game built on one roll: a d20 against a target number. Your character spends points from three Pools (Might, Speed, Intellect) to make hard things easier, and carries <em>cyphers</em>, one-use powers you\'re meant to burn through.');
+  rule('Every task has a difficulty from 0 to 10. Multiply it by 3 for the target number, then roll a d20 and meet or beat it. Skills, assets, and Effort ease the difficulty before you roll.');
+  nar('Choose who rides out from Mercy Wells tonight.');
+  const pick = await choose(Object.entries(PCS).map(([k,p]) => ({id:k, label:p.name, sub:`${cap(p.sentence.replace(/^an? /,''))} · Might ${p.pools.might[0]} · Speed ${p.pools.speed[0]} · Intellect ${p.pools.intellect[0]}`, say:`I'll play ${p.name}.`})));
+  const P = PCS[pick];
+  C = {...P, key:pick, pools:{}, xp:0, rec:0, cyphers:P.cyphers.map(([id,level]) => ({id, level})), skills:[...P.skills]};
+  STATS.forEach(s => C.pools[s] = {cur:P.pools[s][0], max:P.pools[s][0], edge:P.pools[s][1]});
+  render();
+  nar(esc(P.blurb));
+  rule(`The character sentence: "I am ${P.sentence}." Descriptor, type, and focus set your Pools, Edge, skills, and abilities. At first tier you have Effort 1: you can ease any roll by one step, for a price.`);
+  await cont('Begin Act One');
+  await s1();
+}
+
+async function s1(){
+  scene(1, 'The Empty Stage');
+  nar('You hear it before you see it: six horses at a dead run, and the rattle of a coach being dragged instead of driven. The evening stage from Kestrel Junction comes down Main Street with the reins trailing in the dust and nobody on the box. The horses\' eyes are white. Their sweat smells of hot metal.');
+  nar('They\'re headed straight for the well-house, and the people drawing water there.');
+  const ranged = C.weapons.some(w => w.kind !== 'light' && w.stat === 'speed');
+  const opts = [
+    {id:'might', label:'Leap onto the box and haul on the reins', sub:'Might task, difficulty 3', say:'I go for the box.'},
+    {id:'speed', label:'Run alongside and catch the lead bridle', sub:`Speed task, difficulty 3${C.skills.includes('riding and animals') ? ' · your riding skill eases it' : ''}`, say:'I grab for the bridle.'},
+    {id:'shoot', label:'Fire into the dirt to turn them', sub:`Speed task, difficulty 4${ranged ? ' · your gun is an asset' : ''}`, say:'I put a shot into the street ahead of them.'},
+  ];
+  if (C.key === 'cordelia') opts.push({id:'push', label:'Push the lead horse aside with your coil', sub:'Push: Intellect task, difficulty 3, costs 2 Intellect', say:'I raise the coil and shove.'});
+  const c = await choose(opts);
+  let r;
+  if (c === 'might') r = await task({name:'Haul on the reins', stat:'might', diff:3});
+  else if (c === 'speed') r = await task({name:'Catch the bridle', stat:'speed', diff:3, skills:[C.skills.includes('riding and animals') ? 'riding and animals' : null]});
+  else if (c === 'shoot') r = await task({name:'Turn the team', stat:'speed', diff:4, assets:[ranged ? 'a gun you know' : null]});
+  else { used.add('ability'); r = await task({name:'Push the lead horse', stat:'intellect', diff:3, ability:{name:'Push', cost:2}}); }
+  if (r.ok) nar(`The team slews to a stop a body\'s length from the well, blowing and shaking.${r.effect ? ' Townsfolk cheer. Someone presses a cup of coffee into your hand.' : ''}`);
+  else takeDamage(3, {why:'You stop them the hard way: the coach drags you twenty feet down Main Street before the horses give up.'});
+  nar('Inside the coach there are no passengers. Only a valise, a lady\'s glove, and a fine frost of green glass on the seats, as if something sat there and left part of itself behind. On the driver\'s bench, wedged into the wood where Hob Tully\'s hand would rest, is a thumb-long shard of green glass. It is warm.');
+  rule('That shard is starglass, a cypher: a single-use power. Every character can carry only a few (the cypher limit).');
+  await gainCypher('quiet', 3);
+  nar('<strong>Sheriff Ruth Calloway</strong> arrives at a run, a shotgun in one hand and her hat in the other. She\'s forty, steady, and hasn\'t slept.');
+  npc('Ruth Calloway', '"Hob Tully drove that stage nine years. He\'d sooner cut off his hand than leave his team." She looks east, at the salt going pink in the last light. "Same as my brother left his horse. Eli rode out to the crater two nights back. His horse came home at dawn. He didn\'t."');
+  npc('Ruth Calloway', '"I can\'t leave. Half this town hums in its sleep, and somebody has to lock the doors. Find Eli. Find out what\'s out there."');
+  await intrusionCheck(2, 'A horse bolts, scattering the crowd. Mrs. Abernathy from the boardinghouse is knocked flat in the street. Helping her up and home costs you an hour.', async () => markHum(1, 'An hour gone. Somewhere east, another voice joins the song.'));
+  await cont('Look around town');
+  await s2();
+}
+
+async function s2(){
+  scene(2, 'The Humming Well');
+  nar('Night comes down. Mercy Wells shutters early these days. Three places are still lit: the jailhouse, the Wells Hotel saloon, and the stone well-house, where a lantern burns all night so the sheriff can see who comes for water.');
+  rule('In the Cypher System, finding things out is what earns experience. Each discovery in this adventure is worth 1 XP.');
+  const done = new Set(); let visits = 0;
+  while (visits < 2){
+    const opts = [
+      {id:'jail', label:'The jailhouse cell', sub:'Examine the humming blacksmith: Intellect, difficulty 3', disabled: done.has('jail')},
+      {id:'well', label:'The well-house', sub:'Study the trembling water: Intellect, difficulty 4', disabled: done.has('well')},
+      {id:'saloon', label:'The Wells Hotel saloon', sub:'Get the Concern\'s agent talking: Intellect, difficulty 3', disabled: done.has('saloon')},
+    ];
+    if (visits === 1) opts.push({id:'ride', label:'Enough. Ride out now', cls:'primary'});
+    const c = await choose(opts);
+    if (c === 'ride') break;
+    done.add(c); visits++;
+    if (c === 'jail') await jail(); else if (c === 'well') await well(); else await saloon();
+    if (visits === 1) await aurelio();
+  }
+  nar('Ruth meets you at the hitching rail with what she can spare: a canteen of clean water from her own rain barrel, a box of cartridges, and a tin harmonica.');
+  npc('Ruth Calloway', '"Eli\'s. He\'ll know it. Play it if you find him."');
+  C.harmonica = true; render();
+  await cont('Ride east');
+  await s3();
+}
+async function jail(){
+  nar('Ruth has locked up a Hummer for his own safety: <strong>Aurelio Fuentes</strong>, the blacksmith, a huge gentle man who keeps walking into the bars, facing east, humming. His palms are scored with fine green lines.');
+  let ability = null, assets = [];
+  if (C.key === 'cordelia'){
+    const c = await choose([{id:'lab', label:'Use Lab Analysis', sub:'Costs 3 Intellect (minus Edge): eases the task and turns up an extra fact'},{id:'no', label:'Just look closely', sub:'No ability cost'}]);
+    if (c === 'lab'){ ability = {name:'Lab Analysis', cost:3}; assets.push('Lab Analysis samples'); used.add('ability'); }
+  }
+  const r = await task({name:'Examine Aurelio', stat:'intellect', diff:3, skills:[C.skills.includes('learning new things') ? 'learning new things' : null], assets, ability});
+  if (r.ok){
+    nar('The green lines in his hands are glass, growing under the skin like frost on a window. He hasn\'t eaten in two days. He drinks constantly, and the more he drinks, the louder he hums.');
+    if (ability || r.effect){ nar('And one thing more: when you hold a cup of well water near him, his humming goes up a full note.'); C.waterClue = true; }
+    gainXP(1, 'discovery'); used.add('discovery');
+  } else nar('He turns his head and hums at you until you have to look away. You learn nothing you can use.');
+}
+async function well(){
+  nar('The well is old stone, deep and cold. When you lean over it, the water far below is trembling in rings, though nothing touches it.');
+  let ability = null, assets = [];
+  if (C.key === 'cordelia'){
+    const c = await choose([{id:'scan', label:'Use Scan on the water', sub:'Costs 2 Intellect (minus Edge): an asset'},{id:'no', label:'Just study it', sub:'No ability cost'}]);
+    if (c === 'scan'){ ability = {name:'Scan', cost:2}; assets.push('Scan'); used.add('ability'); }
+  }
+  const sk = ['geology','chemistry'].find(s => C.skills.includes(s));
+  const r = await task({name:'Study the water', stat:'intellect', diff:4, skills:[sk], assets, ability});
+  if (r.ok){
+    nar('It\'s in the water. The well draws from a buried river that runs east, under the flats, toward the crater, and the hum rides along it. Anyone who drinks from this well hears the song a little better.');
+    C.waterClue = true; gainXP(1, 'discovery'); used.add('discovery');
+  } else {
+    const c = await choose([{id:'drink', label:'Drink a cup to be sure', sub:'Intellect defense roll against the Hum'},{id:'no', label:'Leave it alone'}]);
+    if (c === 'drink'){
+      const d2 = await task({name:'Resist the Hum', stat:'intellect', diff:humLevel(), defense:true, why:`the Hum is level ${humLevel()}`});
+      if (!d2.ok){ takeDamage(2, {stat:'intellect', ignoreArmor:true, why:'The water tastes of pennies. For a moment the whole street sings.'}); markHum(1); }
+      else { nar('You hear it: a single note under the cold. It\'s in the water.'); C.waterClue = true; gainXP(1, 'discovery'); used.add('discovery'); }
+    }
+  }
+}
+async function saloon(){
+  nar('The only crowd is three Concern men at a corner table and <strong>Mr. Lucius Pruitt</strong>, the Concern\'s agent, in a clean collar, buying their whiskey. He smiles with his teeth.');
+  const c = await choose([{id:'talk', label:'Buy him a drink and talk', sub:`Intellect, difficulty 3${C.inab.length && C.key === 'jonah' ? ' · Rugged: hindered' : ''}`, say:'"Quiet town."'},{id:'lean', label:'Lean on him', sub:`Intellect, difficulty 3${C.tough ? ' · Tough is an asset' : ''}`, say:'I sit down close. Too close.'}]);
+  const r = await task({name: c === 'talk' ? 'Get Pruitt talking' : 'Lean on Pruitt', stat:'intellect', diff:3, hinder:[c === 'talk' && C.key === 'jonah' ? 'Rugged: no social graces' : null], assets:[c === 'lean' && C.tough ? 'Tough' : null]});
+  if (r.ok){
+    npc('Lucius Pruitt', '"The Colonel\'s taking on labor out at the crater. Volunteers. They walk right in." He laughs. "No wages. Anyone else comes near the fence gets shot."');
+    if (r.effect){ nar('And, a little drunker: the password at the Concern gate is <em>"Kestrel."</em>'); C.password = true; }
+    gainXP(1, 'discovery'); used.add('discovery');
+  } else nar('Pruitt smiles and says nothing, and two of his men stand up. You leave before it becomes a conversation.');
+}
+async function aurelio(){
+  nar('From the jailhouse comes a sound like a bell being struck with a hammer.');
+  await offerIntrusion('In his cell, Aurelio stops humming. He turns, looks straight at you through the window, and says in a voice that isn\'t his: <em>"Thirty-two."</em> Then he tears the cell door off its hinges and walks out into the night, east.', async () => {
+    const c = await choose([{id:'stop', label:'Get in his way', sub:'Might task, difficulty 3', say:'I plant myself in front of him.'},{id:'let', label:'Let him go', sub:'Mark the Hum'}]);
+    if (c === 'stop'){
+      const r = await task({name:'Hold Aurelio back', stat:'might', diff:3});
+      if (r.ok) nar('You wrap him up and hang on until Ruth gets the irons on him. He keeps humming, but he stays.');
+      else { takeDamage(3, {why:'He walks through you like you\'re a screen door.'}); markHum(1, 'He disappears east into the dark.'); }
+    } else markHum(1, 'He walks past you, barefoot, toward the salt. Nobody stops him.');
+  });
+}
+
+const FLATS = [[2,'A Hummer\'s nightshirt, folded neatly on the salt.'],[4,'A dead glassback coyote, its spine-glass gone dark.'],[6,'Bare footprints, all in step, heading east.'],[8,'A prospector\'s claim stake made of green glass.'],[10,'A circle of salt fused to glass, smooth as a pond.'],[12,'An abandoned Concern freight wagon, still loaded with barbed wire.'],[14,'The tracks of a single shod horse: Eli\'s, two nights old.'],[16,'A shard glinting in the moonlight. It\'s cold and dead, but it hums when you hold it.'],[18,'A coyote watching, silent, from a salt ridge.'],[19,'A brine spring where the water hums so loud it ripples.'],[20,'A green streak overhead: another, smaller, falling far away.']];
+async function s3(){
+  scene(3, 'Across the Saltpan');
+  nar('East of town the land goes white. The Saltpan is flat as a table, cracked into plates that ring like crockery under your boots. The moon is up. On the horizon, where the crater lies, a faint green glow pulses, slow, like breathing.');
+  let assets = [], skills = [], freeEffort = false;
+  if (C.skills.includes('navigation')) skills.push('navigation');
+  if (C.waterClue) assets.push('following the wet salt, where the river runs');
+  if (C.key === 'jonah'){ freeEffort = true; rule('Find the Way: when Jonah applies Effort to find his way, the first level is free.'); }
+  const ci = hasCypher('compass');
+  if (ci >= 0){
+    const c = await choose([{id:'use', label:'Use the Saltpan compass', sub:'Cypher: eases navigation by two steps', cls:'xp'},{id:'no', label:'Save it'}]);
+    if (c === 'use'){ useCypher(ci); assets = ['Saltpan compass', 'Saltpan compass']; nar('You float the shard in your canteen cup. It spins once and points east-northeast, trembling.'); }
+  }
+  const r = await task({name:'Find the way to the crater', stat:'intellect', diff:3, skills, assets, freeEffort});
+  const {v} = await gmRoll('On the Flats oracle (d20)', 20); used.add('oracle');
+  nar(`<em>${FLATS.find(x => v <= x[0])[1]}</em>`);
+  if (r.ok){ C.goodApproach = true; nar('You reach the crater\'s outskirts before midnight, with time to watch before anything sees you.'); }
+  else {
+    markHum(1, 'You wander for hours among salt pans that all look the same.');
+    nar('Then the crust gives way under you over a brine sinkhole.');
+    const dr = await task({name:'Dodge the sinkhole', stat:'speed', diff:3, defense:true, skills:[C.key === 'della' ? 'Speed defense (no armor)' : null]});
+    if (!dr.ok) takeDamage(3, {why:'You go in to the waist. The brine burns like cold fire.'}); else nar('You throw yourself flat as the salt cracks open.');
+  }
+  await intrusionCheck(2, 'Your horse smells something ahead and refuses to go on. You lead it the rest of the way on foot, and you arrive tired.', async () => { C.tired = true; nar('Your first task in the next scene will be hindered.'); });
+  await cont('Ride on');
+  await s4();
+}
+
+async function s4(){
+  scene(4, 'The Glassback');
+  nar('A mile from the crater, you hear chimes. Thin, bright, coming closer: glass touching glass. It\'s following you.');
+  nar('The <strong>glassback</strong> comes out of the dark at a lope: a coyote the size of a yearling calf, its spine split open by a ridge of green starglass that chimes with every stride. Its eyes are the same green as the glow on the horizon. It doesn\'t growl. It hums.');
+  Object.assign(foe, {on:true, name:'Glassback', level:3, hp:12, max:12, armor:1, dmg:3, hindered:0, stunned:false}); render();
+  rule('Creatures have a level. A level 3 glassback is difficulty 3 to hit and difficulty 3 to dodge: target 9 either way. The GM never rolls in the Cypher System. When it attacks, you make a defense roll.');
+  const c = await choose([{id:'fight', label:'Stand and fight', sub:'Initiative: Speed task, difficulty 3'},{id:'sneak', label:'Slip away downwind', sub:'Speed task, difficulty 4'}]);
+  const tired = C.tired ? 'tired from the walk' : null; C.tired = false;
+  if (c === 'sneak'){
+    const r = await task({name:'Slip away downwind', stat:'speed', diff:4, hinder:[tired]});
+    if (r.ok){ nar('You lie flat behind a salt ridge as it lopes past, chiming, close enough to smell. Then it\'s gone toward the glow.'); foe.on = false; render(); return s5(false); }
+    nar('A plate of salt cracks under your knee. Its head snaps around. It has you.');
+    return fight(false);
+  }
+  let skills = [], assets = [], hinder = [tired];
+  if (C.goodApproach) assets.push('you saw it coming');
+  if (C.key === 'jonah'){ assets.push('Danger Sense'); used.add('ability'); rule('Danger Sense: Jonah spends 1 Speed (minus his Speed Edge of 1, so free) to ease initiative.'); }
+  if (C.inab.includes('initiative')) hinder.push('Inquisitive: hesitates to take in the details');
+  const r = await task({name:'Initiative', stat:'speed', diff:3, skills, assets, hinder});
+  used.add('initiative');
+  if (!used.has('initRule')){ used.add('initRule'); rule('Initiative is a Speed task against the foe\'s level. Succeed, and you act first.'); }
+  await fight(r.ok);
+}
+async function fight(first){
+  let round = 0, streak = 0, skip = false, intrudedFight = false;
+  if (!first){ const h = await foeAttack(); streak = h ? 1 : 0; }
+  while (foe.hp > 0){
+    round++;
+    if (trackStep() >= 2){
+      nar('You can barely lift your head. In the full game, one more Pool at 0 would kill you. Here, the Hum saves you: the glassback\'s ears go up, it turns toward the crater as if called, and lopes away into the dark.');
+      foe.on = false; render(); return s5(false);
+    }
+    if (round > 10){ nar('The glassback circles, bleeding glass, then breaks off and runs for the crater.'); foe.on = false; render(); return s5(false); }
+    add('', `<div class="hpline"><b>Glassback</b><span class="hpbar"><i style="width:${Math.round(100*foe.hp/foe.max)}%"></i></span><span>${foe.hp}/${foe.max} health</span></div>`);
+    if (round === 2 && !intrudedFight){
+      intrudedFight = true;
+      await intrusionCheck(2, C.key === 'della' ? 'Patience jams on a bad cartridge. You lose your next action clearing it.' : 'Your boot breaks through a crust of salt and you go down on one knee. You lose your next action getting up.', async () => { skip = true; });
+    }
+    if (skip){ skip = false; nar('You lose your action.'); }
+    else {
+      const acted = await playerTurn();
+      if (foe.hp <= 0) break;
+      if (acted === 'stunned'){ foe.stunned = false; }
+    }
+    if (foe.stunned){ foe.stunned = false; nar('The glassback reels, stunned, and loses its turn.'); continue; }
+    const hit = await foeAttack();
+    streak = hit ? streak + 1 : 0;
+    if (streak >= 2){
+      streak = 0;
+      nar('Its spines ring like struck glass, right in your ear.');
+      const r = await task({name:'Shake off the chime', stat:'intellect', diff:humLevel() < 3 ? 3 : humLevel(), defense:true});
+      if (!r.ok){ skip = true; nar('The song fills your head. You\'ll lose your next action.'); }
+    }
+  }
+  nar('The glassback goes down in a spray of salt. The glass ridge on its back cracks and goes dark, all but one shard that keeps glowing.');
+  foe.on = false; render();
+  const {v} = await gmRoll('Starglass found (d6 on a short table)', 6);
+  const id = ['mending','flash','thunder','shatter','stillskin','mending'][v-1];
+  await gainCypher(id, d(6) + (id === 'thunder' ? 2 : id === 'stillskin' ? 1 : 0));
+  return s5(true);
+}
+async function playerTurn(){
+  const opts = C.weapons.map(w => {
+    const can = !w.cost || C.pools[w.stat].cur >= Math.max(0, w.cost - C.pools[w.stat].edge);
+    return {id:'w:'+w.id, label:`Attack: ${w.name}`, sub:`${cap(w.stat)} vs difficulty 3${w.kind === 'light' ? ', eased (light weapon)' : ''} · ${w.dmg} damage (${w.why})`, disabled:!can};
+  });
+  cypherList().forEach(c => { if (['thunder','flash','stillskin','shatter','mending'].includes(c.id) && !(c.id === 'stillskin' && C.stillskin)) opts.push({id:'c:'+c.i, label:`Use cypher: ${c.name}`, sub:c.text, cls:'xp'}); });
+  if (C.key === 'jonah' && !C.blocking) opts.push({id:'block', label:'Block', sub:`Costs 3 Speed minus Edge 1: automatically block its next attack (you have ${C.pools.speed.cur})`, disabled: C.pools.speed.cur < 2});
+  const c = await choose(opts);
+  if (c === 'block'){ spend('speed', 2); C.blocking = true; used.add('ability'); nar('You set your feet and get the hatchet up, watching its shoulders.'); return 'block'; }
+  if (c.startsWith('c:')){
+    const cy = useCypher(Number(c.slice(2)));
+    if (cy.id === 'thunder'){ nar('You hurl the Thunderglass. It bursts against the glassback\'s flank in a clap of green fire.'); hurtFoe(cy.level, false); }
+    else if (cy.id === 'flash'){ foe.hindered = cy.level; nar('The Flashglass bursts in a blind of green light. The glassback shakes its head, half blind.'); rule(`The glassback's tasks are hindered for ${cy.level} rounds. Since players make every roll, that means your defense rolls against it are eased.`); }
+    else if (cy.id === 'stillskin'){ C.stillskin = true; render(); nar('You press the shard to your chest. Your skin takes on a sheen like a window at dusk. +2 Armor.'); }
+    else if (cy.id === 'shatter'){ C.shatter = cy.level; nar('You touch the shard to your weapon. It goes green along the edge.'); }
+    else if (cy.id === 'mending'){ await mend(cy.level); }
+    return 'cypher';
+  }
+  const w = C.weapons.find(x => 'w:'+x.id === c);
+  if (w.kind === 'ability') used.add('ability');
+  const r = await task({name:`Attack with ${w.name}`, stat:w.stat, diff:foe.level, attack:true, assets:[w.kind === 'light' ? 'light weapon' : null], ability: w.cost ? {name:w.name.split(':')[0], cost:w.cost} : null});
+  if (!used.has('atkRule')){ used.add('atkRule'); rule('Attacks are tasks against the foe\'s level. Damage is a flat number, never rolled. Light weapons ease the attack but hit for 2; medium hit for 4; heavy for 6.'); }
+  if (!r.ok){ nar('You miss. It twists away, quick as smoke.'); return 'miss'; }
+  let dmg = w.dmg + (r.effDmg ? 3 : 0);
+  const impaired = trackStep() >= 1;
+  let stun = false;
+  if (r.nat >= 17){
+    used.add('nat');
+    if (impaired){ dmg += 1; rule('Impaired: a natural 17 or higher adds only 1 damage.'); }
+    else if (r.nat <= 18){ dmg += r.nat - 16; rule(`A natural ${r.nat} on an attack adds ${r.nat - 16} damage.`); }
+    else {
+      const bonus = r.nat === 19 ? 3 : 4;
+      const ch = await choose([{id:'dmg', label:`+${bonus} damage`, sub:`Natural ${r.nat}: ${r.nat === 19 ? 'minor' : 'major'} effect as damage`},{id:'fx', label: r.nat === 19 ? 'Knock it sprawling' : 'Stun it', sub: r.nat === 19 ? 'Minor effect: its next attack is hindered' : 'Major effect: it loses its next turn'}]);
+      if (ch === 'dmg') dmg += bonus; else if (r.nat === 19) foe.hindered = Math.max(foe.hindered, 1); else foe.stunned = true;
+      rule('A natural 19 or 20 on a successful attack: a minor or major effect. Take extra damage (3 or 4) or a special result.');
+    }
+  }
+  if (r.effDmg) rule('Effort on damage: +3 damage instead of easing the roll.');
+  const ignore = !!C.shatter; if (C.shatter){ dmg += C.shatter; C.shatter = 0; rule('Shatterpoint: this attack ignores Armor and adds damage equal to the cypher\'s level.'); }
+  nar(['You hit it square. Glass sprays.','A solid hit. It yelps like a struck bell.','You catch it across the shoulder and it staggers.'][d(3)-1]);
+  hurtFoe(dmg, ignore);
+  return 'hit';
+}
+function hurtFoe(n, ignoreArmor){
+  const dealt = Math.max(0, n - (ignoreArmor ? 0 : foe.armor));
+  foe.hp = Math.max(0, foe.hp - dealt); render();
+  add('', `<span class="result n">${dealt} damage to the glassback${!ignoreArmor && foe.armor ? ` (${n} minus Armor ${foe.armor})` : ''}</span>`);
+}
+async function foeAttack(){
+  nar(['It comes in low, jaws wide.','It circles once and lunges for your leg.','It leaps, all teeth and chiming glass.'][d(3)-1]);
+  if (C.blocking){ C.blocking = false; nar('You were ready. The hatchet\'s haft takes the bite and you shove it off. Blocked.'); return false; }
+  const assets = [];
+  if (foe.hindered > 0){ assets.push('the glassback is hindered'); foe.hindered--; }
+  const r = await task({name:'Dodge the bite', stat:'speed', diff:foe.level, defense:true, skills:[C.key === 'della' ? 'Speed defense (no armor)' : null], assets});
+  if (!used.has('defRule')){ used.add('defRule'); rule('Defense roll: dodging an attack is a Speed task against the attacker\'s level. Fail, and you take its damage minus your Armor.'); }
+  if (r.ok){ nar('You twist aside. Its teeth close on air.'); return false; }
+  takeDamage(foe.dmg, {why:'Its teeth close on your arm, cold as ice.'});
+  return true;
+}
+
+async function s5(won){
+  if (C.rec < 2 && STATS.some(s => C.pools[s].cur < C.pools[s].max)){
+    nar(won ? 'You catch your breath beside the dark heap of glass and fur.' : 'You catch your breath in the lee of a salt ridge.');
+    const c = await choose([{id:'rest', label:'Make a recovery roll', sub:`d6 + 1${C.tough ? ' + 1 (Tough)' : ''}: the ${REC[C.rec]} rest`},{id:'no', label:'Press on'}]);
+    if (c === 'rest'){ await recovery(); if (C.rec < 2 && STATS.some(s => C.pools[s].cur < C.pools[s].max)){ const c2 = await choose([{id:'rest', label:'Rest ten minutes more', sub:'Another recovery roll'},{id:'no', label:'Press on'}]); if (c2 === 'rest') await recovery(); } }
+  }
+  scene(5, 'The Rim of the Kettle');
+  nar('The salt rises to a lip, and then it isn\'t salt anymore. For a hundred yards around the crater the ground has turned to glass, green and rippled like frozen water, and it hums underfoot. Below, the Kettle steams. At the bottom, something is glowing.');
+  nar('The Concern\'s camp crouches on the near rim: barbed wire, tents, a steam winch, lanterns on poles. A half-built rail spur runs off into the dark. At its end sits a private railcar painted oxblood and gold.');
+  nar('And through a gap in the wire, a line of people is walking in. Men and women in nightclothes, barefoot on the glass, humming the same tune in perfect time. Two Regulators with rifles stand at the gap, watching them pass like cattle into a pen.');
+  rule(`The Hum attacks the mind. Resisting it is an Intellect defense roll against its level (now ${humLevel()}), and the damage ignores Armor.`);
+  const assets = ['Ruth\'s clean water'];
+  if (C.waterClue) assets.push('you know it rides the water');
+  let qi = hasCypher('quiet');
+  if (qi >= 0){
+    const c = await choose([{id:'use', label:'Use the Quiet stone', sub:'Cypher: eases this defense by two steps', cls:'xp'},{id:'no', label:'Save it'}]);
+    if (c === 'use'){ useCypher(qi); assets.length = 0; assets.push('Quiet stone','Quiet stone'); nar('You tuck the stone under your tongue. The world goes muffled, as if packed in wool.'); }
+  }
+  const r = await task({name:'Resist the Hum', stat:'intellect', diff:humLevel(), defense:true, assets});
+  if (!r.ok){ takeDamage(3, {stat:'intellect', ignoreArmor:true, why:'The song gets in. You catch yourself humming along, one foot already stepping forward.'}); markHum(1); }
+  else nar('You hear it, and you know it for what it is: a tune that wants something from you. You don\'t give it.');
+  const f = await task({name:'Find Eli in the line', stat:'intellect', diff:2});
+  if (f.ok) nar('There. <strong>Deputy Eli Calloway</strong>, hatless, his badge still pinned to his nightshirt, walking into the camp with the others. He doesn\'t look back.');
+  else nar('The faces blur in the lantern light. If Eli is among them, you can\'t pick him out. But you\'re close. You can feel it.');
+  nar('Below you, at the bottom of the Kettle, the green light pulses once, hard. Every Hummer in the line stops and turns their face toward you at the same moment. Then they turn back and walk on.');
+  nar('<strong>Something down there knows you\'re here.</strong>');
+  await cont('End of Act One');
+  await ending(f.ok);
+}
+
+async function ending(sawEli){
+  $('#sceneName').textContent = 'End of Act One';
+  const ALL = [['task','Task rolls vs target number'],['skill','Skills easing a task'],['asset','Assets'],['effort','Applying Effort'],['edge','Edge cutting the cost'],['defense','Defense rolls'],['initiative','Initiative'],['intrusion','Accepting a GM intrusion'],['refuse','Refusing a GM intrusion'],['reroll','Spending XP on a reroll'],['nat','A special roll (1, or 17 to 20)'],['cypher','Using a cypher'],['limit','The cypher limit'],['ability','A special ability'],['recovery','A recovery roll'],['track','The damage track'],['discovery','A discovery (XP)'],['hum','The Hum']];
+  const store = (window.RDL_STORE && window.RDL_STORE.products && window.RDL_STORE.products[PRODUCT_ID]) || {};
+  const live = !!store.checkout;
+  add('endcard', `
+    <h3>Act One complete.</h3>
+    <p style="margin:0">${esc(C.name)} stands on the glass rim of the Kettle with ${C.xp} XP, ${C.cyphers.length} cypher${C.cyphers.length === 1 ? '' : 's'}, and the Hum at ${hum} of 10. ${sawEli ? 'Eli Calloway is down there in the line, walking toward the light.' : 'Eli is somewhere in that line.'} The wire, the Colonel, and the thing at the bottom of the crater are waiting in the full adventure.</p>
+    <div class="product">
+      <div class="cov"><small>Compatible with the Cypher System</small>The Glass Comet</div>
+      <div>
+        <strong style="font-family:var(--f-display);font-weight:400;font-size:21px">The Glass Comet: the complete adventure (PDF)</strong>
+        <ul>
+          <li>Acts Two and Three: the Concern camp, Dr. Hesper Quill, Silas Grieve the Glass Foreman, Colonel Vance, and the Lodestar</li>
+          <li>Four endings, including a failure ending, plus hooks to keep playing</li>
+          <li>Three ready-to-play first-tier characters</li>
+          <li>Twenty original starglass cyphers, six new creatures in Cypher format</li>
+          <li>Solo rules: intrusion die, d20 oracle, and six custom tables</li>
+          <li>A rules summary, so you can play without the rulebook · printable sheets · 35 pages</li>
+        </ul>
+        <div class="buy">
+          ${live ? `<a class="buybtn" href="${esc(store.checkout)}" target="_blank" rel="noopener">Buy the PDF · ${esc(store.price || '')}</a>` : `<span class="buybtn" aria-disabled="true">PDF coming soon${store.price ? ' · ' + esc(store.price) : ''}</span>`}
+          <small>${live ? 'Instant download. Secure checkout by Lemon Squeezy.' : 'The store opens soon.'}</small>
+        </div>
+      </div>
+    </div>
+    <p style="margin:0;font-family:var(--f-mono);font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)">Rules you used tonight</p>
+    <ul class="learned">${ALL.map(([k,t]) => `<li class="${used.has(k)?'':'no'}">${t}</li>`).join('')}</ul>
+    <p class="fine">The Cypher System Rulebook is published by Monte Cook Games: <a href="https://www.montecookgames.com" target="_blank" rel="noopener">montecookgames.com</a>. The free Cypher System Reference Document is at <a href="http://csol.montecookgames.com" target="_blank" rel="noopener">csol.montecookgames.com</a>. This adventure is not an official Cypher System product.</p>`);
+  const c = await choose([{id:'again', label:'Play Act One again', cls:'primary'}]);
+  if (c === 'again') location.reload();
+}
+
+if (matchMedia('(max-width: 880px)').matches) $('#sheet').open = false;
+start();
+})();
+</script>
+</body>
+</html>

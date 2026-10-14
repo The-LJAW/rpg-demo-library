@@ -1,0 +1,707 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Sleepless Mill: Free Solo Demo</title>
+<meta name="description" content="Play Act One of The Sleepless Mill, a solo fantasy adventure compatible with Pathfinder Second Edition, free in your browser. Three actions a turn, real d20 checks, four degrees of success.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,800;0,9..144,900;1,9..144,600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=IBM+Plex+Sans+Condensed:wght@400;600;700&display=swap">
+<script src="../../store.js"></script>
+<style>
+/* Look: a sleepless village at midnight. Indigo night, a flour-white story page, lamplight amber. */
+:root{
+  --night:#171A33; --night-2:#21264A; --night-3:#2E3463; --flour:#F6F1E7; --flour-2:#EAE2D0; --ink:#1D1E2C; --muted:#5D5F70;
+  --lamp:#E0952B; --lamp-deep:#B8741A; --lamp-soft:#F8E7C6; --moth:#C9C3E6;
+  --crit:#1F6E4A; --ok:#3B8A63; --fail:#B5632A; --cfail:#9B2C2C;
+  --f-display:"Fraunces", Georgia, serif; --f-body:"Source Serif 4", Georgia, serif; --f-sans:"IBM Plex Sans Condensed", "Arial Narrow", Arial, sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--night);color:var(--flour);font-family:var(--f-body);font-size:17px;line-height:1.5;
+  background-image:radial-gradient(circle at 85% -5%, rgba(224,149,43,.20) 0, transparent 38%), radial-gradient(circle at 10% 110%, rgba(201,195,230,.10) 0, transparent 45%)}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--lamp);outline-offset:2px}
+.proto{background:#0F1124;color:var(--moth);font-family:var(--f-sans);font-size:13px;padding-block:7px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));display:flex;gap:6px 16px;flex-wrap:wrap;justify-content:space-between}
+.proto b{color:#fff}
+.wrap{max-width:1160px;margin:0 auto;padding-block:22px 60px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+.masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px 24px;flex-wrap:wrap;margin-bottom:18px}
+.eyebrow{font-family:var(--f-sans);font-weight:700;font-size:12.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--moth);margin:0 0 6px}
+h1{font-family:var(--f-display);font-weight:900;font-size:clamp(38px,6.5vw,66px);line-height:.92;margin:0;color:var(--flour);letter-spacing:-.02em}
+.tagline{font-style:italic;color:#DAD6EA;margin:10px 0 0;max-width:54ch}
+.actchip{font-family:var(--f-sans);font-size:13px;border:1px solid var(--lamp);color:var(--lamp);padding:6px 12px;border-radius:999px;white-space:nowrap}
+
+.table{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:20px;align-items:start}
+.story{background:var(--flour);color:var(--ink);border-radius:10px;min-width:0;box-shadow:0 18px 50px rgba(0,0,0,.45);overflow:hidden}
+.story-head{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;padding:10px 18px;background:var(--flour-2);border-bottom:1px solid #D5CCB8}
+.story-head .scene{font-family:var(--f-display);font-weight:800;font-size:20px;line-height:1.1;color:var(--night)}
+.toggles{display:flex;gap:4px 14px;flex-wrap:wrap}
+.toggle{font-family:var(--f-sans);font-size:13.5px;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--muted)}
+.toggle input{accent-color:var(--lamp-deep)}
+#log{padding:18px 20px 10px;display:flex;flex-direction:column;gap:12px}
+.line{max-width:66ch}
+.who{font-family:var(--f-sans);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:1px}
+.npc{border-left:3px solid var(--lamp);padding-left:12px;font-style:italic}
+.npc .who{font-style:normal}
+.you{align-self:flex-end;background:var(--night-2);color:#fff;padding:7px 13px;border-radius:14px 14px 3px 14px;max-width:min(54ch,90%);font-weight:600}
+.rule{font-family:var(--f-sans);font-size:14.5px;line-height:1.45;background:#E9E7F4;border-left:4px solid var(--night-3);padding:7px 11px;max-width:66ch;border-radius:0 6px 6px 0}
+.rule::before{content:"RULE  ";font-weight:700;letter-spacing:.08em;color:var(--night-3)}
+body.norules .rule{display:none}
+.scenebreak{font-family:var(--f-display);font-weight:800;font-size:27px;line-height:1.1;color:var(--night);border-top:1px solid #D5CCB8;padding-top:12px;margin-top:8px}
+.scenebreak small{display:flex;align-items:center;gap:8px;font-family:var(--f-sans);font-weight:700;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--lamp-deep)}
+.scenebreak small i{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--lamp);color:#fff;font-style:normal;letter-spacing:0}
+
+.rollrow{display:flex;flex-direction:column;gap:8px;border:1.5px solid #CFC6B2;border-radius:10px;padding:10px 12px;max-width:66ch;background:#fff}
+.rollrow.foe{background:#F3F1FA;border-color:#C9C3E6}
+.rollrow .lbl{font-family:var(--f-sans);font-size:14px}
+.dice{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.d20{width:48px;height:52px;display:grid;place-items:center;font-family:var(--f-sans);font-weight:700;font-size:19px;color:#fff;background:var(--night-3);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+.d20.foe{background:#6B6A73}
+.d20.nat20{background:var(--crit)} .d20.nat1{background:var(--cfail)}
+.dn{min-width:38px;height:38px;padding:0 6px;display:grid;place-items:center;border:2px solid var(--ink);border-radius:8px;font-family:var(--f-sans);font-weight:700;font-size:17px;background:#fff}
+.dn small{font-size:9px;color:var(--muted);line-height:1;margin-top:-3px}
+.ghost{opacity:.35}
+.d20.ghost{background:#9A97B0}
+.tumble{animation:tumble .12s linear infinite}
+@keyframes tumble{50%{transform:rotate(12deg) translateY(-2px)}}
+.score{font-family:var(--f-sans);font-weight:600;font-size:15px}
+.result{font-family:var(--f-sans);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:4px;color:#fff;align-self:flex-start}
+.result.cs{background:var(--crit)} .result.s{background:var(--ok)} .result.f{background:var(--fail)} .result.cf{background:var(--cfail)} .result.n{background:var(--night-3)}
+.pips{display:flex;gap:6px;align-items:center;font-family:var(--f-sans);font-size:13px;color:var(--muted);flex-wrap:wrap}
+.pip{width:16px;height:16px;border-radius:50%;border:2px solid var(--night-3);display:inline-block}
+.pip.on{background:var(--lamp);border-color:var(--lamp-deep)}
+.hpbar{display:flex;align-items:center;gap:8px;font-family:var(--f-sans);font-size:13px;max-width:66ch}
+.hpbar .bar{flex:1;height:10px;background:#E5DFD0;border-radius:6px;overflow:hidden}
+.hpbar .bar i{display:block;height:100%;background:var(--cfail)}
+
+#choices{position:sticky;bottom:0;background:var(--flour-2);border-top:1px solid #D5CCB8;padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:10px}
+#choices:empty{display:none}
+.turninfo{flex:1 1 100%;font-family:var(--f-sans);font-size:13.5px;color:var(--muted);display:flex;gap:6px 14px;flex-wrap:wrap;align-items:center}
+.turninfo b{color:var(--ink)}
+.opt{flex:1 1 220px;text-align:left;border:1.5px solid var(--night-3);background:#fff;padding:9px 12px;cursor:pointer;border-radius:10px;box-shadow:0 2px 0 var(--night-3)}
+.opt:hover{background:#F7F3EA}
+.opt:active{transform:translateY(2px);box-shadow:none}
+.opt b{display:block;font-weight:700;line-height:1.25}
+.opt span{display:block;font-family:var(--f-sans);font-size:13px;color:var(--muted);margin-top:2px}
+.opt .cost{display:inline-block;font-family:var(--f-sans);font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;background:var(--night-3);color:#fff;border-radius:8px;padding:0 6px;margin-right:6px;vertical-align:2px}
+.opt .cost.r{background:var(--lamp-deep)}
+.opt.primary{background:var(--night-2);color:#fff;border-color:var(--night)}
+.opt.primary span{color:#D3D0E8}
+.opt.hero{background:var(--lamp-soft);border-color:var(--lamp-deep);box-shadow:0 2px 0 var(--lamp-deep)}
+.opt:disabled{opacity:.45;cursor:not-allowed}
+.opt.roll{flex:1 1 100%;display:grid;grid-template-columns:auto 1fr;column-gap:14px;align-items:center;padding:12px 16px}
+.opt.roll::before{content:"";grid-row:span 2;width:26px;height:28px;background:var(--lamp);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);transition:transform .2s}
+.opt.roll:hover::before{transform:rotate(60deg)}
+.opt.roll b{font-size:19px}
+
+/* character sheet */
+.sheet{position:sticky;top:calc(12px + env(safe-area-inset-top,0px));background:var(--night-2);border:1px solid var(--night-3);border-radius:10px;min-width:0;color:var(--flour)}
+.sheet summary{list-style:none;cursor:pointer;padding:9px 14px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 10px;align-items:baseline;border-bottom:1px solid var(--night-3)}
+.sheet summary::-webkit-details-marker{display:none}
+.sheet .nm{font-family:var(--f-display);font-weight:800;font-size:19px}
+.sheet .mini{font-family:var(--f-sans);font-size:12.5px;color:var(--lamp)}
+.sheet-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:12px}
+.sec{font-family:var(--f-sans);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--moth);border-bottom:1px solid var(--night-3);padding-bottom:2px;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px}
+.attrs{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;text-align:center}
+.attrs div{border:1px solid var(--night-3);border-radius:6px;padding:3px 0}
+.attrs b{display:block;font-family:var(--f-display);font-size:18px;line-height:1.1}
+.attrs small{font-family:var(--f-sans);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--moth)}
+.big{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center}
+.big div{background:var(--night);border-radius:8px;padding:6px 2px}
+.big b{display:block;font-family:var(--f-display);font-size:24px;line-height:1.05}
+.big small{font-family:var(--f-sans);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--moth)}
+.big .hurt b{color:#F2A08E}
+.kv{font-family:var(--f-sans);font-size:13.5px;display:grid;grid-template-columns:auto 1fr;gap:2px 10px}
+.kv span:nth-child(odd){color:var(--moth)}
+.feat{font-size:14px;margin:0 0 4px;line-height:1.35}
+.feat b{font-family:var(--f-sans);font-size:13px}
+.conds{display:flex;flex-wrap:wrap;gap:5px}
+.cond{font-family:var(--f-sans);font-size:12px;font-weight:700;letter-spacing:.04em;background:var(--lamp);color:var(--night);padding:1px 8px;border-radius:10px}
+.cond.dim{background:transparent;color:var(--moth);border:1px solid var(--night-3);font-weight:400}
+.track{display:flex;gap:5px;align-items:center}
+.track i{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--moth)}
+.track i.on{background:var(--moth)}
+.empty-sheet{font-style:italic;color:var(--moth);font-size:15px}
+
+.endcard{border:1.5px solid var(--night-3);background:#fff;border-radius:10px;padding:16px 18px;display:flex;flex-direction:column;gap:10px;max-width:66ch}
+.endcard h3{font-family:var(--f-display);font-weight:900;font-size:27px;line-height:1.05;margin:0;color:var(--night)}
+.product{display:grid;grid-template-columns:110px 1fr;gap:14px;align-items:start;background:var(--night);color:var(--flour);padding:14px;border-radius:8px}
+.product .cov{background:var(--night-2);border:1px solid var(--night-3);aspect-ratio:8.5/11;display:flex;flex-direction:column;justify-content:flex-end;padding:8px;font-family:var(--f-display);font-weight:900;font-size:15px;line-height:.95;color:var(--flour);background-image:radial-gradient(circle at 75% 25%, rgba(224,149,43,.45) 0, transparent 45%)}
+.product .cov small{font-family:var(--f-sans);font-size:7px;letter-spacing:.12em;color:var(--moth);margin-bottom:auto;text-transform:uppercase;font-weight:400;line-height:1.2}
+.product ul{margin:.3em 0 .6em;padding-left:1.1em;font-size:15px}
+.buy{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}
+.buybtn{display:inline-block;text-decoration:none;background:var(--lamp);color:var(--night);font-weight:700;padding:10px 16px;border-radius:8px;border:0;cursor:pointer;font-size:16px}
+.buybtn[aria-disabled="true"]{background:#5D5F70;color:#E3DCCB;cursor:not-allowed}
+.buy small{font-family:var(--f-sans);font-size:13px;color:var(--moth)}
+.learned{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px 14px;font-size:15px}
+.learned li::before{content:"\2713  ";font-weight:800;color:var(--ok)}
+.learned li.no{color:var(--muted)} .learned li.no::before{content:"\25CB  ";color:var(--muted)}
+.fine{font-family:var(--f-sans);font-size:13px;color:var(--muted);line-height:1.5}
+.foot{font-family:var(--f-sans);font-size:12.5px;margin-top:22px;max-width:100ch;line-height:1.55;color:#B7B3CF}
+.foot p{margin:0 0 .6em}
+.foot b{color:#E6E2F5}
+
+@media (max-width: 880px){
+  .table{grid-template-columns:minmax(0,1fr)}
+  .sheet{order:-1;top:env(safe-area-inset-top,0px);z-index:5}
+  .sheet-body{max-height:60vh;overflow:auto}
+  #log{padding:14px 14px 6px}
+  .product{grid-template-columns:1fr}
+  .product .cov{max-width:120px}
+}
+@media (prefers-reduced-motion: reduce){ .tumble{animation:none} }
+</style>
+</head>
+<body>
+<div class="proto"><span><a href="../../" style="color:inherit">← All demos</a> · <b>FREE DEMO</b> · Act One of three</span><span>Not an official Pathfinder product · not affiliated with Paizo Inc.</span></div>
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">A solo adventure compatible with Pathfinder Second Edition</p>
+      <h1>The Sleepless Mill</h1>
+      <p class="tagline">For nine nights, nobody in Dunmarrow has slept. The bread is good, the lamps are lit, and the great wheel of the mill on the hill is turning backward.</p>
+    </div>
+    <span class="actchip">Free: Act One · about 20 minutes</span>
+  </header>
+  <div class="table">
+    <main class="story" aria-live="polite">
+      <div class="story-head">
+        <span class="scene" id="sceneName">Before you begin</span>
+        <span class="toggles">
+          <label class="toggle"><input type="checkbox" id="rulesToggle" checked> Show rules</label>
+          <label class="toggle"><input type="checkbox" id="autoToggle"> Auto-roll</label>
+        </span>
+      </div>
+      <div id="log"></div>
+      <div id="choices"></div>
+    </main>
+    <details class="sheet" id="sheet" open>
+      <summary><span class="nm" id="sumName">Maud Kestrel</span><span class="mini" id="sumMini">Human fighter 1</span></summary>
+      <div class="sheet-body" id="sheetBody"><p class="empty-sheet">Your character appears here: attributes, Hit Points, AC, saves, Strikes, feats, and conditions.</p></div>
+    </details>
+  </div>
+  <div class="foot">
+    <p><b>Not an official Pathfinder product.</b> The Sleepless Mill is not published, endorsed, or specifically approved by Paizo Inc. It uses no Paizo art, logos, setting, characters, or trade dress. "Pathfinder Second Edition" is named only to say which rules this adventure works with. The adventure, its setting and characters are © 2026 RPG Demo Library. All rights reserved. Game mechanics are licensed as follows.</p>
+    <p><b>ORC Notice.</b> This product is licensed under the ORC License located at the Library of Congress at TX 9-307-067 and available online at various locations including paizo.com/orclicense, azoralaw.com/orclicense, and others. All warranties are disclaimed as set forth therein.</p>
+    <p><b>Attribution Notice.</b> This product is based on the following Licensed Material: Pathfinder Player Core © 2023, Paizo Inc.; Designers: Logan Bonner, Jason Bulmahn, Stephen Radney-MacFarland, and Mark Seifter. Authors: Alexander Augunas, Kate Baker, Logan Bonner, Jason Bulmahn, Carlos Cabrera, Calder CaDavid, James Case, Eleanor Ferron, Steven Hammond, Joan Hong, Vanessa Hoskins, James Jacobs, Jenny Jarzabski, Erik Keith, Dustin Knight, Lyz Liddell, Luis Loza, Patchen Mortimer, Dennis Muldoon, Stephen Radney-MacFarland, Mikhail Rekun, David N. Ross, Michael Sayre, Mark Seifter, Kendra Leigh Speedling, Mark Thompson, Clark Valentine, Andrew White, Landon Winkler, and Linda Zayas-Palmer. Pathfinder GM Core © 2023, Paizo Inc.; Designers: Logan Bonner and Mark Seifter. Authors: Amirali Attar Olyaee, Logan Bonner, Creighton Broadhurst, Jason Bulmahn, James Case, Jesse Decker, Eleanor Ferron, Fabby Garza Marroquín, Jaym Gates, Matthew Goetz, James Jacobs, Brian R. James, Jenny Jarzabski, Dustin Knight, Jason LeMaitre, Lyz Liddell, Luis Loza, Ron Lundeen, Stephen Radney-MacFarland, David N. Ross, Michael Sayre, Mark Seifter, Owen K.C. Stephens, Amber Stewart, Clark Valentine, Landon Winkler, and Linda Zayas-Palmer. Please credit our Licensed Material as: The Sleepless Mill © 2026, RPG Demo Library.</p>
+    <p><b>Reserved Material.</b> Reserved Material elements in this product include all elements designated as Reserved Material under the ORC License, including the title The Sleepless Mill, the RPG Demo Library name, all proper nouns (such as Dunmarrow, Maud Kestrel, Agnet Coyle, Tamsin Venn, Oda Venn, and the Hush), characters, dialogue, locations, plots, storylines, artwork, and trade dress. <b>Expressly Designated Licensed Material.</b> This product contains no Expressly Designated Licensed Material. All game mechanics shown here, including the grist-hound's statistics, are Licensed Material under the ORC License. Rules notes in this demo are summaries in our own words, not official rules text. The demo's code is not licensed under the ORC License.</p>
+    <p>Learn about the game at <a href="https://paizo.com/pathfinder" target="_blank" rel="noopener">paizo.com/pathfinder</a>.</p>
+  </div>
+</div>
+
+<script>
+(() => {
+const PRODUCT_ID = 'sleepless-mill';
+let autoRoll = false;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = s => document.querySelector(s);
+const logEl = $('#log'), choicesEl = $('#choices');
+const d = n => 1 + Math.floor(Math.random()*n);
+const sleep = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sgn = n => (n >= 0 ? '+' : '') + n;
+
+try { if (localStorage.getItem('slm-rules') === 'off') { $('#rulesToggle').checked = false; document.body.classList.add('norules'); } } catch(e){}
+try { if (localStorage.getItem('slm-auto') === 'on') { $('#autoToggle').checked = true; autoRoll = true; } } catch(e){}
+$('#rulesToggle').addEventListener('change', e => { document.body.classList.toggle('norules', !e.target.checked); try { localStorage.setItem('slm-rules', e.target.checked ? 'on' : 'off'); } catch(err){} });
+$('#autoToggle').addEventListener('change', e => { autoRoll = e.target.checked; try { localStorage.setItem('slm-auto', autoRoll ? 'on' : 'off'); } catch(err){} });
+
+/* ---------- state ---------- */
+const C = {
+  name:'Maud Kestrel', attrs:{Str:4,Dex:1,Con:2,Int:0,Wis:1,Cha:1},
+  maxHp:21, hp:21, ac:18, speed:25, perception:6, fort:7, ref:6, will:4,
+  skills:{Athletics:7, Acrobatics:1, Diplomacy:4, Intimidation:4, Medicine:4, Survival:4},
+  hero:1, potion:1, javelins:2, shieldHp:20, shieldRaised:false, reaction:true,
+  wakeful:false, dazzled:0, wounded:0, longNight:0, pin:false,
+  tamsin:'none', warned:false, sneaky:false
+};
+const used = new Set();
+const shieldBroken = () => C.shieldHp <= 10;
+const F = {name:'Grist-hound', hp:15, maxHp:15, ac:16, will:3, frightened:0, offGuardRound1:false, grit:0, on:false};
+
+/* ---------- log ---------- */
+function add(cls, html){ const el = document.createElement('div'); if (cls) el.className = cls; el.innerHTML = html; logEl.appendChild(el); requestAnimationFrame(() => el.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'})); return el; }
+const nar = h => add('line', h);
+const npc = (who, h) => add('line npc', `<span class="who">${who}</span>${h}`);
+const you = h => add('line you', h);
+const rule = h => add('rule', h);
+function scene(num, name){ $('#sceneName').textContent = name; add('scenebreak', `<small>${num ? `<i>${num}</i>` : ''}Act One</small>${name}`); }
+function choose(opts, info){
+  return new Promise(res => {
+    choicesEl.innerHTML = '';
+    if (info){ const t = document.createElement('div'); t.className = 'turninfo'; t.innerHTML = info; choicesEl.appendChild(t); }
+    opts.forEach(o => {
+      const b = document.createElement('button'); b.className = 'opt' + (o.cls ? ' ' + o.cls : '');
+      b.innerHTML = `<b>${o.cost ? `<span class="cost${o.cost === 'reaction' ? ' r' : ''}">${o.cost}</span>` : ''}${o.label}</b>${o.sub ? `<span>${o.sub}</span>` : ''}`; if (o.disabled) b.disabled = true;
+      b.addEventListener('click', () => { choicesEl.innerHTML = ''; if (o.say !== false) you(o.say || o.label); res(o.id); });
+      choicesEl.appendChild(b);
+    });
+    requestAnimationFrame(() => choicesEl.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'}));
+    const first = choicesEl.querySelector('button:not(:disabled)'); if (first && matchMedia('(pointer:fine)').matches) first.focus({preventScroll:true});
+  });
+}
+const cont = (label='Continue') => choose([{id:'c', label, cls:'primary', say:false}]);
+async function waitRoll(label, btn){ if (autoRoll) return; await choose([{id:'r', label: btn || 'Roll the d20', sub: label, cls:'primary roll', say:false}]); }
+
+/* ---------- dice ---------- */
+function d20El(foe){ const e = document.createElement('div'); e.className = 'd20 ghost' + (foe ? ' foe' : ''); e.textContent = '?'; return e; }
+function dnEl(n){ const e = document.createElement('div'); e.className = 'dn ghost'; e.innerHTML = `?`; e.dataset.n = n; return e; }
+async function tumble(fn){ for (let t=0;t<(reduced?1:8);t++){ fn(); await sleep(55); } }
+
+/* degrees of success */
+const DEG = ['cf','f','s','cs'];
+const DEG_NAME = {cs:'Critical success', s:'Success', f:'Failure', cf:'Critical failure'};
+function degree(total, dc, nat){
+  let i = total >= dc + 10 ? 3 : total >= dc ? 2 : total <= dc - 10 ? 0 : 1;
+  const base = i;
+  if (nat === 20) i = Math.min(3, i + 1);
+  if (nat === 1) i = Math.max(0, i - 1);
+  return {deg: DEG[i], shifted: i !== base};
+}
+
+/* A check rolled by the player (skill, save, attack, Perception). */
+async function check({label, mod, dc, dcName, parts, isAttack=false, allowHero=true, button}){
+  const row = add('rollrow', `<span class="lbl"><b>${label}</b>: d20 ${sgn(mod)}${parts ? ` <span style="color:var(--muted)">(${parts})</span>` : ''} vs ${dcName || 'DC'} ${dc}</span>`);
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  const die = d20El(); dice.appendChild(die);
+  await waitRoll(`${label}: d20 ${sgn(mod)} vs ${dcName || 'DC'} ${dc}`, button);
+  let r = await rollInto(row, die, mod, dc);
+  used.add(isAttack ? 'attack' : 'check');
+  if ((r.deg === 'f' || r.deg === 'cf') && C.hero > 0 && allowHero){
+    const c = await choose([
+      {id:'hero', label:'Spend your Hero Point to reroll', sub:'You must take the new result', cls:'hero', say:'I spend my Hero Point!'},
+      {id:'keep', label:`Keep the ${DEG_NAME[r.deg].toLowerCase()}`, say:false}]);
+    if (c === 'hero'){
+      C.hero--; used.add('hero'); render();
+      rule('Hero Points: spend one to reroll a check. You must use the second result, even if it is worse.');
+      const die2 = d20El(); dice.appendChild(die2);
+      r = await rollInto(row, die2, mod, dc);
+    }
+  }
+  return r;
+}
+async function rollInto(row, die, mod, dc){
+  const nat = d(20); die.classList.remove('ghost');
+  await tumble(() => die.textContent = d(20));
+  die.textContent = nat; if (nat === 20) die.classList.add('nat20'); if (nat === 1) die.classList.add('nat1');
+  const total = nat + mod; const {deg, shifted} = degree(total, dc, nat);
+  const sc = document.createElement('span'); sc.className = 'score'; sc.textContent = `${nat} ${mod >= 0 ? '+' : '-'} ${Math.abs(mod)} = ${total} vs ${dc}`; row.appendChild(sc);
+  stamp(row, deg);
+  if (shifted){ used.add('nat'); rule(nat === 20 ? 'Natural 20: your result improves by one degree of success.' : 'Natural 1: your result gets one degree of success worse.'); }
+  return {deg, nat, total};
+}
+function stamp(row, deg){ const s = document.createElement('span'); s.className = 'result ' + deg; s.textContent = DEG_NAME[deg]; row.appendChild(s); if (deg === 'cs' || deg === 'cf') used.add('crit'); }
+
+/* Damage dice rolled by the player. */
+async function playerDamage(label, dice, bonus, crit){
+  const row = add('rollrow', `<span class="lbl"><b>${label} damage</b>: ${dice.length}d${dice[0]}${bonus ? ' ' + sgn(bonus) : ''}${crit ? ', doubled for a critical hit' : ''}</span>`);
+  const box = document.createElement('div'); box.className = 'dice'; row.appendChild(box);
+  const els = dice.map(n => { const e = dnEl(n); box.appendChild(e); return e; });
+  await waitRoll(`Damage: ${dice.length}d${dice[0]}${bonus ? sgn(bonus) : ''}`, 'Roll damage');
+  const vals = dice.map(n => d(n));
+  els.forEach(e => e.classList.remove('ghost'));
+  await tumble(() => els.forEach(e => e.innerHTML = d(+e.dataset.n)));
+  els.forEach((e,i) => e.innerHTML = `${vals[i]}<small>d${dice[i]}</small>`);
+  let total = Math.max(1, vals.reduce((a,b)=>a+b,0) + bonus); if (crit) total *= 2;
+  const sc = document.createElement('span'); sc.className = 'score'; sc.textContent = `${total} damage`; row.appendChild(sc);
+  return total;
+}
+/* World and foe rolls happen automatically. */
+async function autoRoll20(label, mod, dc){
+  const row = add('rollrow foe', `<span class="lbl">${label}: d20 ${sgn(mod)} vs ${dc}</span>`);
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  const die = d20El(true); dice.appendChild(die); await sleep(150);
+  const r = await rollInto(row, die, mod, dc); return r;
+}
+async function autoDamage(label, n, bonus, crit){
+  const row = add('rollrow foe', `<span class="lbl">${label}: 1d${n}${bonus ? sgn(bonus) : ''}${crit ? ', doubled' : ''}</span>`);
+  const box = document.createElement('div'); box.className = 'dice'; row.appendChild(box);
+  const e = dnEl(n); box.appendChild(e); e.classList.remove('ghost');
+  const v = d(n); await tumble(() => e.innerHTML = d(n)); e.innerHTML = `${v}<small>d${n}</small>`;
+  let total = Math.max(1, v + bonus); if (crit) total *= 2;
+  const sc = document.createElement('span'); sc.className = 'score'; sc.textContent = `${total} damage`; row.appendChild(sc);
+  return total;
+}
+
+/* ---------- sheet ---------- */
+function render(){
+  const conds = [];
+  if (C.shieldRaised) conds.push('shield raised (+2 AC)');
+  if (C.dazzled) conds.push('dazzled');
+  if (C.wakeful) conds.push('Wakeful');
+  if (C.wounded) conds.push('wounded ' + C.wounded);
+  $('#sumName').textContent = C.name;
+  $('#sumMini').textContent = `HP ${C.hp}/${C.maxHp} · AC ${C.ac + (C.shieldRaised ? 2 : 0)} · Hero ${C.hero}`;
+  const per = C.perception + (C.wakeful ? 1 : 0), will = C.will - (C.wakeful ? 1 : 0);
+  $('#sheetBody').innerHTML = `
+    <div class="sec"><span>Human fighter 1</span><span>Warrior</span></div>
+    <div class="attrs">${Object.entries(C.attrs).map(([k,v]) => `<div><b>${sgn(v)}</b><small>${k}</small></div>`).join('')}</div>
+    <div class="big"><div class="${C.hp < C.maxHp/2 ? 'hurt' : ''}"><b>${C.hp}</b><small>HP of ${C.maxHp}</small></div><div><b>${C.ac + (C.shieldRaised ? 2 : 0)}</b><small>AC</small></div><div><b>${C.hero}</b><small>Hero Pts</small></div></div>
+    <div class="kv"><span>Perception</span><span>${sgn(per)}${C.wakeful ? ' (Wakeful)' : ''}</span><span>Saves</span><span>Fort ${sgn(C.fort)} · Ref ${sgn(C.ref)} · Will ${sgn(will)}</span><span>Speed</span><span>25 feet</span><span>Skills</span><span>Athletics +7, Diplomacy +4, Intimidation +4, Medicine +4, Survival +4</span></div>
+    <div><div class="sec"><span>Strikes</span><span>MAP -5 / -10</span></div>
+      <p class="feat"><b>Longsword +9</b> · 1d8+4 slashing</p>
+      <p class="feat"><b>Javelin +6</b> · 1d6+4 piercing, thrown 30 ft · ${C.javelins} left</p></div>
+    <div><div class="sec"><span>Steel shield</span><span>Hardness 5</span></div>
+      <p class="feat">Shield HP ${C.shieldHp}/20 · broken at 10${shieldBroken() ? ' · <b>BROKEN</b>' : ''}</p></div>
+    <div><div class="sec"><span>Feats and features</span></div>
+      <p class="feat"><b>Reactive Strike</b> (reaction): Strike a foe in reach that moves out of a square or uses a manipulate action.</p>
+      <p class="feat"><b>Shield Block</b> (reaction): with shield raised, block up to 5 damage.</p>
+      <p class="feat"><b>Sudden Charge</b> (2 actions): Stride twice, then Strike.</p>
+      <p class="feat"><b>Intimidating Glare</b>: Demoralize with a look.</p></div>
+    <div><div class="sec"><span>Gear</span></div><p class="feat">Chain mail, steel shield, longsword, javelins, ${C.potion ? '1 minor healing potion (1d8 HP)' : 'empty potion vial'}, healer's toolkit${C.pin ? ', <b>the first millpin</b>' : ''}</p></div>
+    <div><div class="sec"><span>Conditions</span></div><div class="conds">${conds.length ? conds.map(c => `<span class="cond">${c}</span>`).join('') : '<span class="cond dim">none</span>'}</div></div>
+    <div><div class="sec"><span>The Long Night</span><span>${C.longNight}/6</span></div><div class="track">${[0,1,2,3,4,5].map(i => `<i class="${i < C.longNight ? 'on' : ''}"></i>`).join('')}</div></div>
+    ${F.on ? `<div><div class="sec"><span>Foe: grist-hound</span><span>AC ${F.ac}</span></div><div class="hpbar"><span>HP ${Math.max(0,F.hp)}/${F.maxHp}</span><span class="bar"><i style="width:${Math.max(0,F.hp)/F.maxHp*100}%"></i></span></div>${F.frightened ? `<div class="conds" style="margin-top:6px"><span class="cond">frightened ${F.frightened}</span></div>` : ''}</div>` : ''}`;
+}
+function markNight(n=1){ C.longNight = Math.min(6, C.longNight + n); render(); used.add('night'); }
+
+/* ---------- start ---------- */
+async function start(){
+  nar('<strong>The Sleepless Mill</strong> is a fantasy adventure for one player, using the open rules of <strong>Pathfinder Second Edition</strong>: a d20 for every check, three actions every turn, and four ways each roll can turn out.');
+  rule('A check is a d20 plus a modifier against a Difficulty Class (DC). Beat it by 10 for a critical success, meet it for a success, miss it for a failure, miss by 10 for a critical failure.');
+  nar('You play <strong>Maud Kestrel</strong>, a human fighter who spent eleven years in a border company and can still sleep standing up. When a letter reached her that said <em>nobody here has slept in nine nights, please come,</em> she laughed, and then she saddled her horse.');
+  render();
+  rule('Your sheet shows Maud\'s numbers. Her Strength is +4, so her longsword hits at +9: Strength plus a proficiency bonus of +5 (expert). Her AC of 18 is what foes must roll to hit her.');
+  await cont('Begin Act One');
+  await s1();
+}
+
+/* ---------- scene 1 ---------- */
+async function s1(){
+  scene(1, 'Nine Nights Awake');
+  nar('The road comes down out of the hills into the valley of the Cressing, and Dunmarrow sits at the bottom of it like a lit candle. Every window glows. In the square, a man re-thatches a roof that doesn\'t need it. Two children play a game with no rules, laughing too loudly. Up on the hill, above the river, the great wheel of the mill turns slowly. The water pours off it the wrong way.');
+  nar('The reeve, <strong>Agnet Coyle</strong>, meets you at the well. Her eyes are red to the rims. She talks too fast and laughs at nothing.');
+  npc('Agnet Coyle', '"You came! Good, good. Nine nights. Not a wink, not one of us. And we\'re not tired, that\'s the strange part. Here, you must be hungry." She presses a warm loaf into your hands. It smells wonderful.');
+  const b = await choose([
+    {id:'eat', label:'Eat the bread', sub:'Become Wakeful: +1 Perception, -1 to Will saves', say:'I tear off a piece and eat it. It\'s the best bread I\'ve ever had.'},
+    {id:'no', label:'Politely refuse', sub:'Agnet looks hurt, just for a heartbeat', say:'"Thank you. Maybe later."'}]);
+  if (b === 'eat'){ C.wakeful = true; render(); nar('Warmth spreads through you, and every edge of the world gets sharper. You don\'t think you\'ll be sleeping tonight.'); rule('Wakeful is a condition this adventure invents. It gives a +1 status bonus to Perception and a -1 status penalty to Will saves. Bonuses and penalties come in types (circumstance, status, item); you only use the best of each type.'); }
+  else nar('Agnet\'s smile wobbles, then comes back too wide. "Of course! Of course."');
+  nar('You need to know what\'s going on here. How do you start?');
+  const per = C.perception + (C.wakeful ? 1 : 0);
+  const c = await choose([
+    {id:'dip', label:'Ask around the square', sub:`Diplomacy +4 to Gather Information, DC 15`, say:'I buy a round at the inn and listen.'},
+    {id:'med', label:'Examine a sleepless child', sub:`Medicine +4, DC 15`, say:'"May I look at your grandson?"'},
+    {id:'per', label:'Search the bakery and flour carts', sub:`Perception ${sgn(per)} to Seek, DC 15`, say:'I go and look at where the bread comes from.'}]);
+  const opt = {dip:['Gather Information (Diplomacy)',4,'Diplomacy +4'], med:['Examine Ewan (Medicine)',4,'Medicine +4'], per:['Seek (Perception)',per,`Perception +6${C.wakeful ? ', Wakeful +1' : ''}`]}[c];
+  rule('Skill checks use the same d20 roll as everything else. A DC of 15 is a typical task for a level 1 hero who is trained in the skill.');
+  const r = await check({label:opt[0], mod:opt[1], dc:15, parts:opt[2]});
+  if (r.deg === 'cs' || r.deg === 's'){
+    nar('You piece it together. The sleeplessness started the night the mill reopened. <strong>Oda Venn</strong>, the miller, had shut it for two years of drought and debt, then opened it again nine nights ago. And only one person in Dunmarrow still sleeps: Oda\'s daughter <strong>Tamsin</strong>, who won\'t touch the bread.');
+    C.clue = true;
+    if (r.deg === 'cs') nar('There\'s more. The flour sacks are stamped with a spiral of six spokes, and old Fen Margery swears the wheel only runs backward after midnight. It is nearly midnight now.');
+  } else {
+    nar('Nobody makes much sense. You learn only that the mill reopened nine nights ago, and that Oda Venn, the miller, hasn\'t been seen in three days.');
+    if (r.deg === 'cf'){ markNight(); nar('Worse, the hour slips away while you chase nonsense. The Long Night marks one circle.'); rule('The Long Night is this adventure\'s danger track. The more circles are marked, the stronger the thing under the mill will be in Act Three.'); }
+  }
+  nar('Everyone agrees on one thing: Oda\'s girl keeps watch on the mill bridge.');
+  await cont('Go to the mill bridge');
+  await s2();
+}
+
+/* ---------- scene 2 ---------- */
+async function s2(){
+  scene(2, 'The Girl Who Sleeps');
+  nar('The mill bridge is a hump of old stone over the millrace. A girl of about twelve sits on the parapet with a lantern and a slingshot, wrapped in a blanket, asleep, her chin on her chest. As your boots scrape the stones she snaps awake, and the slingshot comes up, loaded.');
+  npc('Tamsin Venn', '"You\'re not from here. Good. Everyone from here is wrong." She lowers it, a little. "I\'m Tamsin. If you\'re going up there you\'ll want the key. Mam\'s got the other one, and Mam\'s inside. She\'s been inside three days."');
+  nar('She\'s frightened, and something else: guilty. She isn\'t telling you everything.');
+  const per = C.perception + (C.wakeful ? 1 : 0);
+  const c = await choose([
+    {id:'dip', label:'Be kind and honest with her', sub:'Diplomacy +4 to Make an Impression, DC 14', say:'I sit down on the parapet next to her. "I\'m here to help your mam. That\'s all."'},
+    {id:'per', label:'Notice what she isn\'t saying', sub:`Perception ${sgn(per)} to Sense Motive, DC 14`, say:'I watch her face. "You know why this is happening, don\'t you?"'},
+    {id:'int', label:'Lean on her', sub:'Intimidation +4 -2 to Coerce, DC 14. She won\'t trust you', say:'"Tell me what you know. Now."'}]);
+  const opt = {dip:['Make an Impression (Diplomacy)',4,'Diplomacy +4'], per:['Sense Motive (Perception)',per,`Perception +6${C.wakeful ? ', Wakeful +1' : ''}`], int:['Coerce (Intimidation)',2,'Intimidation +4, -2 for bullying a frightened child']}[c];
+  const r = await check({label:opt[0], mod:opt[1], dc:14, parts:opt[2]});
+  if (r.deg === 'cs' || r.deg === 's'){
+    if (c !== 'int' && r.deg === 'cs'){ C.tamsin = 'ally'; npc('Tamsin Venn', '"Mam made a bargain. I heard her say the stone needs feeding." She swallows. "And there\'s a dog at the door. It\'s not a dog. It hates water." She presses the key into your hand. "I\'m coming with you as far as the steps."'); }
+    else { C.tamsin = 'key'; npc('Tamsin Venn', '"There\'s a dog at the door. It\'s not a dog." She drops the key into your palm. "Be careful."'); }
+    C.warned = true; C.key = true;
+    rule('Tamsin warned you. When the fight starts, you get a +2 circumstance bonus to your initiative roll.');
+  } else if (r.deg === 'f'){ C.key = true; C.tamsin = 'key'; npc('Tamsin Venn', 'She holds out the key without looking at you. "Just bring her back."'); }
+  else { C.key = false; markNight(); npc('Tamsin Venn', '"No. You\'re like the rest of them." She pockets the key and walks off into the dark.'); nar('No key. You\'ll have to find another way in. The Long Night marks one circle.'); }
+  await cont('Climb the millrace path');
+  await s3();
+}
+
+/* ---------- scene 3 ---------- */
+const BY_NIGHT = ['A man fishing in the millrace with no hook, catching nothing, perfectly happy.','Two children follow you at a distance, playing the game with no rules. They stop when you turn.','An owl, awake and alert, watching the mill. It\'s the only creature in the valley that looks worried.','A cart of flour sacks left in the path. One of the sacks is breathing, slow and deep.','The baker, Ilse, walking home, eating bread with both hands, crying, and not knowing why.','White moths, thousands of them, all flying uphill toward the mill.','A dog, a real one, asleep under a hedge. Seeing it makes you feel a little better. You gain 1 temporary Hit Point (we\'ll just add it to your HP).','The wheel stops for a moment. The whole valley holds its breath. Then it turns again.'];
+async function s3(){
+  scene(3, 'The Millrace Path');
+  nar('The path to the mill runs along the stone lip of the weir, slick with spray. To your left, the millrace roars. Above, the wheel groans as it turns backward, throwing up a white mist that smells of bread.');
+  const row = add('rollrow', '<span class="lbl"><b>Dunmarrow by Night</b> oracle (d8): what else is on the path?</span>');
+  const box = document.createElement('div'); box.className = 'dice'; row.appendChild(box);
+  const e = dnEl(8); box.appendChild(e);
+  await waitRoll('Dunmarrow by Night (d8)', 'Roll on the oracle');
+  const v = d(8); e.classList.remove('ghost'); await tumble(() => e.innerHTML = d(8)); e.innerHTML = `${v}<small>d8</small>`;
+  used.add('oracle');
+  nar(`<em>${BY_NIGHT[v-1]}</em>`);
+  if (v === 7){ C.hp = Math.min(C.maxHp + 1, C.hp + 1); render(); }
+  rule('Solo play uses random tables (oracles) to surprise you. The full book has eight of them, plus a yes-or-no oracle that uses the same degrees of success as a check.');
+  nar('Halfway up, the old footbridge has rotted through. There\'s a gap of black water and white foam.');
+  const c = await choose([
+    {id:'ath', label:'Climb the old sluice gate', sub:'Athletics +7, DC 15', say:'I go hand over hand along the sluice gate.'},
+    {id:'acr', label:'Balance along the top of the weir', sub:'Acrobatics +1, DC 15 (Maud is untrained)', say:'Arms out. One foot in front of the other.'},
+    {id:'long', label:'Take the long way through the orchard', sub:'No roll, but mark the Long Night', say:'Not worth the risk. I go around.'}]);
+  if (c === 'long'){ markNight(); nar('The orchard path takes the best part of an hour. The Long Night marks one circle.'); }
+  else {
+    if (c === 'acr') rule('Untrained: you add only your attribute modifier. Maud adds Dex +1 to Acrobatics, with no proficiency bonus. Trained skills add level + 2.');
+    const r = await check({label: c === 'ath' ? 'Climb (Athletics)' : 'Balance (Acrobatics)', mod: c === 'ath' ? 7 : 1, dc:15, parts: c === 'ath' ? 'Str +4, trained +3' : 'Dex +1, untrained'});
+    if (r.deg === 'cs'){ C.sneaky = true; nar('You\'re over in a moment, light and quiet. Whatever waits at the door doesn\'t know you\'re here yet.'); rule('Critical success: the foe will be off-guard to you in the first round of the fight. Off-guard means -2 to its AC.'); }
+    else if (r.deg === 's') nar('You cross safely and keep climbing.');
+    else if (r.deg === 'f'){ nar('Your foot goes out from under you and you slam into the stones before you haul yourself over.'); const dmg = await autoDamage('Falling against the stones', 6, 0, false); hurt(dmg); }
+    else { nar('You fall. The millrace takes you like a hand and drags you down to the pool. You come up gasping, a long way below.'); const dmg = await autoDamage('Swept down the millrace (2d6)', 12, 0, false); hurt(dmg); markNight(); nar('The climb back up costs time. The Long Night marks one circle.'); }
+  }
+  await cont('Climb the last steps to the mill');
+  await s4();
+}
+function hurt(n){ C.hp = Math.max(0, C.hp - n); render(); }
+
+/* ---------- scene 4: the fight ---------- */
+let dist = 40, round = 0, defeated = false;
+async function s4(){
+  scene(4, 'The Hound at the Door');
+  nar('The mill door is oak and iron, and in front of it, on the top step forty feet above you, lies a dog the size of a calf. It is made of flour: packed, damp, grey-white flour, shaped like a dog the way a child shapes a snowman, with teeth of broken millstone and two wet pebbles for eyes. As you come up the steps it stands, and flour sifts from its flanks like smoke.');
+  F.on = true; render();
+  rule('Combat starts with initiative. You roll Perception; the hound rolls Stealth because it was lying in wait. The higher total acts first, and a foe wins ties.');
+  const per = C.perception + (C.wakeful ? 1 : 0) + (C.warned ? 2 : 0);
+  const irow = add('rollrow', `<span class="lbl"><b>Initiative</b>: d20 ${sgn(per)} <span style="color:var(--muted)">(Perception +6${C.wakeful ? ', Wakeful +1' : ''}${C.warned ? ', warned +2' : ''})</span></span>`);
+  const idice = document.createElement('div'); idice.className = 'dice'; irow.appendChild(idice);
+  const idie = d20El(); idice.appendChild(idie);
+  await waitRoll('Initiative: Perception d20 ' + sgn(per), 'Roll initiative');
+  const inat = d(20); idie.classList.remove('ghost'); await tumble(() => idie.textContent = d(20)); idie.textContent = inat;
+  const mine = {total: inat + per};
+  const isc = document.createElement('span'); isc.className = 'score'; isc.textContent = `${inat} + ${per} = ${mine.total}`; irow.appendChild(isc);
+  const hn = d(20), ht = hn + 6;
+  add('rollrow foe', `<span class="lbl">Grist-hound initiative: Stealth d20+6</span><div class="dice"><div class="d20 foe">${hn}</div><span class="score">${hn} + 6 = ${ht}</span></div>`);
+  const first = mine.total > ht ? 'pc' : 'foe';
+  add('', `<span class="result n">${first === 'pc' ? 'You act first' : 'The hound acts first'}</span>`);
+  used.add('init');
+  if (C.sneaky) F.offGuardRound1 = true;
+  rule('Each round, every creature takes a turn. On your turn you get three actions and you regain your one reaction.');
+  if (first === 'foe'){ round = 1; await houndTurn(); }
+  while (!defeated && F.hp > 0){
+    round++;
+    await pcTurn();
+    if (F.hp <= 0 || defeated) break;
+    await houndTurn();
+    if (round > 12 && F.hp > 0){ nar('Tamsin\'s voice rings out from below: "Water! It hates water!" A bucket arcs through the air and bursts over the hound. It slumps.'); F.hp = 0; }
+  }
+  F.on = false; render();
+  await aftermath();
+}
+function mapPenalty(n){ return n === 0 ? 0 : n === 1 ? -5 : -10; }
+
+async function pcTurn(){
+  let actions = 3, attacks = 0, flourish = false;
+  C.reaction = true;
+  if (C.shieldRaised){ C.shieldRaised = false; }
+  render();
+  add('', `<span class="result n">Round ${round} · your turn</span>`);
+  if (round <= 2 && !used.has('threeNote')){ used.add('threeNote'); rule('Three actions: each button shows its cost. Mix them however you like. Your second attack this turn takes -5 and your third takes -10: the multiple attack penalty.'); }
+  while (actions > 0 && F.hp > 0 && !defeated){
+    const adj = dist <= 5;
+    const fr = F.frightened;
+    const strikeBonus = 9 + mapPenalty(attacks);
+    const opts = [];
+    if (adj) opts.push({id:'strike', cost:'1 action', label:`Strike with your longsword (${sgn(strikeBonus)})`, sub:`vs AC ${F.ac - fr - (F.offGuardRound1 ? 2 : 0)} · 1d8+4 slashing${attacks ? ` · includes multiple attack penalty ${mapPenalty(attacks)}` : ''}`, say:'I swing.'});
+    if (!adj && actions >= 2 && !flourish) opts.push({id:'charge', cost:'2 actions', label:'Sudden Charge', sub:`Stride twice (50 feet) and Strike at ${sgn(strikeBonus)}`, say:'I charge up the steps, blade low.'});
+    if (!adj) opts.push({id:'stride', cost:'1 action', label:'Stride up the steps', sub:`Move 25 feet (the hound is ${dist} feet away)`, say:'I close the distance.'});
+    if (!adj && C.javelins > 0) opts.push({id:'jav', cost:'1 action', label:`Throw a javelin (${sgn(6 + mapPenalty(attacks) - (dist > 30 ? 2 : 0))})`, sub:`1d6+4 piercing${dist > 30 ? ' · -2 for range beyond 30 feet' : ''}`, say:'I hurl a javelin.'});
+    if (!C.shieldRaised && !shieldBroken()) opts.push({id:'shield', cost:'1 action', label:'Raise a Shield', sub:'+2 AC until your next turn, and lets you Shield Block', say:'I bring my shield up.'});
+    if (!used.has('demoralizeUsed') && dist <= 30) opts.push({id:'demo', cost:'1 action', label:'Demoralize with a glare', sub:'Intimidation +4 vs its Will DC 13. Frightened lowers its AC and attacks', say:'I fix it with the look I used to give new recruits.'});
+    if (adj && !used.has('splashUsed')) opts.push({id:'water', cost:'1 action', label:'Kick millrace water over it', sub:'Interact. It has weakness to water: 3 damage, no roll', say:'I kick a sheet of water from the millrace over it.'});
+    if (C.potion && C.hp < C.maxHp) opts.push({id:'potion', cost:'1 action', label:'Drink your healing potion', sub:'Interact. Regain 1d8 HP', say:'I pull the cork with my teeth and drink.'});
+    if (C.dazzled) opts.push({id:'wipe', cost:'1 action', label:'Wipe the flour from your eyes', sub:'Interact, using water from the millrace. Ends dazzled', say:'I splash my face.'});
+    opts.push({id:'end', label:'End your turn', sub: actions === 3 ? 'Do nothing' : `Waste ${actions} action${actions > 1 ? 's' : ''}`, say:false});
+    const info = `<span>Actions left: <b>${actions}</b></span><span class="pips">${[0,1,2].map(i => `<i class="pip ${i < actions ? 'on' : ''}"></i>`).join('')}</span><span>Hound: <b>${dist <= 5 ? 'in reach' : dist + ' feet away'}</b></span>`;
+    const c = await choose(opts, info);
+    if (c === 'end') break;
+    used.add('three');
+    if (c === 'strike'){ actions--; await strike(attacks, 'Longsword'); attacks++; if (attacks >= 2) used.add('map'); }
+    else if (c === 'charge'){ actions -= 2; flourish = true; used.add('charge'); dist = 5; rule('Sudden Charge is a flourish: you can use only one flourish action per turn. Its Strike still counts toward your multiple attack penalty.'); await strike(attacks, 'Longsword'); attacks++; if (attacks >= 2) used.add('map'); }
+    else if (c === 'stride'){ actions--; dist = Math.max(5, dist - 25); nar(dist <= 5 ? 'You reach the top step. It\'s right in front of you.' : `You climb. It\'s ${dist} feet away now.`); }
+    else if (c === 'jav'){ actions--; C.javelins--; await strike(attacks, 'Javelin', {bonus:6 - (dist > 30 ? 2 : 0), die:6}); attacks++; if (attacks === 2) used.add('map'); }
+    else if (c === 'shield'){ actions--; C.shieldRaised = true; used.add('shield'); render(); rule('Raise a Shield: +2 circumstance bonus to AC until the start of your next turn. While it\'s raised, you can use Shield Block as a reaction.'); }
+    else if (c === 'demo'){ actions--; used.add('demoralizeUsed'); used.add('demoralize');
+      rule('Demoralize: Intimidation against the target\'s Will DC (10 + its Will modifier, 13). Success: frightened 1. Critical success: frightened 2. Frightened is a penalty to all its checks and DCs, including AC, and it drops by 1 at the end of each of its turns. Afterward it is immune to your Demoralize for 10 minutes.');
+      const r = await check({label:'Demoralize (Intimidation)', mod:4, dc:13 - F.frightened, parts:'Intimidation +4'});
+      if (r.deg === 'cs'){ F.frightened = 2; nar('It flattens its ears of flour and backs a step. <strong>Frightened 2.</strong>'); }
+      else if (r.deg === 's'){ F.frightened = Math.max(F.frightened, 1); nar('Its pebble eyes slide away from yours. <strong>Frightened 1.</strong>'); }
+      else nar('It doesn\'t care how you look at it.');
+      render(); }
+    else if (c === 'water'){ actions--; used.add('splashUsed'); used.add('weak'); F.hp -= 3; render(); nar('The water hits it with a hiss. Its flank sags and runs like wet dough. <strong>3 damage.</strong>'); rule('Weakness: a creature with weakness to something takes extra damage from it. Here, the water alone deals the 3 damage.'); }
+    else if (c === 'potion'){ actions--; C.potion = 0; used.add('potion'); const h = await playerDamage('Healing potion (heals)', [8], 0, false); C.hp = Math.min(C.maxHp, C.hp + h); render(); nar(`Warmth floods back into you. <strong>+${h} HP.</strong>`); rule('Drinking a potion is an Interact action: one of your three.'); }
+    else if (c === 'wipe'){ actions--; C.dazzled = 0; render(); nar('You can see again.'); }
+    if (F.hp <= 0) return;
+  }
+  // end of your turn
+  if (C.dazzled && C.dazzled < 50){ C.dazzled--; render(); if (!C.dazzled) nar('Your eyes clear.'); }
+  F.offGuardRound1 = false;
+}
+
+async function strike(attacks, weapon, opt){
+  const pen = mapPenalty(attacks);
+  const base = opt ? opt.bonus : 9;
+  const mod = base + pen;
+  const og = F.offGuardRound1 ? 2 : 0;
+  const ac = F.ac - F.frightened - og;
+  const parts = `${weapon} ${sgn(base)}${pen ? `, multiple attack penalty ${pen}` : ''}`;
+  if (og) rule('The hound is off-guard this round: -2 to its AC.');
+  if (F.frightened && !used.has('frNote')){ used.add('frNote'); rule(`Frightened ${F.frightened}: the hound's AC is ${F.frightened} lower.`); }
+  if (C.dazzled){ if (!await flatCheck()) return; }
+  const r = await check({label:`Strike: ${weapon}`, mod, dc:ac, dcName:'AC', parts, isAttack:true});
+  used.add('ac');
+  if (r.deg === 'cs' || r.deg === 's'){
+    const crit = r.deg === 'cs';
+    if (crit) rule('Critical hit: double all the damage.');
+    const dmg = await playerDamage(weapon, [opt ? opt.die : 8], 4, crit);
+    F.hp -= dmg; render();
+    nar(F.hp <= 0 ? 'Your blow bursts it apart in a cloud of wet flour.' : crit ? 'A tremendous hit. A whole flank of it sloughs away.' : 'You carve a chunk out of it. Flour spills like sand.');
+  } else nar(r.deg === 'cf' ? 'You overextend badly. It slides away from the blow.' : 'It twists aside.');
+}
+async function flatCheck(){
+  used.add('flat');
+  rule('Dazzled: the hound is concealed from you. Before an attack, roll a DC 5 flat check: a plain d20 with no modifiers. On 4 or less, the attack misses before you roll it.');
+  const row = add('rollrow', '<span class="lbl"><b>Flat check</b> (dazzled): d20 vs DC 5</span>');
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  const die = d20El(); dice.appendChild(die);
+  await waitRoll('Flat check: d20, need 5 or more', 'Roll the flat check');
+  const v = d(20); die.classList.remove('ghost'); await tumble(() => die.textContent = d(20)); die.textContent = v;
+  const ok = v >= 5; const s = document.createElement('span'); s.className = 'result ' + (ok ? 's' : 'f'); s.textContent = ok ? 'You see it' : 'Lost in the flour'; row.appendChild(s);
+  if (!ok) nar('You swing at a shape in the white haze. Nothing there.');
+  return ok;
+}
+
+async function houndTurn(){
+  add('', `<span class="result n">Round ${round} · the grist-hound's turn</span>`);
+  if (F.grit > 0) F.grit--;
+  let attacks = 0;
+  if (dist > 5){
+    nar('The hound bounds down the steps toward you in a spray of flour.');
+    dist = 5;
+    rule('It moved into your reach, not out of a square in your reach, so Reactive Strike doesn\'t trigger.');
+    await houndBite(attacks++); if (defeated) return;
+    await houndBite(attacks++); if (defeated) return;
+  } else {
+    let t = d(6);
+    if ((t === 4 || t === 5) && F.grit > 0) t = 1;
+    add('rollrow foe', `<span class="lbl">Hound tactics (d6)</span><div class="dice"><div class="dn">${t}<small>d6</small></div><span class="score">${t <= 3 ? 'jaws, jaws, Circle' : t <= 5 ? 'Shake Off Grit, then jaws' : 'jaws, jaws, jaws'}</span></div>`);
+    if (t <= 3){
+      await houndBite(attacks++); if (defeated) return;
+      await houndBite(attacks++); if (defeated) return;
+      nar('The hound circles you, low and quick, looking for a better angle.');
+      if (C.reaction){
+        const c = await choose([
+          {id:'rs', cost:'reaction', label:'Reactive Strike', sub:'It\'s moving out of a square in your reach. Strike at +9, no multiple attack penalty', say:'It turns its flank to me. I cut.'},
+          {id:'no', label:'Hold your reaction', sub: C.shieldRaised ? 'Save it for Shield Block' : 'Let it go', say:false}]);
+        if (c === 'rs'){ C.reaction = false; used.add('reactive'); rule('Reactive Strike: a reaction triggered when a creature in your reach leaves a square during a move action. Reactions don\'t count toward your multiple attack penalty. You get one reaction per round.'); await strike(0, 'Longsword (Reactive Strike)'); if (F.hp <= 0) return; }
+      }
+    } else if (t <= 5){
+      F.grit = d(4); used.add('save');
+      nar('The hound shakes itself like a wet dog, and the air goes white with flour.');
+      rule('Saving throw: you roll to resist an effect. Fortitude for things you endure with your body. Maud\'s Fortitude is +7 against the hound\'s DC 16.');
+      const r = await check({label:'Fortitude save', mod:C.fort, dc:16, parts:'Fortitude +7', button:'Roll your save'});
+      if (r.deg === 'cf'){ C.dazzled = 99; nar('Flour fills your eyes. You\'re <strong>dazzled</strong> until you wash them out.'); }
+      else if (r.deg === 'f'){ C.dazzled = 1; nar('Flour stings your eyes. You\'re <strong>dazzled</strong> until the end of your next turn.'); }
+      else nar('You squeeze your eyes shut and turn your face away. When you look again, you can see.');
+      render();
+      await houndBite(attacks++); if (defeated) return;
+    } else {
+      for (let i=0;i<3;i++){ await houndBite(attacks++); if (defeated) return; }
+    }
+  }
+  if (F.frightened){ F.frightened--; render(); if (!used.has('frDrop')){ used.add('frDrop'); rule('At the end of the hound\'s turn, its frightened value drops by 1.'); } }
+}
+async function houndBite(n){
+  const pen = mapPenalty(n);
+  const ac = C.ac + (C.shieldRaised ? 2 : 0);
+  const mod = 8 + pen - F.frightened;
+  const r = await autoRoll20(`Hound jaws: +8${pen ? ` ${pen} (MAP)` : ''}${F.frightened ? ` -${F.frightened} frightened` : ''}`, mod, ac);
+  if (n === 0 && !used.has('acNote')){ used.add('acNote'); rule(`Foes roll against your AC, ${ac}${C.shieldRaised ? ' with your shield raised' : ''}. They follow the same rules: a natural 20 is one step better, and hitting by 10 is a critical hit. The hound's attacks take the multiple attack penalty too.`); }
+  if (r.deg === 'f' || r.deg === 'cf'){ nar(['Its teeth snap shut on air.','It lunges and slides off your armor.','You turn it aside.'][d(3)-1]); return; }
+  const crit = r.deg === 'cs';
+  let dmg = await autoDamage(`Jaws${crit ? ' (critical hit)' : ''}`, 6, 2, crit);
+  if (C.shieldRaised && C.reaction && !shieldBroken()){
+    const c = await choose([
+      {id:'block', cost:'reaction', label:`Shield Block (${dmg} damage)`, sub:`Your shield absorbs up to 5. You take ${Math.max(0, dmg-5)}, the shield takes ${Math.max(0, dmg-5)}`, say:'I catch it on my shield.'},
+      {id:'no', label:`Take all ${dmg} damage`, sub:'Keep your reaction for Reactive Strike', say:false}]);
+    if (c === 'block'){
+      C.reaction = false; used.add('block');
+      const rest = Math.max(0, dmg - 5); C.shieldHp -= rest; dmg = rest;
+      rule('Shield Block: your shield\'s Hardness (5) stops that much damage. You and the shield each take whatever is left. At 10 HP or less, the shield is broken and can\'t be raised.');
+      if (shieldBroken()) nar('Your shield splits along the rim. It\'s broken.');
+    }
+  }
+  C.hp -= dmg; render();
+  nar(dmg ? `Millstone teeth bite through mail. <strong>${dmg} damage.</strong>` : 'The teeth grind on steel and nothing else.');
+  if (C.hp <= 0){ C.hp = 0; render(); await fall(crit); }
+}
+async function fall(crit){
+  defeated = true; used.add('dying');
+  nar('Your legs go. The steps come up to meet you.');
+  rule(`At 0 HP you fall unconscious with the dying condition: dying ${crit ? 2 : 1}${crit ? ' because it was a critical hit' : ''}. At dying 4, a hero dies. Each turn you roll a recovery check to get better or worse.`);
+  if (C.hero > 0){
+    const c = await choose([{id:'hr', label:'Spend all your Hero Points: Heroic Recovery', sub:'Lose dying and stabilize at 0 HP', cls:'hero', say:'Not here. Not like this.'}]);
+    if (c === 'hr'){ C.hero = 0; used.add('hero'); rule('Heroic Recovery: when you\'re dying, spend all your Hero Points to stabilize at 0 HP without becoming wounded. You\'re still unconscious, but you won\'t bleed out.'); }
+  } else { C.wounded = 1; }
+  nar('Through the roaring in your ears you hear a girl yelling. A bucket of millrace water bursts over the hound, and it sags, hissing, into a sodden lump. Small hands drag you down the steps by your collar.');
+  npc('Tamsin Venn', '"Told you. It hates water."');
+  F.hp = 0;
+  C.hp = 1; render();
+  nar('You wake an hour later with 1 Hit Point. The hound is a heap of wet flour on the step. The Long Night marks two circles.');
+  markNight(2);
+}
+
+async function aftermath(){
+  C.shieldRaised = false; C.dazzled = 0; render();
+  if (!defeated){ nar('The grist-hound slumps into a wet heap of flour and grit. Its millstone teeth clatter down the steps.'); used.add('victory'); }
+  nar('In the heap you find an iron spike as long as your forearm, cold to the touch, square at one end: a pin, the kind you would drive into stone. You don\'t know it yet, but it\'s <strong>the first millpin</strong>, and it\'s the reason the hound existed at all.');
+  C.pin = true; render();
+  nar(C.key ? 'You turn the key in the lock.' : 'You put your shoulder to the door.');
+  nar('The door swings open by itself. Inside, the great millstones are turning, grinding nothing. Flour drifts down through the dark like snow. And from somewhere below the floor, so faint you might be imagining it, someone is singing a lullaby backward.');
+  await cont('End of Act One');
+  await ending();
+}
+
+/* ---------- ending ---------- */
+async function ending(){
+  $('#sceneName').textContent = 'End of Act One';
+  const ALL = [['check','Skill checks against a DC'],['crit','Critical success or failure'],['nat','A natural 20 or 1 shifting the result'],['three','The three-action turn'],['attack','Strikes against AC'],['map','Multiple attack penalty'],['charge','Sudden Charge (class feat)'],['shield','Raise a Shield'],['block','Shield Block (reaction)'],['reactive','Reactive Strike (reaction)'],['demoralize','Demoralize and frightened'],['save','A saving throw'],['flat','A flat check while dazzled'],['hero','Spending a Hero Point'],['oracle','A solo oracle table']];
+  const store = (window.RDL_STORE && window.RDL_STORE.products && window.RDL_STORE.products[PRODUCT_ID]) || {};
+  const price = store.price || '';
+  const live = !!store.checkout;
+  add('endcard', `
+    <h3>Act One complete.</h3>
+    <p style="margin:0">${esc(C.name)} stands in the mill doorway with ${C.hp} Hit Points, a cold iron pin in her pack, and the Long Night at ${C.longNight} of 6. Somewhere below, under the stone, something is singing. The story continues in the full adventure.</p>
+    <div class="product">
+      <div class="cov"><small>A solo adventure compatible with Pathfinder Second Edition</small>The Sleepless Mill</div>
+      <div>
+        <strong style="font-family:var(--f-display);font-size:20px">The Sleepless Mill: the complete adventure (PDF)</strong>
+        <ul>
+          <li>Acts Two and Three: the sleepwalkers, the Sackman in the loft, Oda's confession, and the Hush beneath the millstone</li>
+          <li>Three endings plus a failure ending, and a level-up to 2 for the finale</li>
+          <li>Three ready-to-play heroes: Maud the fighter, a dwarf cleric, and a halfling rogue</li>
+          <li>Five new foes and a hazard, with solo tactics tables</li>
+          <li>Eight oracle and random tables, a full rules summary, and printable sheets · 31 pages</li>
+        </ul>
+        <div class="buy">
+          ${live ? `<a class="buybtn" href="${esc(store.checkout)}" target="_blank" rel="noopener">Buy the PDF · ${esc(price)}</a>` : `<span class="buybtn" aria-disabled="true">PDF coming soon${price ? ' · ' + esc(price) : ''}</span>`}
+          <small>${live ? 'Instant download. Secure checkout by Lemon Squeezy.' : 'The store opens soon.'}</small>
+        </div>
+      </div>
+    </div>
+    <ul class="learned">${ALL.map(([k,t]) => `<li class="${used.has(k)?'':'no'}">${t}</li>`).join('')}</ul>
+    <p class="fine">Learn about Pathfinder Second Edition, the game these rules come from, at <a href="https://paizo.com/pathfinder" target="_blank" rel="noopener">paizo.com/pathfinder</a>. This adventure is not an official Pathfinder product and is not affiliated with or endorsed by Paizo Inc.</p>`);
+  const c = await choose([{id:'again', label:'Play Act One again', cls:'primary', say:false}]);
+  if (c === 'again') location.reload();
+}
+
+if (matchMedia('(max-width: 880px)').matches) $('#sheet').open = false;
+render();
+start();
+})();
+</script>
+</body>
+</html>

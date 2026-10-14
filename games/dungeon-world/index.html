@@ -1,0 +1,799 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Salt King's Stair: Dungeon World Demo</title>
+<meta name="description" content="Play Act One of The Salt King's Stair, a solo adventure for Dungeon World, free in your browser. Real moves, real 2d6 rolls.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze:wght@600;800&family=Spectral:ital,wght@0,400;0,700;1,400&family=Barlow+Condensed:wght@500;700&display=swap">
+<script src="../../store.js"></script>
+<style>
+/* Layout: a salt mine at night. Indigo dark, a salt-white page for the story, rose-salt accents, a slate character sheet. */
+:root{
+  --night:#141826; --night-2:#1D2234; --line-d:#343B55; --salt:#F5F3EF; --salt-2:#E8E5DF; --ink:#1D2130; --muted:#5D6478;
+  --slate:#3B4563; --rose:#B04A5F; --rose-l:#E39AAA; --frost:#C9CFDD; --ok:#2F7A58; --mix:#B7791F; --bad:#A63A3A;
+  --f-display:"Grenze", Georgia, serif; --f-body:"Spectral", Georgia, serif; --f-sans:"Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--night);color:var(--salt);font-family:var(--f-body);font-size:17px;line-height:1.55;
+  background-image:linear-gradient(60deg, transparent 0 49%, rgba(201,207,221,.035) 49% 51%, transparent 51%),linear-gradient(-60deg, transparent 0 49%, rgba(201,207,221,.035) 49% 51%, transparent 51%);
+  background-size:90px 156px}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--rose-l);outline-offset:2px}
+.proto{background:#0C0F18;color:#AEB6CA;font-family:var(--f-sans);font-size:14px;letter-spacing:.03em;padding-block:7px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));display:flex;gap:6px 16px;flex-wrap:wrap;justify-content:space-between}
+.proto b{color:#fff}
+.wrap{max-width:1160px;margin:0 auto;padding-block:22px 60px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+.masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px 24px;flex-wrap:wrap;margin-bottom:18px}
+.eyebrow{font-family:var(--f-sans);font-weight:700;font-size:14px;letter-spacing:.24em;text-transform:uppercase;color:var(--rose-l);margin:0 0 4px}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(40px,7vw,70px);line-height:.9;margin:0;color:#fff}
+.tag{font-style:italic;color:var(--frost);margin:10px 0 0;max-width:56ch}
+.actchip{font-family:var(--f-sans);font-size:14px;letter-spacing:.04em;border:1px solid var(--rose-l);color:var(--rose-l);padding:6px 12px;white-space:nowrap}
+
+.table{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start}
+.story{background:var(--salt);color:var(--ink);min-width:0;box-shadow:0 0 0 1px #000, 0 18px 40px rgba(0,0,0,.5)}
+.story-head{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;padding:10px 18px;border-bottom:3px solid var(--slate)}
+.story-head .scene{font-family:var(--f-display);font-weight:800;font-size:22px;line-height:1.1}
+.toggles{display:flex;gap:4px 14px;flex-wrap:wrap}
+.toggle{font-family:var(--f-sans);font-size:15px;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--muted)}
+.toggle input{accent-color:var(--rose)}
+#log{padding:18px 20px 8px;display:flex;flex-direction:column;gap:12px}
+.line{max-width:66ch}
+.who{font-family:var(--f-sans);font-weight:700;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--rose);display:block;margin-bottom:1px}
+.npc{border-left:4px solid var(--rose);padding-left:12px;font-style:italic}
+.npc .who{font-style:normal}
+.you{align-self:flex-end;background:var(--slate);color:#fff;padding:7px 13px;max-width:min(54ch,90%);font-weight:700}
+.rule{font-family:var(--f-sans);font-size:16px;line-height:1.4;background:#E4E8F1;border-left:4px solid var(--slate);padding:7px 11px;max-width:66ch}
+.rule::before{content:"RULE  ";font-weight:700;letter-spacing:.1em;color:var(--slate)}
+body.norules .rule{display:none}
+.scenebreak{font-family:var(--f-display);font-weight:800;font-size:28px;line-height:1.05;border-top:2px solid var(--ink);padding-top:10px;margin-top:8px}
+.scenebreak small{display:flex;align-items:center;gap:10px;font-family:var(--f-sans);font-weight:700;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--rose);margin-bottom:4px}
+.scenebreak small i{display:inline-grid;place-items:center;width:20px;height:20px;background:var(--slate);color:#fff;font-style:normal;letter-spacing:0;transform:rotate(45deg)}
+.scenebreak small i span{transform:rotate(-45deg);display:block}
+
+details.move{max-width:66ch;border:1.5px solid var(--ink);background:#FBFAF8}
+details.move summary{cursor:pointer;padding:6px 11px;font-family:var(--f-display);font-weight:800;font-size:18px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+details.move summary small{font-family:var(--f-sans);font-weight:700;font-size:12px;letter-spacing:.1em;color:var(--muted)}
+details.move .mt{padding:0 12px 10px;font-size:15px}
+details.move .mt p{margin:.4em 0} details.move .mt ul{margin:.2em 0;padding-left:1.2em}
+body.norules details.move{display:none}
+
+.rollrow{display:flex;flex-direction:column;gap:8px;border:2px solid var(--ink);padding:10px 12px;max-width:66ch;background:#fff}
+.rollrow .lbl{font-family:var(--f-sans);font-size:16px}
+.dice{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.dice .sep{font-family:var(--f-display);font-weight:800;font-size:20px;color:var(--muted)}
+.d6{width:42px;height:42px;border:2px solid var(--ink);border-radius:6px;background:#fff;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:5px}
+.d6 i{width:7px;height:7px;border-radius:50%;background:var(--ink);place-self:center;visibility:hidden}
+.d6.foe{background:var(--slate);border-color:var(--slate)} .d6.foe i{background:#fff}
+.dn{min-width:44px;height:44px;display:grid;place-items:center;position:relative;font-family:var(--f-sans);font-weight:700;font-size:19px;color:#fff;padding:0 4px}
+.dn::before{content:"";position:absolute;inset:4px;background:var(--rose);clip-path:polygon(50% 0,100% 38%,82% 100%,18% 100%,0 38%)}
+.dn.foe::before{background:var(--slate)}
+.dn span{position:relative;top:3px}
+.dn small{position:absolute;bottom:-14px;left:0;right:0;text-align:center;font-size:11px;color:var(--muted);letter-spacing:.05em}
+.dice.withlabels{padding-bottom:12px}
+.ghost{opacity:.4}
+.d6.ghost{border-style:dashed}
+.tumble{animation:tumble .12s linear infinite}
+@keyframes tumble{50%{transform:rotate(10deg) translateY(-2px)}}
+.score{font-family:var(--f-sans);font-weight:700;font-size:17px}
+.result{font-family:var(--f-sans);font-weight:700;font-size:14px;letter-spacing:.1em;text-transform:uppercase;padding:2px 9px;color:#fff;align-self:flex-start}
+.result.ok{background:var(--ok)} .result.mix{background:var(--mix)} .result.bad{background:var(--bad)} .result.n{background:var(--slate)}
+.foeline{display:flex;gap:8px;flex-wrap:wrap;font-family:var(--f-sans);font-size:15px}
+.foeline span{border:1.5px solid var(--ink);padding:2px 8px;background:#fff}
+.foeline span.dead{text-decoration:line-through;opacity:.45}
+
+#choices{position:sticky;bottom:0;background:var(--salt-2);border-top:3px solid var(--slate);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:10px}
+#choices:empty{display:none}
+.opt{flex:1 1 220px;text-align:left;border:2px solid var(--ink);background:#fff;padding:9px 12px;cursor:pointer;box-shadow:3px 3px 0 var(--slate)}
+.opt:hover{background:#F3F0EA}
+.opt:active{transform:translate(3px,3px);box-shadow:none}
+.opt b{display:block;font-weight:700;line-height:1.25}
+.opt span{display:block;font-family:var(--f-sans);font-size:15px;color:var(--muted);margin-top:2px}
+.opt.primary{background:var(--slate);color:#fff;border-color:var(--slate);box-shadow:3px 3px 0 var(--ink)}
+.opt.primary span{color:#D5DAE7}
+.opt:disabled{opacity:.45;cursor:not-allowed}
+.opt.roll{flex:1 1 100%;display:grid;grid-template-columns:auto 1fr;column-gap:14px;align-items:center;padding:12px 16px}
+.opt.roll::before{content:"";grid-row:span 2;width:24px;height:24px;background:var(--rose-l);clip-path:polygon(50% 0,100% 38%,82% 100%,18% 100%,0 38%);transition:transform .25s}
+.opt.roll:hover::before{transform:rotate(72deg)}
+.opt.roll b{font-size:20px;font-family:var(--f-display);font-weight:800}
+
+/* sheet */
+.sheet{position:sticky;top:calc(12px + env(safe-area-inset-top,0px));background:var(--night-2);border:1.5px solid var(--line-d);min-width:0;color:var(--salt)}
+.sheet summary{list-style:none;cursor:pointer;padding:9px 14px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 10px;align-items:baseline;border-bottom:1px solid var(--line-d)}
+.sheet summary::-webkit-details-marker{display:none}
+.sheet .nm{font-family:var(--f-display);font-weight:800;font-size:21px;color:#fff}
+.sheet .mini{font-family:var(--f-sans);font-size:14px;color:var(--rose-l);white-space:nowrap}
+.sheet-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:12px}
+.sec{font-family:var(--f-sans);font-weight:700;font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:#98A1BA;border-bottom:1px solid var(--line-d);padding-bottom:2px;margin-bottom:6px;display:flex;justify-content:space-between}
+.statrow{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;text-align:center}
+.statrow div{border:1.5px solid #4A5370;padding:3px 0}
+.statrow b{display:block;font-family:var(--f-display);font-size:21px;line-height:1.05;color:#fff}
+.statrow small{font-family:var(--f-sans);font-size:11.5px;letter-spacing:.08em;color:#98A1BA}
+.vitals{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;text-align:center}
+.vitals div{background:#262C42;padding:4px 0}
+.vitals b{display:block;font-family:var(--f-display);font-size:22px;color:#fff;line-height:1.1}
+.vitals small{font-family:var(--f-sans);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#98A1BA}
+.hpbar{height:8px;background:#2B3148;margin-top:6px}
+.hpbar i{display:block;height:100%;background:var(--rose-l);transition:width .3s}
+.pips{display:flex;gap:4px;flex-wrap:wrap}
+.pips span{width:16px;height:16px;border:1.5px solid #98A1BA}
+.pips span.on{background:var(--rose-l);border-color:var(--rose-l)}
+.clockp span{width:30px;height:22px}
+.sh-label{font-family:var(--f-sans);font-size:15px;color:var(--frost)}
+.list{list-style:none;margin:0;padding:0;font-size:14.5px;display:flex;flex-direction:column;gap:2px}
+.list li{display:flex;justify-content:space-between;gap:8px}
+.list small{font-family:var(--f-sans);font-size:13px;color:#98A1BA;white-space:nowrap}
+.empty-sheet{font-style:italic;color:#98A1BA;font-size:15px}
+
+.endcard{border:2px solid var(--ink);background:#fff;padding:16px 18px;display:flex;flex-direction:column;gap:10px;max-width:66ch}
+.endcard h3{font-family:var(--f-display);font-weight:800;font-size:30px;line-height:1;margin:0}
+.product{display:grid;grid-template-columns:110px 1fr;gap:14px;align-items:start;background:var(--night);color:var(--salt);padding:14px}
+.product .cov{background:#161A26;border:1px solid var(--line-d);aspect-ratio:8.5/11;display:flex;flex-direction:column;justify-content:flex-end;padding:8px;font-family:var(--f-display);font-weight:800;font-size:16px;line-height:.95;color:#fff}
+.product .cov small{font-family:var(--f-sans);font-size:8px;letter-spacing:.14em;color:var(--rose-l);margin-bottom:auto;text-transform:uppercase}
+.product ul{margin:.3em 0 .6em;padding-left:1.1em;font-size:15px}
+.buy{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}
+.buybtn{display:inline-block;text-decoration:none;background:var(--rose-l);color:var(--night);font-weight:700;padding:10px 16px;border:0;cursor:pointer;font-size:16px}
+.buybtn[aria-disabled="true"]{background:#5D6478;color:#E8E5DF;cursor:not-allowed}
+.buy small{font-family:var(--f-sans);font-size:14px;color:#AEB6CA}
+.learned{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px 14px;font-size:15px}
+.learned li::before{content:"✓ ";font-weight:700;color:var(--ok)}
+.learned li.no{color:var(--muted)} .learned li.no::before{content:"○ ";color:var(--muted)}
+.fine{font-family:var(--f-sans);font-size:14px;color:var(--muted);line-height:1.45}
+.foot{font-family:var(--f-sans);font-size:14px;margin-top:22px;max-width:92ch;line-height:1.5;color:#AEB6CA}
+
+@media (max-width: 880px){
+  .table{grid-template-columns:minmax(0,1fr)}
+  .sheet{order:-1;top:env(safe-area-inset-top,0px);z-index:5}
+  .sheet-body{max-height:60vh;overflow:auto}
+  #log{padding:14px 14px 6px}
+  .product{grid-template-columns:1fr}
+  .product .cov{max-width:120px}
+}
+@media (prefers-reduced-motion: reduce){ .tumble{animation:none} }
+</style>
+</head>
+<body>
+<div class="proto"><span><a href="../../" style="color:inherit">← All demos</a> · <b>FREE DEMO</b> · Act One of three</span><span>Not an official Dungeon World product</span></div>
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">A solo adventure for Dungeon World</p>
+      <h1>The Salt King's Stair</h1>
+      <p class="tag">The miners of Brinewick broke through a wall of rock salt and found a white stair going down. Now the wells taste of the sea, and four miners haven't come home.</p>
+    </div>
+    <span class="actchip">Free: Act One · about 20 minutes</span>
+  </header>
+  <div class="table">
+    <main class="story" aria-live="polite">
+      <div class="story-head">
+        <span class="scene" id="sceneName">Before you begin</span>
+        <span class="toggles">
+          <label class="toggle"><input type="checkbox" id="rulesToggle" checked> Show rules</label>
+          <label class="toggle"><input type="checkbox" id="autoToggle"> Auto-roll</label>
+        </span>
+      </div>
+      <div id="log"></div>
+      <div id="choices"></div>
+    </main>
+    <details class="sheet" id="sheet" open>
+      <summary><span class="nm" id="sumName">Your adventurer</span><span class="mini" id="sumMini">not chosen yet</span></summary>
+      <div class="sheet-body" id="sheetBody"><p class="empty-sheet">Your character appears here: stats, HP, armor, damage, XP, gear, moves, and the Salt Clock.</p></div>
+    </details>
+  </div>
+  <p class="foot">This work is based on Dungeon World by Sage LaTorra and Adam Koebel (dungeon-world.com), licensed under the Creative Commons Attribution 3.0 Unported License (creativecommons.org/licenses/by/3.0/). Move text shown in this demo is reproduced from the Dungeon World source text (github.com/Sagelt/Dungeon-World), CC BY 3.0, with em dashes replaced by commas. The Dungeon World text includes material from the System Reference Document 5.1 by Wizards of the Coast LLC, licensed under CC BY 4.0. This is not an official Dungeon World product. The adventure "The Salt King's Stair" and its characters are © 2026 RPG Demo Library. All rights reserved. Get Dungeon World at <a href="https://www.dungeon-world.com" target="_blank" rel="noopener">dungeon-world.com</a>.</p>
+</div>
+
+<script>
+(() => {
+const DATA = {"moves":{"hack_and_slash":["Hack and Slash","<p>When you <strong>attack an enemy in melee</strong>, roll+Str. On a 10+ you deal your damage to the enemy and avoid their attack. At your option, you may choose to do +1d6 damage but expose yourself to the enemy’s attack. On a 7–9, you deal your damage to the enemy and the enemy makes an attack against you.</p>"],"volley":["Volley","<p>When you <strong>take aim and shoot at an enemy at range</strong>, roll+Dex. On a 10+ you have a clear shot, deal your damage. On a 7–9, choose one (whichever you choose you deal your damage):</p>\n<ul><li>You have to move to get the shot placing you in danger of the GM’s choice</li>\n<li>You have to take what you can get: -1d6 damage</li>\n<li>You have to take several shots, reducing your ammo by one.</li></ul>"],"defy_danger":["Defy Danger","<p>When you <strong>act despite an imminent threat</strong> or <strong>suffer a calamity</strong>, say how you deal with it and roll. If you do it…</p>\n<ul><li>…by powering through, +Str</li>\n<li>…by getting out of the way or acting fast, +Dex</li>\n<li>…by enduring, +Con</li>\n<li>…with quick thinking, +Int</li>\n<li>…through mental fortitude, +Wis</li>\n<li>…using charm and social grace, +Cha</li></ul>\n<p>On a 10+, you do what you set out to, the threat doesn’t come to bear. On a 7–9, you stumble, hesitate, or flinch: the GM will offer you a worse outcome, hard bargain, or ugly choice.</p>"],"spout_lore":["Spout Lore","<p>When you <strong>consult your accumulated knowledge about something</strong>, roll+Int. On a 10+ the GM will tell you something interesting and useful about the subject relevant to your situation. On a 7–9 the GM will only tell you something interesting, it’s on you to make it useful. The GM might ask you “How do you know this?” Tell them the truth, now.</p>"],"discern_realities":["Discern Realities","<p>When you <strong>closely study a situation or person</strong>, roll+Wis. On a 10+ ask the GM 3 questions from the list below. On a 7–9 ask 1. Take +1 forward when acting on the answers.</p>\n<ul><li>What happened here recently?</li>\n<li>What is about to happen?</li>\n<li>What should I be on the lookout for?</li>\n<li>What here is useful or valuable to me?</li>\n<li>Who’s really in control here?</li>\n<li>What here is not what it appears to be?</li></ul>"],"last_breath":["Last Breath","<p>When <strong>you’re dying</strong> you catch a glimpse of what lies beyond the Black Gates of Death’s Kingdom (the GM will describe it). Then roll (just roll, +nothing, yeah, Death doesn’t care how tough or cool you are). On a 10+ you’ve cheated death, you’re in a bad spot but you’re still alive. On a 7–9 Death will offer you a bargain. Take it and stabilize or refuse and pass beyond the Black Gates into whatever fate awaits you. On a miss, your fate is sealed. You’re marked as Death’s own and you’ll cross the threshold soon. The GM will tell you when.</p>"],"end_of_session":["End of Session","<p>When you <strong>reach the end of a session</strong>, choose one your bonds that you feel is resolved (completely explored, no longer relevant, or otherwise). Ask the player of the character you have the bond with if they agree. If they do, mark XP and write a new bond with whomever you wish.</p>\n<p>Once bonds have been updated look at your alignment. If you fulfilled that alignment at least once this session, mark XP. Then answer these three questions as a group:</p>\n<ul><li>Did we learn something new and important about the world?</li>\n<li>Did we overcome a notable monster or enemy?</li>\n<li>Did we loot a memorable treasure?</li></ul>\n<p>For each “yes” answer everyone marks XP.</p>"],"bend_bars":["Bend Bars, Lift Gates","<p>When you <strong>use pure strength to destroy an inanimate obstacle</strong>, roll+Str. On a 10+, choose 3. On a 7-9 choose 2.</p>\n<ul><li>It doesn’t take a very long time</li>\n<li>Nothing of value is damaged</li>\n<li>It doesn’t make an inordinate amount of noise</li>\n<li>You can fix the thing again without a lot of effort</li></ul>"],"signature_weapon":["Signature Weapon","<p>This is your weapon. There are many like it, but this one is yours. Your weapon is your best friend. It is your life. You master it as you master your life. Your weapon, without you, is useless. Without your weapon, you are useless. You must wield your weapon true.</p>\n<p>Choose a base description, all are 2 weight:</p>\n<ul><li>Sword</li>\n<li>Axe</li>\n<li>Hammer</li>\n<li>Spear</li>\n<li>Flail</li>\n<li>Fists</li></ul>\n<p>Choose the range that best fits your weapon:</p>\n<ul><li>Hand</li>\n<li>Close</li>\n<li>Reach</li></ul>\n<p>Choose two enhancements:</p>\n<ul><li>Hooks and spikes. +1 damage, but +1 weight.</li>\n<li>Sharp. +2 piercing.</li>\n<li>Perfectly weighted. Add precise.</li>\n<li>Serrated edges. +1 damage.</li>\n<li>Glows in the presence of one type of creature, your choice.</li>\n<li>Huge. Add messy and forceful.</li>\n<li>Versatile. Choose an additional range.</li>\n<li>Well-crafted. -1 weight.</li></ul>\n<p>Choose a look:</p>\n<ul><li>Ancient</li>\n<li>Unblemished</li>\n<li>Ornate</li>\n<li>Blood-stained</li>\n<li>Sinister</li></ul>"],"fighter_human":["Human (fighter)","<p>Once per battle you may reroll a single damage roll (yours or someone else’s).</p>"],"tricks":["Tricks of the Trade","<p>When you <strong>pick locks or pockets or disable traps</strong>, roll+DEX. On a 10+, you do it, no problem. On a 7–9, you still do it, but the GM will offer you two options between suspicion, danger, or cost.</p>"],"backstab":["Backstab","<p>When you <strong>attack a surprised or defenseless enemy with a melee weapon</strong>, you can choose to deal your damage or roll+DEX. On a 10+ choose two. On a 7–9 choose one.</p>\n<ul><li>You don’t get into melee with them</li>\n<li>You deal your damage+1d6</li>\n<li>You create an advantage, +1 forward to you or an ally acting on it</li>\n<li>Reduce their armor by 1 until they repair it</li></ul>"],"thief_halfling":["Halfling (thief)","<p>When you attack with a ranged weapon, deal +2 damage.</p>"],"cast_a_spell":["Cast a Spell","<p>When you <strong>release a spell you’ve prepared</strong>, roll+Int. On a 10+, the spell is successfully cast and you do not forget the spell, you may cast it again later. On a 7-9, the spell is cast, but choose one:</p>\n<ul><li>You draw unwelcome attention or put yourself in a spot. The GM will tell you how.</li>\n<li>The spell disturbs the fabric of reality as it is cast, take -1 ongoing to cast a spell until the next time you Prepare Spells.</li>\n<li>After it is cast, the spell is forgotten. You cannot cast the spell again until you prepare spells.</li></ul>\n<p>Note that maintaining spells with ongoing effects will sometimes cause a penalty to your roll to cast a spell.</p>"],"magic_missile":["Magic Missile","<p>Projectiles of pure magic spring from your fingers. Deal 2d4 damage to one target.</p>"],"prestidigitation":["Prestidigitation","<p>You perform minor tricks of true magic. If you touch an item as part of the casting you can make cosmetic changes to it: clean it, soil it, cool it, warm it, flavor it, or change its color. If you cast the spell without touching an item you can instead create minor illusions no bigger than yourself. Prestidigitation illusions are crude and clearly illusions, they won’t fool anyone, but they might entertain them.</p>"],"potion":["Healing Potion","<p>When you drink an entire healing potion, heal yourself of 10 damage or remove one debility, your choice.</p>"]},"gm":["Use a monster, danger, or location move","Reveal an unwelcome truth","Show signs of an approaching threat","Deal damage","Use up their resources","Turn their move back on them","Separate them","Give an opportunity that fits a class’ abilities","Show a downside to their class, race, or equipment","Offer an opportunity, with or without cost","Put someone in a spot","Tell them the requirements or consequences and ask"]};
+const PRODUCT_ID = 'salt-kings-stair';
+let autoRoll = false;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = s => document.querySelector(s);
+const logEl = $('#log'), choicesEl = $('#choices');
+const d = n => 1 + Math.floor(Math.random()*n);
+const sleep = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sg = n => (n > 0 ? '+' : '') + n;
+
+try { if (localStorage.getItem('dw-rules') === 'off') { $('#rulesToggle').checked = false; document.body.classList.add('norules'); } } catch(e){}
+try { if (localStorage.getItem('dw-auto') === 'on') { $('#autoToggle').checked = true; autoRoll = true; } } catch(e){}
+$('#rulesToggle').addEventListener('change', e => { document.body.classList.toggle('norules', !e.target.checked); try { localStorage.setItem('dw-rules', e.target.checked ? 'on' : 'off'); } catch(err){} });
+$('#autoToggle').addEventListener('change', e => { autoRoll = e.target.checked; try { localStorage.setItem('dw-auto', autoRoll ? 'on' : 'off'); } catch(err){} });
+
+/* ---------- log ---------- */
+function add(cls, html){ const el = document.createElement('div'); if (cls) el.className = cls; el.innerHTML = html; logEl.appendChild(el); requestAnimationFrame(() => el.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'})); return el; }
+const nar = h => add('line', h);
+const npc = (who, h) => add('line npc', `<span class="who">${who}</span>${h}`);
+const you = h => add('line you', h);
+const rule = h => add('rule', h);
+const shown = new Set();
+function showMove(key){ if (!key || shown.has(key)) return; shown.add(key); const m = DATA.moves[key]; if (!m) return; add('', `<details class="move"><summary><span>${m[0]}</span><small>READ THE MOVE · CC BY</small></summary><div class="mt">${m[1]}</div></details>`); }
+function scene(num, name){ $('#sceneName').textContent = name; add('scenebreak', `<small>${num ? `<i><span>${num}</span></i>` : ''}Act One</small>${name}`); }
+function choose(opts){
+  return new Promise(res => {
+    choicesEl.innerHTML = '';
+    opts.forEach(o => {
+      const b = document.createElement('button'); b.className = 'opt' + (o.cls ? ' ' + o.cls : '');
+      b.innerHTML = `<b>${o.label}</b>${o.sub ? `<span>${o.sub}</span>` : ''}`; if (o.disabled) b.disabled = true;
+      b.addEventListener('click', () => { choicesEl.innerHTML = ''; if (o.say !== false) you(o.say || o.label); res(o.id); });
+      choicesEl.appendChild(b);
+    });
+    requestAnimationFrame(() => choicesEl.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'}));
+    const first = choicesEl.querySelector('button:not(:disabled)'); if (first && matchMedia('(pointer:fine)').matches) first.focus({preventScroll:true});
+  });
+}
+const cont = (label='Continue') => choose([{id:'c', label, cls:'primary', say:false}]);
+async function waitRoll(sub, btn){ if (autoRoll) return; await choose([{id:'r', label: btn || 'Roll 2d6', sub, cls:'primary roll', say:false}]); }
+
+/* ---------- dice visuals ---------- */
+const PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function d6El(foe){ const e = document.createElement('div'); e.className = 'd6 ghost' + (foe ? ' foe' : ''); for (let i=0;i<9;i++) e.appendChild(document.createElement('i')); return e; }
+function face6(e, v){ [...e.children].forEach((p,i) => p.style.visibility = (PIPS[v]||[]).includes(i) ? 'visible' : 'hidden'); e.setAttribute('aria-label','d6 showing '+v); }
+function dnEl(n, foe){ const e = document.createElement('div'); e.className = 'dn ghost' + (foe ? ' foe' : ''); e.innerHTML = `<span>?</span><small>d${n}</small>`; return e; }
+async function tumble(fn){ for (let t=0;t<(reduced?1:8);t++){ fn(); await sleep(55); } }
+
+/* ---------- characters ---------- */
+const PCS = {
+  oda:{name:'Oda Quarrel', cls:'fighter', title:'human fighter', mods:{STR:2,DEX:1,CON:1,INT:-1,WIS:0,CHA:0}, hp:25, armor:3, die:10, plus:1, potions:2, daggers:0,
+    moves:['Bend Bars, Lift Gates','Armored','Signature Weapon: Old Grudge','Human: reroll one damage roll per battle'], align:'Good: defend those weaker than you',
+    blurb:'You were a caravan guard on the salt road. Three winters ago you dug Dagna Rook out of a collapsed seam with your bare hands. Your axe, Old Grudge, glows faintly near the dead.'},
+  wren:{name:'Wren Ashby', cls:'thief', title:'halfling thief', mods:{STR:-1,DEX:2,CON:0,INT:0,WIS:1,CHA:1}, hp:18, armor:1, die:8, plus:0, potions:1, daggers:3,
+    moves:['Trap Expert','Tricks of the Trade','Backstab','Flexible Morals','Poisoner: Bloodweed','Halfling: +2 damage with ranged attacks'], align:'Neutral: avoid detection or infiltrate a location',
+    blurb:'Small, quick, and owed a favor by half the fences on the coast road. You came to Brinewick chasing a rumor of crown-stamped gold. Your rapier is precise: you Hack and Slash with DEX.'},
+  ilse:{name:'Ilse Varrow', cls:'wizard', title:'human wizard', mods:{STR:-1,DEX:1,CON:0,INT:2,WIS:1,CHA:0}, hp:16, armor:1, die:4, plus:0, potions:1, daggers:0,
+    moves:['Spellbook','Prepare Spells','Cast a Spell','Spell Defense','Ritual'], align:'Neutral: discover something about a magical mystery',
+    blurb:'The Collegium\'s most promising student, until you asked one question too many about the drowned library. Prepared: Magic Missile and Detect Magic, plus your cantrips.'},
+};
+let C = null; const used = new Set(); let clock = 0; let foes = null;
+
+function render(){
+  if (!C) return;
+  $('#sumName').textContent = C.name;
+  $('#sumMini').textContent = `HP ${C.hp}/${C.maxHp} · Armor ${C.armor} · XP ${C.xp}${C.forward ? ' · ' + sg(C.forward) + ' forward' : ''}`;
+  const gear = [];
+  if (C.potions) gear.push(['Healing potion', '× ' + C.potions]);
+  gear.push(['Dungeon rations', C.rations + ' uses']);
+  if (C.cls === 'thief') gear.push(['Throwing daggers', '× ' + C.daggers]);
+  if (C.water) gear.push(['Waterskin of fresh water', 'salt fears it']);
+  if (C.cls === 'wizard') gear.push(['Magic Missile', C.mm ? 'prepared' : 'forgotten'], ['Detect Magic', 'prepared'], ['Cantrips', 'Light, Unseen Servant, Prestidigitation']);
+  if (C.cls === 'wizard' && C.castPen) gear.push(['Cast a Spell', C.castPen + ' ongoing']);
+  if (C.note) gear.push(['Hesk\'s sealed note', 'found']);
+  $('#sheetBody').innerHTML = `
+    <div class="statrow">${Object.entries(C.mods).map(([k,v]) => `<div><b>${sg(v)}</b><small>${k}</small></div>`).join('')}</div>
+    <div><div class="vitals"><div><b>${C.hp}<span style="font-size:14px;color:#98A1BA">/${C.maxHp}</span></b><small>HP</small></div><div><b>${C.armor}</b><small>Armor</small></div><div><b>d${C.die}${C.plus ? '+' + C.plus : ''}</b><small>Damage</small></div></div>
+      <div class="hpbar"><i style="width:${Math.round(100*C.hp/C.maxHp)}%"></i></div></div>
+    <div><div class="sec"><span>XP</span><span>level 1 · level up at 8</span></div><div class="pips">${Array.from({length:8},(_,i)=>`<span class="${i<C.xp?'on':''}"></span>`).join('')}</div>
+      ${C.forward ? `<div class="sh-label" style="margin-top:6px">${sg(C.forward)} forward on your next roll</div>` : ''}</div>
+    ${foes ? `<div><div class="sec"><span>Foes</span><span>armor 1</span></div><ul class="list">${foes.map((f,i) => `<li><span>${f.name}</span><small>${f.hp > 0 ? f.hp + ' HP' : 'destroyed'}</small></li>`).join('')}</ul></div>` : ''}
+    <div><div class="sec"><span>The Salt Clock</span><span>${clock}/6</span></div><div class="pips clockp">${Array.from({length:6},(_,i)=>`<span class="${i<clock?'on':''}"></span>`).join('')}</div></div>
+    <div><div class="sec"><span>Gear</span><span></span></div><ul class="list">${gear.map(g => `<li><span>${g[0]}</span><small>${g[1]}</small></li>`).join('')}</ul></div>
+    <div><div class="sec"><span>Starting moves</span><span>CC BY</span></div><ul class="list">${C.moves.map(m => `<li><span>${m}</span></li>`).join('')}</ul></div>
+    <div><div class="sec"><span>Alignment</span><span></span></div><div class="sh-label">${C.align}</div></div>
+    <div><div class="sec"><span>Bond</span><span>+1</span></div><div class="sh-label">${C.bond}</div></div>`;
+}
+
+/* ---------- the core roll ---------- */
+const PORTENTS = ['Salt blooms on the walls of Brinewick\'s houses overnight, like frost that won\'t melt.','The Crusted climb the Long Cut. A winch-hand is taken.','Far below, a thousand salted soldiers rise from their ranks.'];
+function markClock(why){
+  used.add('clock');
+  if (clock >= 3){ nar(why ? why + ' ' : ''); rule('In Act One the Salt Clock can\'t go past box 3. The King is patient. In the full adventure, it can fill.'); return; }
+  clock++; render();
+  add('', `<span class="result n">Salt Clock: box ${clock}</span>`);
+  nar((why ? why + ' ' : '') + `<em>Grim portent: ${PORTENTS[clock-1]}</em>`);
+  if (!used.has('clockRule')){ used.add('clockRule'); rule('The Salt Clock is this adventure\'s front: a danger that moves forward on its own. Each box is a grim portent. If all six fill in Acts Two or Three, the King walks.'); }
+}
+// {move, label, stat, adds:[[n,why]], noStat}
+async function roll2d6({move, label, stat, adds=[], noStat=false}){
+  used.add('roll');
+  showMove(move);
+  const mod = noStat ? 0 : C.mods[stat];
+  const fwd = C.forward || 0;
+  const all = [...adds]; if (fwd) all.push([fwd, 'forward']);
+  const sum = all.reduce((a,x)=>a+x[0],0);
+  const parts = `2d6${noStat ? '' : ` ${mod < 0 ? '-' : '+'} ${stat} ${Math.abs(mod)}`}${all.map(a => ` ${a[0] < 0 ? '-' : '+'} ${Math.abs(a[0])} (${a[1]})`).join('')}`;
+  const row = add('rollrow', `<span class="lbl"><b>${label}</b>: roll ${parts}</span>`);
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  const a = d6El(), b = d6El(); dice.append(a, b);
+  await waitRoll(`${label}: ${parts}`);
+  if (fwd){ C.forward = 0; render(); }
+  const av = d(6), bv = d(6);
+  [a,b].forEach(e => e.classList.remove('ghost'));
+  await tumble(() => { face6(a, d(6)); face6(b, d(6)); });
+  face6(a, av); face6(b, bv);
+  const total = av + bv + mod + sum;
+  const sc = document.createElement('span'); sc.className = 'score'; sc.textContent = `${av} + ${bv}${noStat ? '' : ` ${mod < 0 ? '-' : '+'} ${Math.abs(mod)}`}${sum ? ` ${sum < 0 ? '-' : '+'} ${Math.abs(sum)}` : ''} = ${total}`; row.appendChild(sc);
+  const res = total >= 10 ? 'hit' : total >= 7 ? 'partial' : 'miss';
+  const st = document.createElement('span'); st.className = 'result ' + ({hit:'ok',partial:'mix',miss:'bad'})[res]; st.textContent = ({hit:'10+ full success', partial:'7 to 9 partial success', miss:'6- miss'})[res]; row.appendChild(st);
+  if (res === 'miss'){ C.xp++; render(); used.add('xp'); add('', '<span class="result n">Mark 1 XP</span>'); if (!used.has('xpRule')){ used.add('xpRule'); rule('On a 6 or less, you always mark XP. Dungeon World rewards you for failing: that\'s how you learn. Then the GM makes a move, as hard as they like.'); } }
+  return {res, total};
+}
+// player rolls damage
+async function rollDamage(label, dice, plus=0, opts={}){
+  used.add('damage');
+  const row = add('rollrow', `<span class="lbl"><b>Damage</b>: ${label} (${dice.map(n => 'd' + n).join(' + ')}${plus ? (plus > 0 ? ' + ' : ' - ') + Math.abs(plus) : ''})</span>`);
+  const box = document.createElement('div'); box.className = 'dice withlabels'; row.appendChild(box);
+  const els = dice.map(n => dnEl(n)); box.append(...els);
+  await waitRoll('Roll your damage', 'Roll damage');
+  const vals = dice.map(n => d(n));
+  els.forEach(e => e.classList.remove('ghost'));
+  await tumble(() => els.forEach((e,i) => e.firstChild.textContent = d(dice[i])));
+  els.forEach((e,i) => e.firstChild.textContent = vals[i]);
+  let tot = Math.max(0, vals.reduce((a,b)=>a+b,0) + plus);
+  const s = document.createElement('span'); s.className = 'score'; s.textContent = `${tot} damage`; row.appendChild(s);
+  if (C.cls === 'fighter' && !C.rerollUsed && vals[0] <= 4 && !opts.noReroll){
+    const c = await choose([{id:'re', label:'Reroll the damage (human move)', sub:'Once per battle you may reroll a single damage roll', say:'Again!'},{id:'keep', label:`Keep ${tot}`, say:false}]);
+    if (c === 're'){ C.rerollUsed = true; used.add('classmove'); showMove('fighter_human'); return rollDamage(label + ', rerolled', dice, plus, {noReroll:true}); }
+  }
+  return tot;
+}
+// the GM rolls monster damage automatically
+async function foeDamage(label, die, plus=0, ignore=false){
+  const row = add('rollrow', `<span class="lbl"><b>${label}</b>: d${die}${plus ? ' + ' + plus : ''}${ignore ? ', ignores armor' : `, minus your armor ${C.armor}`}</span>`);
+  const box = document.createElement('div'); box.className = 'dice withlabels'; row.appendChild(box);
+  const e = dnEl(die, true); box.append(e); e.classList.remove('ghost');
+  const v = d(die); await tumble(() => e.firstChild.textContent = d(die)); e.firstChild.textContent = v;
+  const raw = v + plus; const dealt = Math.max(0, raw - (ignore ? 0 : C.armor));
+  const s = document.createElement('span'); s.className = 'score'; s.textContent = `${raw} damage${ignore ? '' : ` - ${C.armor} armor`} = ${dealt} HP lost`; row.appendChild(s);
+  if (!used.has('armorRule') && !ignore){ used.add('armorRule'); rule('Monsters don\'t roll to hit. When they get to attack, the GM rolls their damage and you subtract your armor.'); }
+  await hurt(dealt);
+}
+async function hurt(n){
+  used.add('hurt');
+  C.hp = Math.max(0, C.hp - n); render();
+  if (C.hp === 0) await lastBreath();
+}
+async function lastBreath(){
+  used.add('breath');
+  nar('You fall. The world goes grey, and for a moment you see the Black Gates of Death\'s kingdom: a wall of white salt, and a door with no handle.');
+  rule('At 0 HP you take your Last Breath: roll 2d6 with no stat. Death doesn\'t care how tough you are.');
+  const r = await roll2d6({move:'last_breath', label:'Last Breath', noStat:true});
+  if (r.res === 'hit'){ nar('You\'ve cheated death. You\'re in a bad spot, but you\'re still alive. You claw your way back up to your feet.'); }
+  else if (r.res === 'partial'){
+    nar('Death offers a bargain, in a voice like salt pouring from a sack: <em>"One day, you will open a door for me. You won\'t know which one until you open it."</em>');
+    await choose([{id:'take', label:'Take the bargain and live', sub:'Death will remember this', say:'"Done."'}]);
+    C.deathDebt = true;
+  } else {
+    nar('Your fate is sealed. You are marked as Death\'s own, and you will cross the threshold soon. In the full game, the GM tells you when. In this demo, you stagger on, marked, a little colder than before.');
+    C.marked = true;
+  }
+  C.hp = 1; render();
+}
+async function gmMove(ctx, depth=0){
+  used.add('gm');
+  const v = d(12); const name = DATA.gm[v-1];
+  add('', `<span class="result n">GM move (d12 = ${v}): ${esc(name)}</span>`);
+  if (!used.has('gmRule')){ used.add('gmRule'); rule('On a miss, the GM makes a move. Playing solo, the book rolls on a table of the twelve real GM moves and tells you how each looks down here.'); }
+  switch (v){
+    case 1: if (ctx.foeMove) await ctx.foeMove(); else { nar('The salt shifts under you. A crust of it closes on your boot like a hand.'); await foeDamage('The salt', 6); } break;
+    case 2: nar(ctx.truth || 'Somewhere below, a voice that isn\'t human says the name of someone you love. It knows you\'re coming.'); markClock(); break;
+    case 3: markClock('The salt creaks, and white dust sifts from the ceiling like snow.'); break;
+    case 4: await foeDamage(ctx.foeName || 'The salt cuts', ctx.die || 6, ctx.plus || 0); break;
+    case 5:
+      if (C.cls === 'thief' && C.daggers > 0){ C.daggers--; nar('A throwing dagger slips from your belt and skitters into a crack. Gone. <strong>-1 dagger.</strong>'); }
+      else if (C.rations > 0){ C.rations--; nar('Brine soaks your pack. Your rations are ruined. <strong>-1 ration.</strong>'); }
+      else if (C.potions > 0){ C.potions--; nar('A healing potion cracks in your pack. <strong>-1 potion.</strong>'); }
+      else nar('You have nothing left to lose. That\'s its own kind of warning.');
+      render(); break;
+    case 6: nar(ctx.turn || 'What you tried works against you: your blow brings a shower of salt down on your own head.'); await foeDamage('Falling salt', 4); break;
+    case 7: C.forward = (C.forward||0) - 1; render(); nar(ctx.sep || 'A ridge of salt rises between you and where you need to be. You\'ll have to work around it. <strong>-1 forward.</strong>'); break;
+    case 8: C.forward = (C.forward||0) + 1; render(); nar(`Even in failure, you see an opening only ${C.title.split(' ')[1]}s notice. <strong>+1 forward</strong>, but the danger is still here.`); break;
+    case 9: C.forward = (C.forward||0) - 1; render(); nar(({fighter:'Your armor grinds and clanks in the hush. Everything down here heard that.', thief:'Your size works against you: you can\'t reach, can\'t brace, can\'t see over.', wizard:'Your magic leaves a scent in the air, sweet and sharp, and the salt turns toward it.'})[C.cls] + ' <strong>-1 forward.</strong>'); break;
+    case 10: {
+      const c = await choose([{id:'pay', label:'Pay the price: take d4 damage', sub:'and take +1 forward', say:'I push through it.'},{id:'no', label:'Refuse the offer', say:false}]);
+      if (c === 'pay'){ await foeDamage('The cost', 4, 0, true); C.forward = (C.forward||0) + 1; render(); }
+      break; }
+    case 11:
+      if (depth > 0){ await foeDamage(ctx.foeName || 'The salt', ctx.die || 6, ctx.plus || 0); break; }
+      nar(ctx.spot || 'Salt crusts over your feet, fast as frost. You\'re stuck.');
+      { const r = await roll2d6({move:'defy_danger', label:'Defy Danger to break free', stat: C.mods.STR >= C.mods.CON ? 'STR' : 'CON'}); used.add('defy');
+        if (r.res === 'miss') await gmMove(ctx, depth+1); else if (r.res === 'partial'){ nar('You tear loose, but it costs you skin.'); await hurt(1); } else nar('You wrench free.'); }
+      break;
+    case 12: {
+      nar('The salt makes its terms plain: it will let you pass, for a price.');
+      const c = await choose([{id:'hp', label:'Pay in blood', sub:'Take d4 damage, ignoring armor'},{id:'clock', label:'Pay in time', sub:'Mark the Salt Clock'}]);
+      if (c === 'hp') await foeDamage('The price', 4, 0, true); else markClock(); break; }
+  }
+}
+async function potionBreak(){
+  if (C.potions > 0 && C.hp <= Math.floor(C.maxHp/2)){
+    const c = await choose([{id:'drink', label:'Drink a healing potion', sub:'Heal 10 damage'},{id:'no', label:'Save it', say:false}]);
+    if (c === 'drink'){ showMove('potion'); C.potions--; C.hp = Math.min(C.maxHp, C.hp + 10); used.add('potion'); render(); nar('It tastes of honey and iron. Warmth spreads through you. <strong>+10 HP.</strong>'); }
+  }
+}
+
+/* ---------- start ---------- */
+async function start(){
+  nar('<strong>Dungeon World</strong> is a fantasy roleplaying game about adventurers who go into dark places for gold and glory. You say what your character does. When that triggers a <strong>move</strong>, you roll 2d6 and add a stat.');
+  rule('10 or more is a full success. 7 to 9 is a success with a cost or a hard choice. 6 or less is a miss: you mark XP and the GM makes a move. Normally a GM runs the world. Here, the book does.');
+  nar('Choose who goes down the Long Cut.');
+  const pick = await choose(Object.entries(PCS).map(([k,p]) => ({id:k, label:`${p.name}, ${p.title}`, sub:`${Object.entries(p.mods).map(([s,v]) => s + ' ' + sg(v)).join(' · ')} · HP ${p.hp} · Armor ${p.armor} · d${p.die}${p.plus ? '+' + p.plus : ''}`, say:`I'll play ${p.name}.`})));
+  const P = PCS[pick];
+  C = {...P, key:pick, mods:{...P.mods}, maxHp:P.hp, xp:0, forward:0, rations:5, water:0, mm:true, castPen:0,
+    bond: pick === 'oda' ? 'Dagna Rook owes me their life, whether they admit it or not.' : pick === 'wren' ? 'Ysmay Vell knows incriminating details about me.' : 'Tobin Rook will play an important role in the events to come. I have foreseen it!'};
+  render();
+  nar(esc(P.blurb));
+  rule('Your sheet shows six stat modifiers (you add these to rolls), your HP, your armor (subtracted from damage you take), and your class damage die. Your class gives you starting moves of your own.');
+  await cont('Begin Act One');
+  await s1();
+}
+
+/* ---------- scene 1 ---------- */
+async function s1(){
+  scene(1, 'The Winch-Head');
+  nar('The winch-head is a timber tower over a black shaft. Two mules walk the great wheel. The rope coming up out of the dark is grey and wet, and tangled in its hook is a crust of salt grown into the shape of a hand.');
+  nar('<strong>Dagna Rook</strong>, mine-reeve of Brinewick, waits for you: a dwarf with iron-grey braids and two fingers missing from her left hand.');
+  npc('Dagna', '"Three nights back, my nephew Tobin put his pick through a wall at the bottom of the Long Cut. Behind it there\'s a stair. White stone, going down. Since then the wells taste of the sea, and four of my people went down and didn\'t come up. This morning Pell Oakes went after them. Fifty coin for every one you bring up breathing. Anything else you find, keep it."');
+  const c = await choose([
+    {id:'lore', label:'Tell her what you know of the old stories', sub:`Spout Lore, roll + INT ${sg(C.mods.INT)}`, say:'"A white stair under the Flats. I\'ve heard of that before..."'},
+    {id:'disc', label:'Study the rope, the salt-hand, and Dagna', sub:`Discern Realities, roll + WIS ${sg(C.mods.WIS)}`, say:'I crouch by the hook and look closely. At the hand. At her.'},
+  ]);
+  if (c === 'lore'){
+    used.add('lore');
+    const r = await roll2d6({move:'spout_lore', label:'Spout Lore', stat:'INT'});
+    if (r.res === 'hit'){ C.knowWater = true; C.water = 1; C.learned = true; nar('You know the old songs. The drowned kingdom of <strong>Corrant</strong>, whose King Sarn hoarded the last fresh water and swore to rule "until the sea returns." And the one thing salt fears: <em>fresh water</em>. You fill a waterskin from the cook\'s barrel.'); rule('A 10+ on Spout Lore gives you something interesting AND useful. Fresh water now deals d6 damage that ignores armor to salt creatures.'); }
+    else if (r.res === 'partial'){ C.learned = true; nar('You know the song but not the trick: Corrant, King Sarn, the oath to rule "until the sea returns." Interesting. It\'s on you to make it useful.'); }
+    else { await missS1(); }
+  } else {
+    used.add('discern');
+    const r = await roll2d6({move:'discern_realities', label:'Discern Realities', stat:'WIS'});
+    if (r.res === 'miss') await missS1();
+    else {
+      let n = r.res === 'hit' ? 3 : 1;
+      rule(`On a ${r.res === 'hit' ? '10+ you ask 3 questions' : '7 to 9 you ask 1 question'} from the move's list, and the GM answers honestly. Take +1 forward when acting on the answers.`);
+      const QS = {
+        recent:['What happened here recently?','The rope came up wet with brine from far deeper than the Long Cut goes. Something down there is wet with an old sea.'],
+        about:['What is about to happen?','The salt-hand is still growing. It will reach for the next person who touches that rope.'],
+        lookout:['What should I be on the lookout for?','Loose ceiling slabs on the lower gallery. The miners say the salt there has been "breathing."'],
+        useful:['What here is useful or valuable to me?','The cook\'s water barrel. Where water splashed the hook, the salt-hand has melted away. You fill a waterskin.'],
+        control:['Who\'s really in control here?','Not Dagna. Someone paid Tobin to dig at that exact spot. She doesn\'t know who.'],
+        notwhat:['What here is not what it appears to be?','Dagna\'s calm. She is terrified, and she blames herself.'],
+      };
+      const asked = new Set();
+      while (n-- > 0){
+        const q = await choose(Object.entries(QS).filter(([k]) => !asked.has(k)).map(([k,v]) => ({id:k, label:v[0], say:`"${v[0]}"`})));
+        asked.add(q); nar(QS[q][1]);
+        if (q === 'useful'){ C.knowWater = true; C.water = 1; }
+        if (q === 'lookout') C.slabs = true;
+      }
+      C.learned = true; C.forward = 1; render();
+    }
+  }
+  nar('Dagna lowers you on the winch-cage herself. The light shrinks to a coin above you, then goes out.');
+  await cont('Descend the Long Cut');
+  await s2();
+}
+async function missS1(){
+  nar('Dagna tells you something you\'d rather not know.');
+  npc('Dagna', '"Tobin was paid to dig there. In gold. I found the coins under his bed, stamped with a crown no one has minted in a thousand years."');
+  rule('On a miss, the GM makes a move. Here: reveal an unwelcome truth. Someone wanted that wall broken.');
+  used.add('gm');
+  markClock();
+}
+
+/* ---------- scene 2 ---------- */
+const SIGHTS = ['A pick standing upright in the floor, its handle crusted white.','A miner\'s lunch pail. The bread inside has turned to salt.','Rose-colored salt veins pulsing faintly, like a heartbeat.','Chalk tallies on a pillar, then the word GO in shaky letters.','A lamp still burning in an empty niche, with fresh oil.','Bare footprints in the salt dust, all walking down.','A brine pool so still it reflects a ceiling that isn\'t there.','Salt figures from the shrine, set in a line, pointing the way.','A mule\'s harness, cut. No mule.','Faint singing, far below, in no language you know.','A crust of salt in the shape of a hand, reaching from the wall.','A gold coin, stamped with a crown a thousand years old.'];
+async function s2(){
+  scene(2, 'The Lower Gallery');
+  nar('Two hundred feet down, the Long Cut opens into a long hall carved from grey and rose-colored rock salt. Lamps still burn in their niches. The air tastes like tears. Somewhere ahead, the salt creaks like a ship\'s hull.');
+  nar('Then the ceiling moves. A slab of salt the size of a cart shears away above you.');
+  rule('When you act despite an imminent threat, you Defy Danger. How you do it decides the stat.');
+  const opts = [
+    {id:'STR', label:'Brace a pillar and power through', sub:`Defy Danger + STR ${sg(C.mods.STR)}`, say:'I put my shoulder to the pillar and shove through!'},
+    {id:'DEX', label:'Dive clear', sub:`Defy Danger + DEX ${sg(C.mods.DEX)}`, say:'I throw myself forward and roll.'},
+    {id:'CON', label:'Take it on your armor and endure', sub:`Defy Danger + CON ${sg(C.mods.CON)}`, say:'I set my feet and take it.'},
+    {id:'INT', label:'Spot the safe place under the arch', sub:`Defy Danger + INT ${sg(C.mods.INT)}`, say:'The arch! Under the arch!'},
+  ];
+  const c = await choose(opts);
+  if (C.slabs) rule('You asked about the slabs in scene 1, so you\'re acting on the answer: your +1 forward applies.');
+  const r = await roll2d6({move:'defy_danger', label:'Defy Danger', stat:c});
+  used.add('defy');
+  if (r.res === 'hit') nar('The slab smashes down where you were standing. Salt dust rolls past you like smoke. You\'re clear.');
+  else if (r.res === 'partial'){
+    nar('You stumble, hesitate, or flinch. The GM offers you a worse outcome, a hard bargain, or an ugly choice:');
+    const ch = await choose([
+      {id:'hp', label:'The edge clips you', sub:'Take d6 damage (armor applies)'},
+      {id:'ration', label:'Your pack is crushed', sub:'Lose a ration', disabled: C.rations < 1},
+      {id:'clock', label:'The crash echoes down into the deep', sub:'Mark the Salt Clock'},
+    ]);
+    if (ch === 'hp') await foeDamage('The falling slab', 6);
+    else if (ch === 'ration'){ C.rations--; render(); nar('Your rations are flattened into the salt.'); }
+    else markClock('The crash rolls away below you, down and down, and something hears it.');
+  } else {
+    await gmMove({die:6, foeName:'The falling slab', turn:'You brace exactly the wrong pillar. It gives, and half the ceiling comes with it.', spot:'The slab pins your leg against the floor.'});
+  }
+  rule('When you move into a new place, playing solo, roll on the adventure\'s oracle for what you find there.');
+  const row = add('rollrow', '<span class="lbl"><b>Salt Mine Sights</b>: what does the gallery show you? (d12)</span>');
+  const box = document.createElement('div'); box.className = 'dice withlabels'; row.appendChild(box);
+  const e = dnEl(12); box.append(e);
+  await waitRoll('Salt Mine Sights (d12)', 'Roll on the oracle');
+  const v = d(12); e.classList.remove('ghost'); await tumble(() => e.firstChild.textContent = d(12)); e.firstChild.textContent = v;
+  nar(`<em>${SIGHTS[v-1]}</em>`); used.add('oracle');
+  if (v === 12){ C.coin = true; nar('You pocket the coin. It\'s heavier than gold should be.'); }
+  await potionBreak();
+  await cont('Follow the lamps');
+  await s3();
+}
+
+/* ---------- scene 3: the fight ---------- */
+async function s3(){
+  scene(3, 'The Pick-Shrine');
+  nar('At the end of the gallery the miners keep a shrine: a niche of candle stubs, broken pick-heads, and little salt figures carved for luck. Three miners kneel before it. They are not praying.');
+  nar('They are <strong>the Crusted</strong>: miners grown over with salt, white and glittering, crystal where their eyes should be. One wears Hesk Marrow\'s red scarf, stiff as a board. They are scraping salt off the walls and eating it.');
+  if (C.cls === 'fighter') nar('Old Grudge glows faintly in your hand. These things are dead.');
+  foes = [{name:'Crusted (Hesk)', hp:3},{name:'Crusted',hp:3},{name:'Crusted',hp:3}]; render();
+  rule('The Crusted are a Horde: d6 damage, 3 HP, 1 armor. When several attack at once, the GM rolls the highest damage and adds +1 for each monster beyond the first.');
+  const c = await choose([
+    {id:'sneak', label:'Creep close while they feed', sub:`Defy Danger + DEX ${sg(C.mods.DEX)}: strike first`, say:'I ease forward, keeping to the shadow of the pillars.'},
+    {id:'charge', label:'Charge before they rise', sub:'Straight into the fight', say:'I don\'t wait.'},
+  ]);
+  let surprise = false, first = false;
+  if (c === 'sneak'){
+    const r = await roll2d6({move:'defy_danger', label:'Defy Danger (sneak)', stat:'DEX'});
+    used.add('defy');
+    if (r.res === 'hit'){ surprise = true; first = true; nar('They don\'t hear you. You\'re close enough to touch the nearest one\'s crusted neck.'); C.sneaked = true; }
+    else if (r.res === 'partial'){ first = true; nar('One of them turns as you close in. No surprise, but you strike first.'); }
+    else { nar('A salt figure crunches under your boot. Three heads turn at once, with a sound like grinding teeth. They\'re on you.'); await crustedAttack(); }
+  } else first = true;
+  await fight(surprise);
+}
+const alive = () => foes.filter(f => f.hp > 0);
+async function crustedAttack(){
+  const n = alive().length; if (!n) return;
+  await foeDamage(n > 1 ? `${n} Crusted attack` : 'The Crusted attacks', 6, n - 1);
+}
+function hitFoe(dmg, ignore){
+  const t = alive()[0]; if (!t) return;
+  const net = Math.max(0, dmg - (ignore ? 0 : 1));
+  t.hp = Math.max(0, t.hp - net);
+  add('', `<span class="result n">${net} damage to ${t.name}${ignore ? ' (ignores armor)' : ' (after 1 armor)'}${t.hp === 0 ? ': it cracks apart' : `: ${t.hp} HP left`}</span>`);
+  if (t.hp === 0) nar(['It cracks down the middle and sifts into a heap of salt.','It shatters like a dropped plate.','It falls to its knees, then to pieces.'][d(3)-1]);
+  render();
+}
+const crustedCtx = () => ({die:6, plus: Math.max(0, alive().length - 1), foeName:'The Crusted', foeMove: async () => {
+  const m = d(3);
+  if (m === 1){ nar('A Crusted grabs your arm and holds on, so the salt can spread. <strong>-1 forward</strong> until you shake it off.'); C.forward = (C.forward||0) - 1; render(); }
+  else if (m === 2){ nar('A Crusted weeps brine into your eyes. It burns.'); await foeDamage('Brine in the eyes', 4, 0, true); }
+  else { const t = alive().find(f => f.hp < 3) || alive()[0]; t.hp = Math.min(3, t.hp + 2); render(); nar(`${t.name} crusts over its wounds with fresh salt. <strong>It heals 2 HP.</strong>`); }
+}, truth:'Up close, you see Hesk\'s lips moving. He\'s whispering: "Stand still. It doesn\'t hurt if you stand still."', turn:'Your swing goes wide and bites into the shrine wall. Salt rains down on you.', spot:'Two of them pin you against the shrine.'});
+async function fight(surprise){
+  let rounds = 0;
+  while (alive().length){
+    rounds++;
+    if (rounds > 14){ nar('The salt in them gives out all at once. The last of the Crusted crumble where they stand.'); foes.forEach(f => f.hp = 0); render(); break; }
+    add('', `<div class="foeline">${foes.map(f => `<span class="${f.hp>0?'':'dead'}">${f.name}: ${f.hp} HP</span>`).join('')}</div>`);
+    const opts = [];
+    if (surprise && C.cls === 'thief') opts.push({id:'backstab', label:'Backstab the nearest one', sub:'Thief move: deal damage, or roll + DEX for extra effects', cls:'primary', say:'I put my rapier through the gap in its crust.'});
+    const hsStat = C.cls === 'thief' ? 'DEX' : 'STR';
+    opts.push({id:'hs', label: C.cls === 'fighter' ? 'Bring Old Grudge down on it' : C.cls === 'thief' ? 'Fence with your rapier' : 'Crack it with your staff', sub:`Hack and Slash + ${hsStat} ${sg(C.mods[hsStat])} · d${C.die}${C.plus ? '+' + C.plus : ''} damage`, say:'I attack!'});
+    if (C.cls === 'thief' && C.daggers > 0) opts.push({id:'throw', label:'Throw a dagger', sub:`Volley + DEX ${sg(C.mods.DEX)} · d8+2 (halfling) · ${C.daggers} left`, say:'I flick a dagger at its eye.'});
+    if (C.cls === 'wizard' && C.mm) opts.push({id:'mm', label:'Cast Magic Missile', sub:`Cast a Spell + INT ${sg(C.mods.INT)}${C.castPen ? ' ' + C.castPen : ''} · 2d4 damage`, say:'Projectiles of pure magic spring from my fingers!'});
+    if (C.water) opts.push({id:'water', label:'Throw your waterskin', sub:`Volley + DEX ${sg(C.mods.DEX)} · d6 damage, ignores armor`, say:'Taste this!'});
+    const c = await choose(opts);
+    if (c === 'backstab'){ surprise = false; await backstab(); continue; }
+    surprise = false;
+    if (c === 'hs'){
+      used.add('hs');
+      const r = await roll2d6({move:'hack_and_slash', label:'Hack and Slash', stat:hsStat});
+      if (r.res === 'hit'){
+        const ch = await choose([{id:'safe', label:'Deal your damage and avoid its attack'},{id:'more', label:'Go all in: +1d6 damage', sub:'but you expose yourself to its attack'}]);
+        const dmg = await rollDamage('Hack and Slash', ch === 'more' ? [C.die, 6] : [C.die], C.plus);
+        hitFoe(dmg);
+        if (ch === 'more') await crustedAttack(); else nar('You\'re out of reach before it can answer.');
+      } else if (r.res === 'partial'){
+        const dmg = await rollDamage('Hack and Slash', [C.die], C.plus); hitFoe(dmg);
+        nar('You land it, and it lands one back.'); rule('On a 7 to 9, you deal your damage, and the enemy makes an attack against you.');
+        await crustedAttack();
+      } else await gmMove(crustedCtx());
+    } else if (c === 'throw' || c === 'water'){
+      used.add('volley');
+      const isWater = c === 'water';
+      if (isWater) C.water = 0; else C.daggers--; render();
+      const r = await roll2d6({move:'volley', label: isWater ? 'Volley (waterskin)' : 'Volley (thrown dagger)', stat:'DEX'});
+      if (r.res === 'miss'){ nar(isWater ? 'The skin bursts against a pillar. Wasted.' : 'The dagger clatters off into the dark.'); await gmMove(crustedCtx()); continue; }
+      let minus = false;
+      if (r.res === 'partial'){
+        rule('On a 7 to 9 with a thrown weapon you choose between moving into danger or -1d6 damage. (You can\'t choose to spend ammo: once thrown, it\'s gone anyway.)');
+        const ch = await choose([{id:'danger', label:'Step into danger for a clean throw', sub:'They get to attack you'},{id:'less', label:'Take what you can get', sub:'-1d6 damage'}]);
+        if (ch === 'danger') await crustedAttack(); else minus = true;
+      }
+      if (isWater){
+        used.add('water');
+        let dmg = await rollDamage('Fresh water', [6]);
+        if (minus){ const m = d(6); dmg = Math.max(0, dmg - m); add('', `<span class="result n">-1d6 = -${m}</span>`); }
+        hitFoe(dmg, true); nar('Where the water hits, the salt hisses and runs like wax.');
+      } else {
+        if (!used.has('halfling')){ used.add('halfling'); showMove('thief_halfling'); used.add('classmove'); }
+        let dmg = await rollDamage('Thrown dagger', [8], 2);
+        if (minus){ const m = d(6); dmg = Math.max(0, dmg - m); add('', `<span class="result n">-1d6 = -${m}</span>`); }
+        hitFoe(dmg);
+      }
+    } else if (c === 'mm'){
+      used.add('spell'); used.add('classmove');
+      showMove('magic_missile');
+      const r = await roll2d6({move:'cast_a_spell', label:'Cast a Spell: Magic Missile', stat:'INT', adds: C.castPen ? [[C.castPen,'disturbed reality']] : []});
+      if (r.res === 'miss'){ nar('The spell fizzles into blue sparks.'); await gmMove(crustedCtx()); continue; }
+      if (r.res === 'partial'){
+        const ch = await choose([
+          {id:'att', label:'You draw unwelcome attention', sub:'The GM tells you how: they attack'},
+          {id:'pen', label:'The spell disturbs reality', sub:'-1 ongoing to cast until you prepare spells'},
+          {id:'forget', label:'The spell is forgotten', sub:'No more Magic Missile today'}]);
+        if (ch === 'pen'){ C.castPen -= 1; } else if (ch === 'forget'){ C.mm = false; }
+        render();
+        const dmg = await rollDamage('Magic Missile', [4,4]); hitFoe(dmg);
+        if (ch === 'att'){ nar('Every crystal eye in the shrine turns toward the light of your spell.'); await crustedAttack(); }
+      } else { const dmg = await rollDamage('Magic Missile', [4,4]); hitFoe(dmg); }
+    }
+  }
+  foes = null; render();
+  used.add('won');
+  nar('When the last Crusted falls, it doesn\'t bleed. It cracks, and sifts, and goes still. Hesk\'s red scarf lies on a little heap of salt. In what was his hand is a scrap of vellum sealed with a thousand-year-old crown:');
+  nar('<em>"The wall at the end of the third seam. Strike at the mark. V."</em>');
+  C.note = true; render();
+  await potionBreak();
+  await cont('Go to the third seam');
+  await s4();
+}
+async function backstab(){
+  used.add('classmove'); used.add('backstab');
+  showMove('backstab');
+  const c = await choose([{id:'dmg', label:'Just deal your damage', sub:'d8'},{id:'roll', label:'Roll + DEX for more', sub:`10+ choose two, 7 to 9 choose one`}]);
+  if (c === 'dmg'){ const dmg = await rollDamage('Backstab', [8]); hitFoe(dmg); return; }
+  const r = await roll2d6({label:'Backstab', stat:'DEX'});
+  if (r.res === 'miss'){ nar('It shifts at the last moment. Your point skids off salt.'); await gmMove(crustedCtx()); return; }
+  let n = r.res === 'hit' ? 2 : 1; const picked = new Set();
+  const OPTS = {nomelee:['You don\'t get into melee with them'], extra:['You deal your damage+1d6'], adv:['You create an advantage, +1 forward to you'], armor:['Reduce their armor by 1 until they repair it']};
+  while (n-- > 0){ const p = await choose(Object.entries(OPTS).filter(([k]) => !picked.has(k)).map(([k,v]) => ({id:k, label:v[0]}))); picked.add(p); }
+  const dmg = await rollDamage('Backstab', picked.has('extra') ? [8,6] : [8]);
+  hitFoe(dmg + (picked.has('armor') ? 1 : 0));
+  if (picked.has('armor')) rule('Its crust is cracked open: its 1 armor doesn\'t count against this blow.');
+  if (picked.has('adv')){ C.forward = (C.forward||0) + 1; render(); }
+  if (!picked.has('nomelee')){ nar('You\'re in among them now.'); }
+}
+
+/* ---------- scene 4 ---------- */
+async function s4(){
+  scene(4, 'The White Breach');
+  nar('At the end of the third seam, the grey rock salt stops. Tobin\'s pick hole opens onto stone as white as milk, cut smooth by someone who had all the time in the world. Through the hole a stair spirals down out of sight. Air rises from it, cool and slow, like breath.');
+  nar('On the third step sits <strong>Pell Oakes</strong>, a broad young miner with a lamp in his lap. Salt has grown over his boots and halfway to his knees, rooting him to the stair.');
+  npc('Pell', '"Don\'t stand still on it. It grows on you if you stand still. They went down. I heard Tobin singing, way down. In a language I don\'t know."');
+  const opts = [];
+  if (C.cls === 'fighter') opts.push({id:'bend', label:'Break the crust with your bare hands', sub:`Bend Bars, Lift Gates + STR ${sg(C.mods.STR)}`, say:'Hold still, Pell. This is going to be loud.'});
+  if (C.cls === 'thief') opts.push({id:'tricks', label:'Treat the crust like the trap it is', sub:`Tricks of the Trade + DEX ${sg(C.mods.DEX)}`, say:'Every trap has a trigger. Let me find this one\'s.'});
+  if (C.cls === 'wizard') opts.push({id:'presti', label:'Clean the salt away with Prestidigitation', sub:`Cast a Spell + INT ${sg(C.mods.INT)}${C.castPen ? ' ' + C.castPen : ''}`, say:'A cantrip for scrubbing pots. It will do.'});
+  if (C.water) opts.push({id:'water', label:'Pour your fresh water over it', sub:'It simply works. Uses up the waterskin.', say:'I unstopper the waterskin.'});
+  opts.push({id:'haul', label:'Haul him out by force', sub:`Defy Danger + STR ${sg(C.mods.STR)}`, say:'I grab him under the arms and pull.'});
+  const c = await choose(opts);
+  let freed = false;
+  if (c === 'water'){ used.add('water'); C.water = 0; render(); freed = true; nar('The salt hisses and runs off his legs like melting wax. Pell laughs, then nearly cries.'); }
+  else if (c === 'bend'){
+    used.add('classmove');
+    const r = await roll2d6({move:'bend_bars', label:'Bend Bars, Lift Gates', stat:'STR'});
+    if (r.res === 'miss') await missS4();
+    else {
+      freed = true; let n = r.res === 'hit' ? 3 : 2; const picked = new Set();
+      const L = {time:'It doesn\'t take a very long time', value:'Nothing of value is damaged', noise:'It doesn\'t make an inordinate amount of noise', fix:'You can fix the thing again without a lot of effort'};
+      while (n-- > 0){ const p = await choose(Object.entries(L).filter(([k]) => !picked.has(k)).map(([k,v]) => ({id:k, label:v}))); picked.add(p); }
+      nar('The crust splits with a crack like river ice.');
+      if (!picked.has('value')){ nar('So does something in Pell\'s shin. He screams, then grits his teeth. He\'s free, but he won\'t walk out on his own.'); C.pellHurt = true; }
+      if (!picked.has('time')) markClock('It takes far too long.');
+      else if (!picked.has('noise')) markClock('The crack echoes down the stair, down and down.');
+    }
+  } else if (c === 'tricks'){
+    used.add('classmove');
+    const r = await roll2d6({move:'tricks', label:'Tricks of the Trade', stat:'DEX'});
+    if (r.res === 'miss') await missS4();
+    else {
+      freed = true;
+      if (r.res === 'partial'){
+        const all = [['clock','Suspicion: the stair notices you','Mark the Salt Clock'],['hurt','Danger: the salt bites your hands','Take d4 damage'],['cost','Cost: a dagger snaps as a pry bar','Lose a throwing dagger']].filter(o => o[0] !== 'cost' || C.daggers > 0);
+        const two = all.sort(() => Math.random() - .5).slice(0, 2);
+        rule('On a 7 to 9 the GM offers two options between suspicion, danger, or cost. You pick one.');
+        const p = await choose(two.map(o => ({id:o[0], label:o[1], sub:o[2]})));
+        if (p === 'clock') markClock(); else if (p === 'hurt') await foeDamage('Salt bite', 4, 0, true); else { C.daggers--; render(); }
+      }
+      nar('You find the seams in the crust, the places where it\'s still thin, and pry. It comes away in plates.');
+    }
+  } else if (c === 'presti'){
+    used.add('spell'); used.add('classmove');
+    showMove('prestidigitation');
+    const r = await roll2d6({move:'cast_a_spell', label:'Cast a Spell: Prestidigitation', stat:'INT', adds: C.castPen ? [[C.castPen,'disturbed reality']] : []});
+    if (r.res === 'miss') await missS4();
+    else {
+      freed = true;
+      if (r.res === 'partial'){
+        const ch = await choose([{id:'att', label:'You draw unwelcome attention', sub:'Mark the Salt Clock'},{id:'pen', label:'The spell disturbs reality', sub:'-1 ongoing to cast'},{id:'forget', label:'The spell is forgotten', sub:'Only a cantrip. You\'ll prepare it again.'}]);
+        if (ch === 'att') markClock('The magic tastes sweet in the salt air, and something below tastes it too.'); else if (ch === 'pen'){ C.castPen -= 1; render(); }
+      }
+      nar('You touch the crust and it comes clean, as if scrubbed. Pell\'s boots are the cleanest they\'ve ever been.');
+    }
+  } else {
+    used.add('defy');
+    const r = await roll2d6({move:'defy_danger', label:'Defy Danger (haul)', stat:'STR'});
+    if (r.res === 'miss') await missS4();
+    else { freed = true; if (r.res === 'partial'){ nar('The salt tears loose, and takes skin with it. From both of you.'); await foeDamage('Torn salt', 4); } else nar('With a heave, you tear him free.'); }
+  }
+  C.freed = freed;
+  npc('Pell', '"Tobin. Is he still Tobin down there?"');
+  rule('Playing solo, you Ask the Salt: phrase a yes-or-no question and roll 2d6, +1 if likely. 10+ yes. 7 to 9 yes, but. 6- no. (This oracle roll doesn\'t mark XP: it isn\'t a move.)');
+  used.add('ask');
+  const row = add('rollrow', '<span class="lbl"><b>Ask the Salt</b>: "Is Tobin still himself?" Likely: 2d6 + 1</span>');
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  const a = d6El(), b = d6El(); dice.append(a, b);
+  await waitRoll('Ask the Salt (2d6 + 1)', 'Ask the Salt');
+  const av = d(6), bv = d(6); [a,b].forEach(e => e.classList.remove('ghost'));
+  await tumble(() => { face6(a, d(6)); face6(b, d(6)); }); face6(a, av); face6(b, bv);
+  const t = av + bv + 1; const s = document.createElement('span'); s.className = 'result ' + (t >= 10 ? 'ok' : t >= 7 ? 'mix' : 'bad'); s.textContent = `${t}: ${t >= 10 ? 'yes' : t >= 7 ? 'yes, but' : 'no'}`; row.appendChild(s);
+  nar(t >= 10 ? 'Far below, faint but clear, you hear Tobin\'s voice. He\'s calling for help.' : t >= 7 ? 'Far below, Tobin\'s voice. But there\'s another voice in his mouth, older and slower, and the two take turns.' : 'A voice rises up the stair. It uses Tobin\'s throat. It does not use his words.');
+  C.tobin = t >= 10 ? 'himself' : t >= 7 ? 'two voices' : 'the King\'s voice';
+  nar('Then the stair breathes out, long and cold, and a dusting of white settles over everything. Far below, something huge turns over in its sleep.');
+  markClock();
+  if (freed){
+    const ch = await choose(C.pellHurt ? [{id:'carry', label:'Carry Pell back to the winch', sub:'It costs time: mark the Salt Clock', say:'"Up you get. I\'ve got you."'}] : [{id:'climb', label:'Send Pell up on his own', say:'"Go. Tell Dagna I\'m going down."'},{id:'carry', label:'Walk him to the winch yourself', sub:'Safer for him. Mark the Salt Clock', say:'"I\'ll see you to the cage."'}]);
+    if (ch === 'carry'){ markClock('By the time you\'re back at the breach, the white dust is ankle-deep.'); C.carried = true; }
+    nar('Pell presses his lamp into your hands. "Bring them up," he says.');
+  } else nar('You can\'t free him. Pell gives you his lamp anyway. "Bring them up," he says. "Then come back for me."');
+  await cont('End of Act One');
+  await ending();
+}
+async function missS4(){
+  nar('The salt jumps from Pell to you, quick as a spider. You tear free, but you have to leave something behind on the step.');
+  await gmMove({die:6, foeName:'The salt stair', spot:'The salt closes around your boots too.', truth:'Under the salt on Pell\'s legs, you see the skin has already turned white. Some of him isn\'t coming back.'});
+}
+
+/* ---------- end ---------- */
+async function ending(){
+  $('#sceneName').textContent = 'End of Act One';
+  add('scenebreak', '<small>Act One</small>End of Session');
+  rule('At the end of each session (or each act of this adventure), you make the End of Session move and mark XP for what you did.');
+  showMove('end_of_session');
+  const alignMet = C.cls === 'fighter' ? !!C.freed : C.cls === 'thief' ? !!C.sneaked : !!C.learned;
+  const qs = [
+    [alignMet, `Alignment: ${C.align.split(': ')[1]}`],
+    [!!(C.knowWater || C.learned || used.has('clock')), 'Did you learn something new and important about the world?'],
+    [true, 'Did you overcome a notable monster or enemy? (The Crusted.)'],
+    [!!C.coin, 'Did you loot a memorable treasure?'],
+  ];
+  let gained = 0;
+  qs.forEach(([yes, q]) => { add('', `<span class="result ${yes ? 'ok' : 'n'}">${yes ? '+1 XP' : 'no'}</span> <span class="lbl" style="font-family:var(--f-sans)">${esc(q)}</span>`); if (yes) gained++; });
+  C.xp += gained; render(); used.add('eos');
+  nar(C.xp >= 8 ? `You have <strong>${C.xp} XP</strong>: enough to Level Up the next time you get some downtime.` : `You have <strong>${C.xp} XP</strong>. At 8 (your level + 7), you can Level Up.`);
+  const ALL = [['roll','The 2d6 roll: 10+, 7 to 9, miss'],['defy','Defy Danger'],['lore','Spout Lore'],['discern','Discern Realities'],['hs','Hack and Slash'],['volley','Volley'],['spell','Cast a Spell'],['classmove','A class or race move'],['damage','Damage dice and armor'],['xp','Marking XP on a miss'],['gm','GM moves on a miss'],['ask','Ask the Salt (solo oracle)'],['clock','The Salt Clock (a front)'],['breath','Last Breath'],['eos','End of Session']];
+  const store = (window.RDL_STORE && window.RDL_STORE.products && window.RDL_STORE.products[PRODUCT_ID]) || {};
+  const live = !!store.checkout;
+  add('endcard', `
+    <h3>Act One complete.</h3>
+    <p style="margin:0">${esc(C.name)} stands at the top of the White Stair with Pell's lamp, ${C.hp} HP, and ${C.xp} XP. ${C.freed ? 'Pell is free.' : 'Pell is still stuck to the step.'} Tobin is down there, speaking with ${C.tobin === 'himself' ? 'his own voice' : C.tobin === 'two voices' ? 'two voices' : 'the King\'s voice'}. The Salt Clock stands at ${clock} of 6. The story continues in the full adventure.</p>
+    <div class="product">
+      <div class="cov"><small>A solo adventure for Dungeon World</small>The Salt King's Stair</div>
+      <div>
+        <strong style="font-family:var(--f-display);font-size:22px">The Salt King's Stair: the complete adventure (PDF)</strong>
+        <ul>
+          <li>Acts Two and Three: the Weeping Steps, the Glass Gallery, the Pickled Court, the Sweetwater Cistern, and the throne below the sea</li>
+          <li>Four endings, plus a failure ending, and three hooks to keep playing</li>
+          <li>Four ready-to-play characters (Fighter, Thief, Wizard, Cleric) with their full starting moves</li>
+          <li>Six new monsters, a front, and nine solo tables, including GM moves for when you miss</li>
+          <li>Basic moves, special moves, and first-level spells, so you need nothing else to play</li>
+          <li>Plays solo or with a GM · printable sheets · 39 pages</li>
+        </ul>
+        <div class="buy">
+          ${live ? `<a class="buybtn" href="${esc(store.checkout)}" target="_blank" rel="noopener">Buy the PDF · ${esc(store.price || '')}</a>` : `<span class="buybtn" aria-disabled="true">PDF coming soon${store.price ? ' · ' + esc(store.price) : ''}</span>`}
+          <small>${live ? 'Instant download. Secure checkout by Lemon Squeezy.' : 'The store opens soon.'}</small>
+        </div>
+      </div>
+    </div>
+    <ul class="learned">${ALL.map(([k,t]) => `<li class="${used.has(k)?'':'no'}">${t}</li>`).join('')}</ul>
+    <p class="fine">Dungeon World is by Sage LaTorra and Adam Koebel. Get the full game at <a href="https://www.dungeon-world.com" target="_blank" rel="noopener">dungeon-world.com</a>. This adventure is not an official Dungeon World product.</p>`);
+  const c = await choose([{id:'again', label:'Play Act One again', cls:'primary', say:false}]);
+  if (c === 'again') location.reload();
+}
+
+if (matchMedia('(max-width: 880px)').matches) $('#sheet').open = false;
+start();
+})();
+</script>
+</body>
+</html>
