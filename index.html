@@ -7,7 +7,7 @@
 <meta name="description" content="Play a short intro adventure of a tabletop RPG in your browser before you buy the book. Real rules, real dice.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;800&family=Courier+Prime:wght@400;700&family=Pirata+One&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;600;800&family=Courier+Prime:wght@400;700&family=Pirata+One&family=Bungee&display=swap">
 <style>
 /* Layout: a game-store shelf. Ink header, then a grid of demo "boxes", each wearing its own game's colors. */
 :root{
@@ -33,6 +33,10 @@ h2{font-family:var(--f-mono);font-size:13px;letter-spacing:.14em;text-transform:
 .cover .t{font-family:var(--f-display);font-size:48px;line-height:.9}
 .cover .s{font-family:var(--f-display);font-size:20px;margin-top:6px}
 .skellies .cover{background:#F6DE1E;background-image:linear-gradient(#E2C400 2px,transparent 2px),linear-gradient(90deg,#E2C400 2px,transparent 2px);background-size:100% 30px,60px 60px}
+.slugblaster .cover{background:#DDE3E7;background-image:repeating-linear-gradient(0deg,transparent 0 3px,rgba(20,26,38,.06) 3px 4px);position:relative}
+.slugblaster .cover::after{content:"● REC";position:absolute;top:12px;right:14px;font-family:var(--f-mono);font-size:12px;font-weight:700;color:#E0312B}
+.cover .t-sb{font-family:"Bungee","Arial Black",Impact,sans-serif;font-size:34px;line-height:1}
+.slugblaster .cover .s{font-family:var(--f-body);font-size:16px;font-weight:600;margin-top:8px}
 .info{padding:14px 18px 18px;display:flex;flex-direction:column;gap:10px;flex:1}
 .info p{margin:0}
 .meta{display:flex;flex-wrap:wrap;gap:6px}
@@ -65,17 +69,25 @@ footer a{color:inherit}
         <span class="play">Play "Clogged!" →</span>
       </div>
     </a>
+    <a class="game slugblaster" href="games/slugblaster/">
+      <div class="cover"><div class="t t-sb">Slugblaster</div><div class="s">Hoverboards, homemade portals, and the monsters on the other side.</div></div>
+      <div class="info">
+        <p>You're a teen loner with a hoverboard and a homemade portal. Raid a buried alternate-reality mall, then outrun the crab that lives in the pretzel stand.</p>
+        <div class="meta"><span>d6 action rolls</span><span>Sci-fi teen</span><span>~20 min</span><span>Solo</span></div>
+        <span class="play">Play "The Secret Megamall" →</span>
+      </div>
+    </a>
     <div class="soon">More games coming soon.</div>
   </div>
 
   <section class="how">
     <div><h3>Pick a game</h3><p>Each demo is an intro adventure built from the game's own rules.</p></div>
-    <div><h3>Play for 15 minutes</h3><p>The page is your Game Master. You make the choices and roll the dice.</p></div>
+    <div><h3>Play for 20 minutes</h3><p>The page is your Game Master. You make the choices and roll the dice.</p></div>
     <div><h3>Buy what you loved</h3><p>Every demo ends with a link to get the full game from its publisher.</p></div>
   </section>
 </main>
 <footer>
-  <div class="wrap">Demos are adapted from openly licensed games with credit to their creators. Skellies © The Griffon's Saddlebag B.V., used under CC BY-SA 4.0. This prototype is not affiliated with any publisher.</div>
+  <div class="wrap">Demos are adapted under each game's own license, with credit to its creators. Skellies © The Griffon's Saddlebag B.V., used under CC BY-SA 4.0. Slugblaster is copyright © Mikey Hamm. Used with permission. RPG Demo Library is an independent work and not an official Slugblaster product. This prototype is not affiliated with any publisher.</div>
 </footer>
 </body>
 </html>
