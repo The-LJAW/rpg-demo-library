@@ -91,6 +91,15 @@ body.norules .rule{display:none}
 .die.tumble{animation:tumble .12s linear infinite}
 @keyframes tumble{50%{transform:rotate(14deg) translateY(-2px)}}
 .vs{font-family:var(--f-display);font-size:20px;align-self:center;padding:0 4px}
+.die.ghost{background:var(--paper);border-style:dashed;opacity:.55}
+.die.foe.ghost{background:var(--muted)}
+.opt.roll{flex:1 1 100%;display:grid;grid-template-columns:auto 1fr;column-gap:14px;align-items:center;padding:12px 16px}
+.opt.roll::before{content:"";grid-row:span 2;width:30px;height:30px;border:2px solid var(--yellow);border-radius:6px;
+  background:radial-gradient(circle at 30% 30%, var(--yellow) 3px, transparent 3.5px),radial-gradient(circle at 70% 70%, var(--yellow) 3px, transparent 3.5px),radial-gradient(circle at 50% 50%, var(--yellow) 3px, transparent 3.5px);
+  transition:transform .15s}
+.opt.roll:hover::before{transform:rotate(-18deg)}
+.opt.roll b{font-size:19px}
+.toggles{display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:flex-end}
 
 #choices{position:sticky;bottom:0;background:var(--paper);border-top:3px solid var(--ink);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:10px}
 #choices:empty{display:none}
@@ -187,7 +196,10 @@ body.norules .rule{display:none}
     <main class="story" aria-live="polite">
       <div class="story-head">
         <span class="scene" id="sceneName">Prologue</span>
-        <label class="toggle"><input type="checkbox" id="rulesToggle" checked> Show rules</label>
+        <span class="toggles">
+          <label class="toggle"><input type="checkbox" id="rulesToggle" checked> Show rules</label>
+          <label class="toggle"><input type="checkbox" id="autoToggle"> Auto-roll</label>
+        </span>
       </div>
       <div id="log"></div>
       <div id="choices"></div>
@@ -206,6 +218,7 @@ body.norules .rule{display:none}
 
 <script>
 (() => {
+let autoRoll = false;
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const $ = s => document.querySelector(s);
 const logEl = $('#log'), choicesEl = $('#choices');
@@ -218,6 +231,13 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':
 $('#rulesToggle').addEventListener('change', e => document.body.classList.toggle('norules', !e.target.checked));
 try { if (localStorage.getItem('sk-rules') === 'off') { $('#rulesToggle').checked = false; document.body.classList.add('norules'); } } catch(e){}
 $('#rulesToggle').addEventListener('change', e => { try { localStorage.setItem('sk-rules', e.target.checked ? 'on' : 'off'); } catch(err){} });
+try { if (localStorage.getItem('sk-auto') === 'on') { $('#autoToggle').checked = true; autoRoll = true; } } catch(e){}
+$('#autoToggle').addEventListener('change', e => {
+  autoRoll = e.target.checked;
+  try { localStorage.setItem('sk-auto', autoRoll ? 'on' : 'off'); } catch(err){}
+  const pending = choicesEl.querySelector('.opt.roll');
+  if (autoRoll && pending && choicesEl.children.length === 1) pending.click();
+});
 
 /* ---------- data ---------- */
 const BACKGROUNDS = {
@@ -313,21 +333,30 @@ function dieEl(v, foe){
   setFace(d, v); return d;
 }
 function setFace(d, v){
-  [...d.children].forEach((p,i) => p.style.visibility = PIPS[v].includes(i) ? 'visible' : 'hidden');
-  d.setAttribute('aria-label', 'die showing ' + v);
+  const on = PIPS[v] || [];
+  [...d.children].forEach((p,i) => p.style.visibility = on.includes(i) ? 'visible' : 'hidden');
+  d.setAttribute('aria-label', v ? 'die showing ' + v : 'die, not rolled yet');
 }
-async function rollDice(label, groups){
+
+async function rollDice(label, groups, {auto, skip=false, btn}={}){
   // groups: [{n, foe, sixes:true}] ; returns arrays of values per group
+  // Player rolls wait for a "Roll" click. GM/monster rolls (auto) happen on their own.
+  if (auto === undefined) auto = groups.every(g => g.foe);
   const row = add('rollrow', `<span class="lbl">${label}</span>`);
   const wrap = document.createElement('div'); wrap.className = 'dice'; row.appendChild(wrap);
   const out = []; const els = [];
   groups.forEach((g, gi) => {
     if (gi > 0) { const s = document.createElement('span'); s.className = 'vs'; s.textContent = 'vs'; wrap.appendChild(s); }
     const vals = []; const ge = [];
-    for (let i=0;i<g.n;i++){ const v = d6(); vals.push(v); const e = dieEl(d6(), g.foe); e.classList.add('tumble'); wrap.appendChild(e); ge.push(e); }
+    for (let i=0;i<g.n;i++){ vals.push(d6()); const e = dieEl(0, g.foe); e.classList.add('ghost'); wrap.appendChild(e); ge.push(e); }
     out.push(vals); els.push(ge);
   });
-  for (let t=0;t<6;t++){ await sleep(70); els.flat().forEach(e => setFace(e, d6())); }
+  if (!auto && !skip && !autoRoll){
+    const n = groups.filter(g => !g.foe).reduce((a,g) => a + g.n, 0);
+    await choose([{id:'roll', label: btn || (n === 1 ? 'Roll the die' : `Roll ${n} dice`), sub: label.replace(/<[^>]+>/g,''), cls:'primary roll', say:false}]);
+  }
+  els.flat().forEach(e => { e.classList.remove('ghost'); e.classList.add('tumble'); setFace(e, d6()); });
+  for (let t=0;t<(reduced?1:9);t++){ await sleep(65); els.flat().forEach(e => setFace(e, d6())); }
   els.forEach((ge, gi) => ge.forEach((e, i) => { e.classList.remove('tumble'); setFace(e, out[gi][i]); if (out[gi][i] === 6 && groups[gi].sixes !== false) e.classList.add('six'); }));
   await sleep(250);
   return {vals: out, row};
@@ -406,12 +435,14 @@ async function check({stat, trick=0, label, arms=false, weapon=null, bonus=0, bo
   used.add('check');
   let base = stat === 'bones' ? C.bones : effBrains();
   if (trick) used.add('trick');
+  let picked = false;
   if (C.insp){
     const c = await choose([
-      {id:'roll', label:`Roll ${label}`, cls:'primary', say:false},
-      {id:'insp', label:'Spend Inspiration, then roll', sub:'Way Less Tricky: +2d6', say:'I spend my Inspiration!'}
+      {id:'roll', label:'Roll the dice', sub:label, cls:'primary roll', say:false},
+      {id:'insp', label:'Spend Inspiration, then roll', sub:'Way Less Tricky: +2 dice', say:'I spend my Inspiration!'}
     ]);
     if (c === 'insp'){ C.insp = false; trick += 2; used.add('insp'); render(); }
+    picked = true;
   }
   const parts = [`${stat === 'bones' ? 'Bones' : 'Brains'} ${base}`];
   let n = base;
@@ -427,7 +458,7 @@ async function check({stat, trick=0, label, arms=false, weapon=null, bonus=0, bo
     rule('Trickiness can shrink your pool to zero. Then only a Goof (or Inspiration) can save you.');
     return {ok:false, s:0};
   }
-  const {vals, row} = await rollDice(desc, [{n}]);
+  const {vals, row} = await rollDice(desc, [{n}], {skip:picked});
   const s = sixes(vals[0]);
   stamp(row, s > 0, s > 0 ? `Success · ${s} six${s>1?'es':''}` : 'Failure · no sixes');
   return {ok: s > 0, s};
@@ -533,7 +564,7 @@ async function afterCombat(){
 async function ratFight(count){
   used.add('combat');
   let rats = count;
-  const {vals, row} = await rollDice('Who goes first? GM rolls a d6: 1–3 enemies, 4–6 you.', [{n:1, sixes:false}]);
+  const {vals, row} = await rollDice('Who goes first? GM rolls a d6: 1–3 enemies, 4–6 you.', [{n:1, sixes:false}], {auto:true});
   let yourTurn = vals[0][0] >= 4;
   stamp(row, yourTurn, yourTurn ? 'You go first' : 'Rats go first');
   rule('Combat goes in turns. On your turn you can move across a room and take one action, like an attack. Each six you roll is one hit.');
@@ -613,11 +644,11 @@ async function createSkelly(){
   scene('Make-A-Skelly', 'Character creation');
   rule('Skellies uses only six-sided dice. A "d63" means: roll a d6 for the tens and a d3 (half a d6, rounded up) for the ones. So results run 11 to 63.');
   while (true){
-    const {vals, row} = await rollDice('Roll a d63 for your mortal background', [{n:1, sixes:false},{n:1, sixes:false}]);
+    const {vals, row} = await rollDice('Roll a d63 for your mortal background', [{n:1, sixes:false},{n:1, sixes:false}], {btn:'Roll your background (d63)'});
     row.querySelector('.vs').textContent = '&';
     const code = `${vals[0][0]}${Math.ceil(vals[1][0]/2)}`;
     stamp(row, true, `= ${code}`);
-    const {vals: fv, row: frow} = await rollDice('Roll another d63 for a distinguishing feature', [{n:1, sixes:false},{n:1, sixes:false}]);
+    const {vals: fv, row: frow} = await rollDice('Roll another d63 for a distinguishing feature', [{n:1, sixes:false},{n:1, sixes:false}], {btn:'Roll your feature (d63)'});
     frow.querySelector('.vs').textContent = '&';
     const fcode = `${fv[0][0]}${Math.ceil(fv[1][0]/2)}`;
     stamp(frow, true, `= ${fcode}`);
