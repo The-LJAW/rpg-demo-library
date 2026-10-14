@@ -8,11 +8,13 @@ Try-before-you-buy demos of tabletop roleplaying games. Each demo is a short int
 |---|---|---|
 | Skellies | Clogged! (solo, ~15 min) | `games/skellies/` |
 | Slugblaster | The Secret Megamall (solo, ~20 min) | `games/slugblaster/` |
+| Ironsworn | The Bell Beneath the Fen, Act One (solo, ~20 min) | `games/ironsworn/` |
 
 ## Structure
 
 - `index.html`: the library front page
 - `games/<game>/index.html`: one self-contained page per demo (no build step)
+- `store.js`: product list and Lemon Squeezy checkout links. Paste a checkout link into a product's `checkout` field and its demo shows a Buy button instead of "coming soon". Paid PDFs are never stored in this repo.
 
 Hosted with GitHub Pages from the `main` branch.
 
@@ -27,3 +29,7 @@ The text of the Skellies demo (`games/skellies/`) is shared under CC BY-SA 4.0. 
 Slugblaster is copyright © Mikey Hamm. Used with permission. RPG Demo Library is an independent work and not an official Slugblaster product.
 
 The Slugblaster demo (`games/slugblaster/`) adapts rules, The Loner personality, the solo rules, and setting material from *Slugblaster* (Mythworks, 2024) under the [Slugblaster third-party license](https://slugblaster.com/). It uses no Slugblaster art, logos, or trade dress. The adventure "The Secret Megamall" is original. Slugblaster is based on *Blades in the Dark* (found at http://www.bladesinthedark.com/), product of One Seven Design, developed and authored by John Harper, and licensed under the [Creative Commons Attribution 3.0 Unported license](http://creativecommons.org/licenses/by/3.0/). Get the game at [slugblaster.com](https://slugblaster.com).
+
+### Ironsworn
+
+This work is based on Ironsworn (found at www.ironswornrpg.com), created by Shawn Tomkin, and licensed for our use under the Creative Commons Attribution 4.0 International license (creativecommons.org/licenses/by/4.0/). Move and oracle text in the demo comes from the Ironsworn SRD via the [Datasworn](https://github.com/rsek/datasworn) project (CC BY 4.0). This is not an official Ironsworn product. The adventure "The Bell Beneath the Fen", its characters, and its custom oracles are © 2026 RPG Demo Library, all rights reserved.

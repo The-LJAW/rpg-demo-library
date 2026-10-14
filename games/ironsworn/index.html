@@ -1,0 +1,713 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Bell Beneath the Fen: Ironsworn Demo</title>
+<meta name="description" content="Play Act One of The Bell Beneath the Fen, a solo adventure for Ironsworn, free in your browser. Real moves, real dice.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya:ital,wght@0,400;0,700;0,800;1,400&family=Alegreya+SC:wght@500;800&family=Alegreya+Sans:wght@400;700&display=swap">
+<script src="../../store.js"></script>
+<style>
+/* Layout: night over the fen. A bone-coloured journal page for the story, an iron-rimmed character sheet beside it. Single deliberate look. */
+:root{
+  --night:#121A18; --night-2:#1B2522; --bone:#EEE8DA; --bone-2:#E3DCCB; --ink:#1C211F; --muted:#5E655F;
+  --fen:#2E5A4E; --brass:#C8A86A; --rust:#8A3B1F; --ok:#2E7D4F; --mix:#B8781B; --bad:#A63A2A;
+  --f-display:"Alegreya SC", Georgia, serif; --f-body:"Alegreya", Georgia, serif; --f-sans:"Alegreya Sans", "Helvetica Neue", Arial, sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--night);color:var(--bone);font-family:var(--f-body);font-size:17.5px;line-height:1.5;
+  background-image:radial-gradient(ellipse at 50% -10%, #24342F 0%, transparent 60%), repeating-linear-gradient(0deg, rgba(200,168,106,.035) 0 1px, transparent 1px 22px)}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--brass);outline-offset:2px}
+.proto{background:#0B100F;color:#AFC2BA;font-family:var(--f-sans);font-size:13px;padding-block:7px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));display:flex;gap:6px 16px;flex-wrap:wrap;justify-content:space-between}
+.proto b{color:#fff}
+.wrap{max-width:1160px;margin:0 auto;padding-block:22px 60px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+.masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:12px 24px;flex-wrap:wrap;margin-bottom:18px}
+.eyebrow{font-family:var(--f-sans);font-weight:700;font-size:12.5px;letter-spacing:.22em;text-transform:uppercase;color:#9DB8AC;margin:0 0 6px}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(36px,6vw,62px);line-height:.95;margin:0;color:#F2EDE0}
+.tag{font-style:italic;color:#CFD6D0;margin:10px 0 0;max-width:52ch}
+.actchip{font-family:var(--f-sans);font-size:13px;border:1px solid var(--brass);color:var(--brass);padding:6px 12px;border-radius:999px;white-space:nowrap}
+
+.table{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:20px;align-items:start}
+.story{background:var(--bone);color:var(--ink);border-radius:4px;min-width:0;box-shadow:0 0 0 1px #000, 0 18px 40px rgba(0,0,0,.45)}
+.story-head{display:flex;justify-content:space-between;align-items:center;gap:8px 12px;flex-wrap:wrap;padding:10px 18px;border-bottom:2px solid var(--ink)}
+.story-head .scene{font-family:var(--f-display);font-weight:800;font-size:20px;line-height:1.1}
+.toggles{display:flex;gap:4px 14px;flex-wrap:wrap}
+.toggle{font-family:var(--f-sans);font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--muted)}
+.toggle input{accent-color:var(--fen)}
+#log{padding:18px 20px 8px;display:flex;flex-direction:column;gap:12px}
+.line{max-width:66ch}
+.who{font-family:var(--f-sans);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:1px}
+.npc{border-left:4px solid var(--brass);padding-left:12px;font-style:italic}
+.npc .who{font-style:normal}
+.you{align-self:flex-end;background:var(--fen);color:#fff;padding:7px 13px;border-radius:3px;max-width:min(54ch,90%);font-weight:700}
+.rule{font-family:var(--f-sans);font-size:14.5px;line-height:1.45;background:#E2EAE5;border-left:4px solid var(--fen);padding:7px 11px;max-width:66ch}
+.rule::before{content:"RULE  ";font-weight:700;letter-spacing:.08em;color:var(--fen)}
+body.norules .rule{display:none}
+.scenebreak{font-family:var(--f-display);font-weight:800;font-size:26px;line-height:1.1;border-top:2px solid var(--ink);padding-top:10px;margin-top:8px}
+.scenebreak small{display:flex;align-items:center;gap:8px;font-family:var(--f-sans);font-weight:700;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--rust)}
+.scenebreak small i{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--fen);color:#fff;font-style:normal;letter-spacing:0}
+
+details.move{max-width:66ch;border:1.5px solid var(--ink);border-radius:3px;background:#F7F3EA}
+details.move summary{cursor:pointer;padding:6px 11px;font-family:var(--f-display);font-weight:800;font-size:17px;display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+details.move summary small{font-family:var(--f-sans);font-weight:700;font-size:11px;letter-spacing:.1em;color:var(--muted)}
+details.move .mt{padding:0 12px 10px;font-size:15px}
+details.move .mt p{margin:.4em 0} details.move .mt ul{margin:.2em 0;padding-left:1.2em}
+body.norules details.move{display:none}
+
+.rollrow{display:flex;flex-direction:column;gap:8px;border:2px solid var(--ink);border-radius:3px;padding:10px 12px;max-width:66ch;background:#fff}
+.rollrow .lbl{font-family:var(--f-sans);font-size:14px}
+.dice{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.dice .sep{font-family:var(--f-display);font-weight:800;font-size:18px;color:var(--muted)}
+.d6{width:40px;height:40px;border:2px solid var(--ink);border-radius:7px;background:#fff;display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:5px}
+.d6 i{width:7px;height:7px;border-radius:50%;background:var(--ink);place-self:center;visibility:hidden}
+.d10{width:44px;height:44px;display:grid;place-items:center;position:relative;font-family:var(--f-sans);font-weight:700;font-size:17px;color:#fff}
+.d10::before{content:"";position:absolute;inset:6px;background:var(--fen);transform:rotate(45deg);border-radius:4px}
+.d10 span{position:relative}
+.d10.beat::before{background:#9AA59F}
+.d100{min-width:56px;height:40px;padding:0 8px;display:grid;place-items:center;border:2px solid var(--ink);border-radius:20px;font-family:var(--f-sans);font-weight:700;font-size:18px;background:#fff}
+.ghost{opacity:.4;border-style:dashed}
+.d10.ghost::before{background:#9AA59F}
+.tumble{animation:tumble .12s linear infinite}
+@keyframes tumble{50%{transform:rotate(10deg) translateY(-2px)}}
+.score{font-family:var(--f-sans);font-weight:700;font-size:15px}
+.result{font-family:var(--f-sans);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase;padding:2px 8px;border-radius:3px;color:#fff;align-self:flex-start}
+.result.ok{background:var(--ok)} .result.mix{background:var(--mix)} .result.bad{background:var(--bad)} .result.n{background:var(--ink)}
+.trackline{display:flex;gap:4px;align-items:center;flex-wrap:wrap;font-family:var(--f-sans);font-size:13px}
+.trackline b{margin-right:6px}
+.box{width:20px;height:20px;border:1.5px solid var(--ink);display:inline-grid;grid-template:1fr 1fr/1fr 1fr;background:#fff}
+.box i{border:.5px solid transparent}
+.box i.t{background:var(--fen)}
+
+#choices{position:sticky;bottom:0;background:var(--bone-2);border-top:2px solid var(--ink);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:10px}
+#choices:empty{display:none}
+.opt{flex:1 1 220px;text-align:left;border:2px solid var(--ink);background:#fff;padding:9px 12px;cursor:pointer;border-radius:3px;box-shadow:3px 3px 0 var(--ink)}
+.opt:hover{background:#F7F1E2}
+.opt:active{transform:translate(3px,3px);box-shadow:none}
+.opt b{display:block;font-weight:800;line-height:1.25}
+.opt span{display:block;font-family:var(--f-sans);font-size:13px;color:var(--muted);margin-top:2px}
+.opt.primary{background:var(--fen);color:#fff}
+.opt.primary span{color:#D9E8E1}
+.opt.burn{background:#FFF3DC;border-color:var(--mix)}
+.opt:disabled{opacity:.45;cursor:not-allowed}
+.opt.roll{flex:1 1 100%;display:grid;grid-template-columns:auto 1fr;column-gap:14px;align-items:center;padding:12px 16px}
+.opt.roll::before{content:"";grid-row:span 2;width:26px;height:26px;background:#D9E8E1;transform:rotate(45deg);border-radius:4px;transition:transform .2s}
+.opt.roll:hover::before{transform:rotate(135deg)}
+.opt.roll b{font-size:19px}
+
+/* character picker */
+.pcs{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;max-width:66ch}
+
+/* sheet */
+.sheet{position:sticky;top:calc(12px + env(safe-area-inset-top,0px));background:var(--night-2);border:1.5px solid #3A4A45;border-radius:4px;min-width:0;color:var(--bone)}
+.sheet summary{list-style:none;cursor:pointer;padding:9px 14px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 10px;align-items:baseline;border-bottom:1px solid #3A4A45}
+.sheet summary::-webkit-details-marker{display:none}
+.sheet .nm{font-family:var(--f-display);font-weight:800;font-size:19px;color:#F2EDE0}
+.sheet .mini{font-family:var(--f-sans);font-size:12px;color:var(--brass);white-space:nowrap}
+.sheet-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:12px}
+.sec{font-family:var(--f-sans);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:#9DB8AC;border-bottom:1px solid #3A4A45;padding-bottom:2px;margin-bottom:6px;display:flex;justify-content:space-between}
+.statrow{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;text-align:center}
+.statrow div{border:1.5px solid #4E605A;border-radius:50%;aspect-ratio:1;max-width:100%;display:grid;place-items:center;align-content:center}
+.statrow b{font-family:var(--f-display);font-size:21px;line-height:1;color:#F2EDE0}
+.statrow small{font-family:var(--f-sans);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:#9DB8AC}
+.meter{display:grid;grid-template-columns:64px repeat(6,1fr);gap:3px;align-items:center;font-family:var(--f-sans);font-size:12px;margin:3px 0}
+.meter b{font-family:var(--f-display);font-size:14px;color:#F2EDE0}
+.meter span{border:1px solid #4E605A;text-align:center;border-radius:2px;color:#7F918A;padding:1px 0}
+.meter span.on{background:var(--brass);color:var(--night);border-color:var(--brass);font-weight:700}
+.mom{display:flex;align-items:center;gap:8px;font-family:var(--f-sans);font-size:12px;color:#9DB8AC}
+.mom b{font-family:var(--f-display);font-size:26px;color:var(--brass)}
+.sh-track{display:flex;gap:3px;flex-wrap:wrap}
+.sh-track .box{border-color:#9DB8AC;background:transparent;width:18px;height:18px}
+.sh-track .box i.t{background:var(--brass)}
+.sh-label{font-family:var(--f-sans);font-size:12.5px;margin:2px 0 4px;color:#CFD6D0}
+.assets{list-style:none;margin:0;padding:0;font-size:14px;display:flex;flex-direction:column;gap:4px}
+.assets li{display:flex;justify-content:space-between;gap:8px}
+.assets small{font-family:var(--f-sans);font-size:11px;color:#9DB8AC;white-space:nowrap}
+.empty-sheet{font-style:italic;color:#9DB8AC;font-size:15px}
+
+.endcard{border:2px solid var(--ink);background:#fff;padding:16px 18px;display:flex;flex-direction:column;gap:10px;max-width:66ch}
+.endcard h3{font-family:var(--f-display);font-weight:800;font-size:26px;line-height:1.05;margin:0}
+.product{display:grid;grid-template-columns:110px 1fr;gap:14px;align-items:start;background:var(--night);color:var(--bone);padding:14px;border-radius:3px}
+.product .cov{background:#18211E;border:1px solid #3A4A45;aspect-ratio:8.5/11;display:flex;flex-direction:column;justify-content:flex-end;padding:8px;font-family:var(--f-display);font-weight:800;font-size:14px;line-height:1;color:#F2EDE0}
+.product .cov small{font-family:var(--f-sans);font-size:7px;letter-spacing:.14em;color:#9DB8AC;margin-bottom:auto;text-transform:uppercase}
+.product ul{margin:.3em 0 .6em;padding-left:1.1em;font-size:15px}
+.buy{display:inline-flex;align-items:center;gap:10px;flex-wrap:wrap}
+.buybtn{display:inline-block;text-decoration:none;background:var(--brass);color:var(--night);font-weight:800;padding:10px 16px;border-radius:3px;border:0;cursor:pointer;font-size:16px}
+.buybtn[aria-disabled="true"]{background:#5E655F;color:#E3DCCB;cursor:not-allowed}
+.buy small{font-family:var(--f-sans);font-size:13px;color:#AFC2BA}
+.learned{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px 14px;font-size:15px}
+.learned li::before{content:"✓ ";font-weight:800;color:var(--ok)}
+.learned li.no{color:var(--muted)} .learned li.no::before{content:"○ ";color:var(--muted)}
+.fine{font-family:var(--f-sans);font-size:12.5px;color:var(--muted);line-height:1.5}
+.foot{font-family:var(--f-sans);font-size:13px;margin-top:22px;max-width:90ch;line-height:1.55;color:#AFC2BA}
+
+@media (max-width: 880px){
+  .table{grid-template-columns:minmax(0,1fr)}
+  .sheet{order:-1;top:env(safe-area-inset-top,0px);z-index:5}
+  .sheet-body{max-height:60vh;overflow:auto}
+  #log{padding:14px 14px 6px}
+  .product{grid-template-columns:1fr}
+  .product .cov{max-width:120px}
+}
+@media (prefers-reduced-motion: reduce){ .tumble{animation:none} }
+</style>
+</head>
+<body>
+<div class="proto"><span><a href="../../" style="color:inherit">← All demos</a> · <b>FREE DEMO</b> · Act One of three</span><span>Not an official Ironsworn product</span></div>
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <p class="eyebrow">A solo adventure for Ironsworn</p>
+      <h1>The Bell Beneath the Fen</h1>
+      <p class="tag">Three nights running, the drowned chapel's bell has rung under the water. On the third night, the ferryman's apprentice walked into the fen and did not come back.</p>
+    </div>
+    <span class="actchip">Free: Act One · about 20 minutes</span>
+  </header>
+  <div class="table">
+    <main class="story" aria-live="polite">
+      <div class="story-head">
+        <span class="scene" id="sceneName">Before you begin</span>
+        <span class="toggles">
+          <label class="toggle"><input type="checkbox" id="rulesToggle" checked> Show rules</label>
+          <label class="toggle"><input type="checkbox" id="autoToggle"> Auto-roll</label>
+        </span>
+      </div>
+      <div id="log"></div>
+      <div id="choices"></div>
+    </main>
+    <details class="sheet" id="sheet" open>
+      <summary><span class="nm" id="sumName">Your Ironsworn</span><span class="mini" id="sumMini">not chosen yet</span></summary>
+      <div class="sheet-body" id="sheetBody"><p class="empty-sheet">Your character appears here: stats, health, spirit, supply, momentum, assets, and your vow.</p></div>
+    </details>
+  </div>
+  <p class="foot">This work is based on Ironsworn (found at www.ironswornrpg.com), created by Shawn Tomkin, and licensed for our use under the Creative Commons Attribution 4.0 International license (creativecommons.org/licenses/by/4.0/). Move, asset, and oracle text shown in this demo is from the Ironsworn SRD by Shawn Tomkin, CC BY 4.0, via the Datasworn project. This is not an official Ironsworn product. The adventure "The Bell Beneath the Fen" and its characters are © 2026 RPG Demo Library. Ironsworn is free at <a href="https://www.ironswornrpg.com" target="_blank" rel="noopener">ironswornrpg.com</a>.</p>
+</div>
+
+<script>
+(() => {
+const DATA = {"moves":{"face_danger":{"name":"Face Danger","text":"When __you attempt something risky or react to an imminent threat__, envision your action and roll. If you act...\n\n  * With speed, agility, or precision: Roll +edge.\n  * With charm, loyalty, or courage: Roll +heart.\n  * With aggressive action, forceful defense, strength, or endurance: Roll +iron.\n  * With deception, stealth, or trickery: Roll +shadow.\n  * With expertise, insight, or observation: Roll +wits.\n\nOn a __strong hit__, you are successful. Take +1 momentum.\n\nOn a __weak hit__, you succeed, but face a troublesome cost. Choose one.\n\n  * You are delayed, lose advantage, or face a new danger: Suffer -1 momentum.\n  * You are tired or hurt: [Endure Harm](id:classic/moves/suffer/endure_harm) (1 harm).\n  * You are dispirited or afraid: [Endure Stress](id:classic/moves/suffer/endure_stress) (1 stress).\n  * You sacrifice resources: Suffer -1 supply.\n\nOn a __miss__, you fail, or your progress is undermined by a dramatic and costly turn of events. [Pay the Price](id:classic/moves/fate/pay_the_price)."},"secure_an_advantage":{"name":"Secure an Advantage","text":"When __you assess a situation, make preparations, or attempt to gain leverage__, envision your action and roll. If you act...\n\n  * With speed, agility, or precision: Roll +edge.\n  * With charm, loyalty, or courage: Roll +heart.\n  * With aggressive action, forceful defense, strength, or endurance: Roll +iron.\n  * With deception, stealth, or trickery: Roll +shadow.\n  * With expertise, insight, or observation: Roll +wits.\n\nOn a __strong hit__, you gain advantage. Choose one.\n\n  * Take control: Make another move now (not a progress move), and add +1.\n  * Prepare to act: Take +2 momentum.\n\nOn a __weak hit__, your advantage is short-lived. Take +1 momentum.\n\nOn a __miss__, you fail or your assumptions betray you. [Pay the Price](id:classic/moves/fate/pay_the_price)."},"gather_information":{"name":"Gather Information","text":"When __you search an area, ask questions, conduct an investigation, or follow a track__, roll +wits. If you act within a community or ask questions of a person with whom you share a bond, add +1.\n\nOn a __strong hit__, you discover something helpful and specific. The path you must follow or action you must take to make progress is made clear. Envision what you learn ([Ask the Oracle](id:classic/moves/fate/ask_the_oracle) if unsure), and take +2 momentum.\n\nOn a __weak hit__, the information complicates your quest or introduces a new danger. Envision what you discover ([Ask the Oracle](id:classic/moves/fate/ask_the_oracle) if unsure), and take +1 momentum.\n\nOn a __miss__, your investigation unearths a dire threat or reveals an unwelcome truth that undermines your quest. [Pay the Price](id:classic/moves/fate/pay_the_price)."},"heal":{"name":"Heal","text":"When __you treat an injury or ailment__, roll +wits. If you are mending your own wounds, roll +wits or +iron, whichever is lower.\n\nOn a __strong hit__, your care is helpful. If you (or the ally under your care) have the wounded condition, you may clear it. Then, take or give up to +2 health.\n\nOn a __weak hit__, as above, but you must suffer -1 supply or -1 momentum (your choice).\n\nOn a __miss__, your aid is ineffective. [Pay the Price](id:classic/moves/fate/pay_the_price)."},"undertake_a_journey":{"name":"Undertake a Journey","text":"When __you travel across hazardous or unfamiliar lands__, set the rank of your journey.\n\n  * Troublesome journey: 3 progress per waypoint.\n  * Dangerous journey: 2 progress per waypoint.\n  * Formidable journey: 1 progress per waypoint.\n  * Extreme journey: 2 ticks per waypoint.\n  * Epic journey: 1 tick per waypoint.\n\nThen, for each segment of your journey, roll +wits. If you are setting off from a community with which you share a bond, add +1 to your initial roll.\n\nOn a __strong hit__, you reach a waypoint. If the waypoint is unknown to you, envision it ([Ask the Oracle](id:classic/moves/fate/ask_the_oracle) if unsure). Then, choose one.\n\n  * You make good use of your resources: Mark progress.\n  * You move at speed: Mark progress and take +1 momentum, but suffer -1 supply.\n\nOn a __weak hit__, you reach a waypoint and mark progress, but suffer -1 supply.\n\nOn a __miss__, you are waylaid by a perilous event. [Pay the Price](id:classic/moves/fate/pay_the_price)."},"reach_your_destination":{"name":"Reach Your Destination","text":"When __your journey comes to an end__, roll the challenge dice and compare to your progress. Momentum is ignored on this roll.\n\nOn a __strong hit__, the situation at your destination favors you. Choose one.\n\n  * Make another move now (not a progress move), and add +1.\n  * Take +1 momentum.\n\nOn a __weak hit__, you arrive but face an unforeseen hazard or complication. Envision what you find ([Ask the Oracle](id:classic/moves/fate/ask_the_oracle) if unsure).\n\nOn a __miss__, you have gone hopelessly astray, your objective is lost to you, or you were misled about your destination. If your journey continues, clear all but one filled progress, and raise the journey’s rank by one (if not already epic)."},"enter_the_fray":{"name":"Enter the Fray","text":"When __you enter into combat__, set the rank of each of your foes.\n\n  * Troublesome foe: 3 progress per harm; inflicts 1 harm.\n  * Dangerous foe: 2 progress per harm; inflicts 2 harm.\n  * Formidable foe: 1 progress per harm; inflicts 3 harm.\n  * Extreme foe: 2 ticks per harm; inflicts 4 harm.\n  * Epic foe: 1 tick per harm; inflicts 5 harm.\n\nThen, roll to determine who is in control. If you are...\n\n  * Facing off against your foe: Roll +heart.\n  * Moving into position against an unaware foe, or striking without warning: Roll +shadow.\n  * Ambushed: Roll +wits.\n\nOn a __strong hit__, take +2 momentum. You have initiative.\n\nOn a __weak hit__, choose one.\n\n  * Bolster your position: Take +2 momentum.\n  * Prepare to act: Take initiative.\n\nOn a __miss__, combat begins with you at a disadvantage. [Pay the Price](id:classic/moves/fate/pay_the_price). Your foe has initiative."},"strike":{"name":"Strike","text":"When __you have initiative and attack in close quarters__, roll +iron. When __you have initiative and attack at range__, roll +edge.\n\nOn a __strong hit__, inflict +1 harm. You retain initiative.\n\nOn a __weak hit__, inflict your harm and lose initiative.\n\nOn a __miss__, your attack fails and you must [Pay the Price](id:classic/moves/fate/pay_the_price). Your foe has initiative."},"clash":{"name":"Clash","text":"When __your foe has initiative and you fight with them in close quarters__, roll +iron. When __you exchange a volley at range, or shoot at an advancing foe__, roll +edge.\n\nOn a __strong hit__, inflict your harm and choose one. You have the initiative.\n\n  * You bolster your position: Take +1 momentum.\n  * You find an opening: Inflict +1 harm.\n\nOn a __weak hit__, inflict your harm, but then [Pay the Price](id:classic/moves/fate/pay_the_price). Your foe has initiative.\n\nOn a __miss__, you are outmatched and must [Pay the Price](id:classic/moves/fate/pay_the_price). Your foe has initiative."},"end_the_fight":{"name":"End the Fight","text":"When __you make a move to take decisive action__, and score a strong hit, you may resolve the outcome of this fight. If you do, roll the challenge dice and compare to your progress. Momentum is ignored on this roll.\n\nOn a __strong hit__, this foe is no longer in the fight. They are killed, out of action, flee, or surrender as appropriate to the situation and your intent ([Ask the Oracle](id:classic/moves/fate/ask_the_oracle) if unsure).\n\nOn a __weak hit__, as above, but you must also choose one.\n\n  * It’s worse than you thought: [Endure Harm](id:classic/moves/suffer/endure_harm).\n  * You are overcome: [Endure Stress](id:classic/moves/suffer/endure_stress).\n  * Your victory is short-lived: A new danger or foe appears, or an existing danger worsens.\n  * You suffer collateral damage: Something of value is lost or broken, or someone important must pay the cost.\n  * You’ll pay for it: An objective falls out of reach.\n  * Others won’t forget: You are marked for vengeance.\n\nOn a __miss__, you have lost this fight. [Pay the Price](id:classic/moves/fate/pay_the_price)."},"endure_harm":{"name":"Endure Harm","text":"When __you face physical damage__, suffer -health equal to your foe’s rank or as appropriate to the situation. If your health is 0, suffer -momentum equal to any remaining -health. Then, roll +health or +iron, whichever is higher.\n\nOn a __strong hit__, choose one.\n\n  * Shake it off: If your health is greater than 0, suffer -1 momentum in exchange for +1 health.\n  * Embrace the pain: Take +1 momentum.\n\nOn a __weak hit__, you press on.\n\nOn a __miss__, also suffer -1 momentum. If you are at 0 health, you must mark wounded or maimed (if currently unmarked) or roll on the following table.\n\n"},"endure_stress":{"name":"Endure Stress","text":"When __you face mental shock or despair__, suffer -spirit equal to your foe’s rank or as appropriate to the situation. If your spirit is 0, suffer -momentum equal to any remaining -spirit. Then, roll +spirit or +heart, whichever is higher.\n\nOn a __strong hit__, choose one.\n\n  * Shake it off: If your spirit is greater than 0, suffer -1 momentum in exchange for +1 spirit\n  * Embrace the darkness: Take +1 momentum\n\nOn a __weak hit__, you press on.\n\nOn a __miss__, also suffer -1 momentum. If you are at 0 spirit, you must mark shaken or corrupted (if currently unmarked) or roll on the following table.\n\n"},"swear_an_iron_vow":{"name":"Swear an Iron Vow","text":"When __you swear upon iron to complete a quest__, write your vow and give the quest a rank. Then, roll +heart. If you make this vow to a person or community with whom you share a bond, add +1.\n\nOn a __strong hit__, you are emboldened and it is clear what you must do next ([Ask the Oracle](id:classic/moves/fate/ask_the_oracle) if unsure). Take +2 momentum.\n\nOn a __weak hit__, you are determined but begin your quest with more questions than answers. Take +1 momentum, and envision what you do to find a path forward.\n\nOn a __miss__, you face a significant obstacle before you can begin your quest. Envision what stands in your way ([Ask the Oracle](id:classic/moves/fate/ask_the_oracle) if unsure), and choose one.\n\n  * You press on: Suffer -2 momentum, and do what you must to overcome this obstacle.\n  * You give up: [Forsake Your Vow](id:classic/moves/quest/forsake_your_vow)."},"reach_a_milestone":{"name":"Reach a Milestone","text":"When __you make significant progress in your quest by overcoming a critical obstacle, completing a perilous journey, solving a complex mystery, defeating a powerful threat, gaining vital support, or acquiring a crucial item__, you may mark progress.\n\n  * Troublesome quest: Mark 3 progress.\n  * Dangerous quest: Mark 2 progress.\n  * Formidable quest: Mark 1 progress.\n  * Extreme quest: Mark 2 ticks.\n  * Epic quest: Mark 1 tick."},"pay_the_price":{"name":"Pay the Price","text":"When __you suffer the outcome of a move__, choose one.\n\n  * Make the most obvious negative outcome happen.\n  * Envision two negative outcomes. Rate one as ‘likely’, and [Ask the Oracle](id:classic/moves/fate/ask_the_oracle) using the yes/no table. On a ‘yes’, make that outcome happen. Otherwise, make it the other.\n  * Roll on the following table. If you have difficulty interpreting the result to fit the current situation, roll again.\n\n"},"ask_the_oracle":{"name":"Ask the Oracle","text":"When __you seek to resolve questions, discover details in the world, determine how other characters respond, or trigger encounters or events__, you may...\n\n  * Draw a conclusion: Decide the answer based on the most interesting and obvious result.\n  * Ask a yes/no question: Decide the odds of a ‘yes’, and roll on the table below to check the answer.\n  * Pick two: Envision two options. Rate one as ‘likely’, and roll on the table below to see if it is true. If not, it is the other.\n  * Spark an idea: Brainstorm or use a random prompt.\n\nOdds           | The answer is ‘yes’ if you roll...\n---------------|-----------------------------------\nAlmost Certain | 11 or greater\nLikely         | 26 or greater\n50/50          | 51 or greater\nUnlikely       | 76 or greater\nSmall Chance   | 91 or greater\n\nOn a match, an extreme result or twist has occurred."}},"ptp":[[1,2,"Roll again and apply that result but make it worse. If you roll this result yet again, think of something dreadful that changes the course of your quest (Ask the Oracle if unsure) and make it happen."],[3,5,"A person or community you trusted loses faith in you, or acts against you."],[6,9,"A person or community you care about is exposed to danger."],[10,16,"You are separated from something or someone."],[17,23,"Your action has an unintended effect."],[24,32,"Something of value is lost or destroyed."],[33,41,"The current situation worsens."],[42,50,"A new danger or foe is revealed."],[51,59,"It causes a delay or puts you at a disadvantage."],[60,68,"It is harmful."],[69,76,"It is stressful."],[77,85,"A surprising development complicates your quest."],[86,90,"It wastes resources."],[91,94,"It forces you to act against your best intentions."],[95,98,"A friend, companion, or ally is put in harm’s way (or you are, if alone)."],[99,100,"Roll twice more on this table. Both results occur. If they are the same result, make it worse."]]};
+const PRODUCT_ID = 'bell-beneath-the-fen';
+let autoRoll = false;
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = s => document.querySelector(s);
+const logEl = $('#log'), choicesEl = $('#choices');
+const d = n => 1 + Math.floor(Math.random()*n);
+const sleep = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+try { if (localStorage.getItem('isw-rules') === 'off') { $('#rulesToggle').checked = false; document.body.classList.add('norules'); } } catch(e){}
+try { if (localStorage.getItem('isw-auto') === 'on') { $('#autoToggle').checked = true; autoRoll = true; } } catch(e){}
+$('#rulesToggle').addEventListener('change', e => { document.body.classList.toggle('norules', !e.target.checked); try { localStorage.setItem('isw-rules', e.target.checked ? 'on' : 'off'); } catch(err){} });
+$('#autoToggle').addEventListener('change', e => { autoRoll = e.target.checked; try { localStorage.setItem('isw-auto', autoRoll ? 'on' : 'off'); } catch(err){} });
+
+/* ---------- official text rendering ---------- */
+function inline(s){ return esc(s).replace(/__([^_]+)__/g,'<strong>$1</strong>').replace(/\[([^\]]+)\]\(id:[^)]+\)/g,'<em>$1</em>'); }
+function md(t){
+  return t.split(/\n\n+/).map(b => {
+    if (b.split('\n').filter(l=>l.trim()).every(l => /^\s*\*/.test(l))) return '<ul>' + b.split('\n').filter(l=>l.trim()).map(l => `<li>${inline(l.replace(/^\s*\*\s*/,''))}</li>`).join('') + '</ul>';
+    if (b.includes('|') && /-{3,}/.test(b)) return '';
+    return `<p>${inline(b.trim())}</p>`;
+  }).join('');
+}
+function showMove(key){
+  const m = DATA.moves[key]; if (!m) return;
+  add('', `<details class="move"><summary><span>${m.name}</span><small>READ THE MOVE · CC BY</small></summary><div class="mt">${md(m.text)}</div></details>`);
+}
+
+/* ---------- characters ---------- */
+const PCS = {
+  ysolde:{name:'Ysolde Marr', title:'the fen-ferrier', stats:{edge:2,heart:1,iron:2,shadow:1,wits:3}, assets:['Waterborn','Hound (Gristle)','Archer'], bond:true, ranged:true,
+    blurb:'Raised on the punts of the Flooded Lands. You taught Bram to pole a ferry. Your hound Gristle has a nose for drowned things.'},
+  hakon:{name:'Hakon Red-Hand', title:'the oathkeeper', stats:{edge:1,heart:2,iron:3,shadow:1,wits:2}, assets:['Swordmaster','Shield-Bearer','Herbalist'], bond:false, ranged:false,
+    blurb:'A wandering swordsman who keeps every promise and some he shouldn\'t. The bell hasn\'t let you sleep since you arrived.'},
+  liv:{name:'Liv Ashdottir', title:'the salt-witch', stats:{edge:1,heart:3,iron:1,shadow:2,wits:2}, assets:['Ward','Raven (Cinder)','Wayfinder'], bond:false, ranged:false,
+    blurb:'You walk the boundary between the living and the dead. Your raven Cinder rides your shoulder and steals anything shiny.'},
+};
+const ASSET_TXT = {
+  'Waterborn':'+1 and +1 momentum on a hit when you Face Danger, Gather Information, or Secure an Advantage using your knowledge of water.',
+  'Hound (Gristle)':'Ability you chose: Gather Information using your hound\'s senses: +1, and +1 momentum on a hit.',
+  'Archer':'Secure an Advantage by taking a moment to aim: +1 (wits: +2 momentum on a strong hit; edge: +1 momentum on a hit).',
+  'Swordmaster':'Strike or Clash and burn momentum to improve your result: inflict +2 harm.',
+  'Shield-Bearer':'Face Danger using your shield as cover: +1. Clash in close quarters: +1 momentum on a strong hit.',
+  'Herbalist':'Heal using herbal remedies with at least +1 supply: add +2.',
+  'Ward':'Walk a wide circle sprinkling salt, roll +wits. Strong hit: two benefits; weak hit: one.',
+  'Raven (Cinder)':'Ability you chose: Secure an Advantage or Face Danger +shadow using your raven\'s trickery: +1, and +1 momentum on a hit.',
+  'Wayfinder':'Undertake a Journey: +1 momentum on a strong hit.',
+};
+const RANKS = {troublesome:12, dangerous:8, formidable:4, extreme:2, epic:1}; // ticks per mark
+
+let C = null; const used = new Set();
+const vow = {ticks:0, rank:'dangerous'}, journey = {ticks:0, rank:'dangerous'}, foe = {ticks:0, rank:'dangerous'};
+let toll = 0;
+
+/* ---------- log ---------- */
+function add(cls, html){ const el = document.createElement('div'); if (cls) el.className = cls; el.innerHTML = html; logEl.appendChild(el); requestAnimationFrame(() => el.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'})); return el; }
+const nar = h => add('line', h);
+const npc = (who, h) => add('line npc', `<span class="who">${who}</span>${h}`);
+const you = h => add('line you', h);
+const rule = h => add('rule', h);
+function scene(num, name){ $('#sceneName').textContent = name; add('scenebreak', `<small>${num ? `<i>${num}</i>` : ''}Act One</small>${name}`); }
+function choose(opts){
+  return new Promise(res => {
+    choicesEl.innerHTML = '';
+    opts.forEach(o => {
+      const b = document.createElement('button'); b.className = 'opt' + (o.cls ? ' ' + o.cls : '');
+      b.innerHTML = `<b>${o.label}</b>${o.sub ? `<span>${o.sub}</span>` : ''}`; if (o.disabled) b.disabled = true;
+      b.addEventListener('click', () => { choicesEl.innerHTML = ''; if (o.say !== false) you(o.say || o.label); res(o.id); });
+      choicesEl.appendChild(b);
+    });
+    requestAnimationFrame(() => choicesEl.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'}));
+    const first = choicesEl.querySelector('button:not(:disabled)'); if (first && matchMedia('(pointer:fine)').matches) first.focus({preventScroll:true});
+  });
+}
+const cont = (label='Continue') => choose([{id:'c', label, cls:'primary', say:false}]);
+async function waitRoll(label, btn){ if (autoRoll) return; await choose([{id:'r', label: btn || 'Roll the dice', sub: label, cls:'primary roll', say:false}]); }
+
+/* ---------- dice visuals ---------- */
+const PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function d6El(){ const e = document.createElement('div'); e.className = 'd6 ghost'; for (let i=0;i<9;i++) e.appendChild(document.createElement('i')); return e; }
+function face6(e, v){ [...e.children].forEach((p,i) => p.style.visibility = (PIPS[v]||[]).includes(i) ? 'visible' : 'hidden'); e.setAttribute('aria-label','d6 showing '+v); }
+function d10El(){ const e = document.createElement('div'); e.className = 'd10 ghost'; e.innerHTML = '<span>?</span>'; return e; }
+async function tumble(fn){ for (let t=0;t<(reduced?1:9);t++){ fn(); await sleep(60); } }
+
+/* ---------- momentum + meters ---------- */
+function mom(n){ C.momentum = Math.max(-6, Math.min(C.momMax, C.momentum + n)); render(); }
+function meter(k, n){ C[k] = Math.max(0, Math.min(5, C[k] + n)); render(); }
+function ticksHTML(t){ return Array.from({length:10}, (_,i) => { const f = Math.max(0, Math.min(4, t - i*4)); return `<span class="box">${[0,1,2,3].map(j => `<i class="${j<f?'t':''}"></i>`).join('')}</span>`; }).join(''); }
+function showTrack(label, tr){ add('', `<div class="trackline"><b>${label}</b>${ticksHTML(tr.ticks)}<span>${Math.floor(tr.ticks/4)} / 10 boxes</span></div>`); }
+function markProgress(tr, times=1){ tr.ticks = Math.min(40, tr.ticks + RANKS[tr.rank]*times); render(); }
+
+/* ---------- the action roll ---------- */
+// opts: {move, label, stat, adds:[[n,why]], onHitMom:[[n,why]]}
+async function actionRoll({move, label, stat, adds=[]}){
+  used.add('action');
+  if (adds.some(a => !/bond|setting off/.test(a[1]))) used.add('asset');
+  if (move) showMove(move);
+  const statVal = C.stats[stat];
+  const addSum = adds.reduce((a,x)=>a+x[0],0);
+  const row = add('rollrow', `<span class="lbl">${label}: d6 + ${stat} ${statVal}${adds.map(a => ` + ${a[0]} (${a[1]})`).join('')} vs two challenge dice</span>`);
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  const a6 = d6El(); const sep = document.createElement('span'); sep.className='sep'; sep.textContent='vs';
+  const c1 = d10El(), c2 = d10El(); dice.append(a6, sep, c1, c2);
+  await waitRoll(row.querySelector('.lbl').textContent);
+  const av = d(6), cv1 = d(10), cv2 = d(10);
+  [a6,c1,c2].forEach(e => e.classList.remove('ghost'));
+  await tumble(() => { face6(a6, d(6)); c1.firstChild.textContent = d(10); c2.firstChild.textContent = d(10); });
+  face6(a6, av); c1.firstChild.textContent = cv1; c2.firstChild.textContent = cv2;
+  let cancelled = C.momentum < 0 && -C.momentum === av;
+  let score = Math.min(10, (cancelled ? 0 : av) + statVal + addSum);
+  const sc = document.createElement('span'); sc.className = 'score';
+  sc.textContent = `Action score ${score}${score === 10 && av + statVal + addSum > 10 ? ' (max 10)' : ''}${cancelled ? ' (action die cancelled by negative momentum)' : ''}`;
+  row.appendChild(sc);
+  if (cancelled) rule('Negative momentum: when your action die matches your negative momentum, the die is cancelled.');
+  if (score > cv1) c1.classList.add('beat'); if (score > cv2) c2.classList.add('beat');
+  let res = outcome(score, cv1, cv2);
+  const match = cv1 === cv2;
+  stamp(row, res);
+  if (match){ add('', `<span class="result n">Match: ${cv1} and ${cv2}</span>`); rule('The challenge dice match. Expect a twist: something dramatic, good or bad.'); used.add('match'); }
+  // burn momentum
+  const burnRes = C.momentum > 0 ? outcome(C.momentum, cv1, cv2) : res;
+  let burned = false;
+  if (rank(burnRes) > rank(res)){
+    const c = await choose([
+      {id:'burn', label:`Burn momentum (${C.momentum}) for a ${name(burnRes)}`, sub:'Your momentum replaces the action score, then resets to +2', cls:'burn', say:`I burn my momentum!`},
+      {id:'keep', label:`Keep the ${name(res)}`, say:false}]);
+    if (c === 'burn'){ burned = true; used.add('burn'); res = burnRes; C.momentum = C.momReset; render(); add('', `<span class="result ${res==='strong'?'ok':'mix'}">Burned: ${name(res)}</span>`); rule('Burning momentum: if your momentum beats a challenge die, cancel it. Then reset momentum to +2.'); }
+  }
+  return {res, match, burned, av, cv1, cv2};
+}
+async function progressRoll({move, label, tr}){
+  used.add('progress');
+  if (move) showMove(move);
+  const score = Math.floor(tr.ticks/4);
+  const row = add('rollrow', `<span class="lbl">${label}: progress ${score} vs two challenge dice (momentum doesn't count)</span>`);
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  const sc = document.createElement('div'); sc.className = 'd100'; sc.textContent = score;
+  const sep = document.createElement('span'); sep.className='sep'; sep.textContent='vs';
+  const c1 = d10El(), c2 = d10El(); dice.append(sc, sep, c1, c2);
+  await waitRoll(row.querySelector('.lbl').textContent, 'Make the progress roll');
+  const cv1 = d(10), cv2 = d(10); [c1,c2].forEach(e => e.classList.remove('ghost'));
+  await tumble(() => { c1.firstChild.textContent = d(10); c2.firstChild.textContent = d(10); });
+  c1.firstChild.textContent = cv1; c2.firstChild.textContent = cv2;
+  if (score > cv1) c1.classList.add('beat'); if (score > cv2) c2.classList.add('beat');
+  const res = outcome(score, cv1, cv2); stamp(row, res);
+  return {res, match: cv1 === cv2};
+}
+const outcome = (s, a, b) => (s > a && s > b) ? 'strong' : (s > a || s > b) ? 'weak' : 'miss';
+const rank = r => ({miss:0, weak:1, strong:2})[r];
+const name = r => ({strong:'strong hit', weak:'weak hit', miss:'miss'})[r];
+function stamp(row, res){ const s = document.createElement('span'); s.className = 'result ' + ({strong:'ok',weak:'mix',miss:'bad'})[res]; s.textContent = name(res); row.appendChild(s); }
+
+/* ---------- suffer moves ---------- */
+async function endure(kind, amount, why){
+  const isH = kind === 'harm';
+  used.add(isH ? 'harm' : 'stress');
+  const k = isH ? 'health' : 'spirit';
+  nar(why);
+  const before = C[k]; meter(k, -amount);
+  const over = amount - before; if (over > 0) mom(-over);
+  rule(`${isH ? 'Endure Harm' : 'Endure Stress'}: suffer -${amount} ${k}, then roll +${k} or +${isH ? 'iron' : 'heart'}, whichever is higher.`);
+  const statName = isH ? (C[k] >= C.stats.iron ? null : 'iron') : (C[k] >= C.stats.heart ? null : 'heart');
+  const useVal = statName ? C.stats[statName] : C[k];
+  // roll using a temp stat
+  const tmp = isH ? 'iron' : 'heart'; const save = C.stats[tmp]; C.stats[tmp] = useVal;
+  const r = await actionRoll({move: isH ? 'endure_harm' : 'endure_stress', label: `${isH ? 'Endure Harm' : 'Endure Stress'} (+${statName || k})`, stat: tmp});
+  C.stats[tmp] = save; render();
+  if (r.res === 'strong'){
+    const c = await choose([
+      {id:'shake', label:'Shake it off', sub:`-1 momentum, +1 ${k}`, disabled: C[k] === 0},
+      {id:'embrace', label: isH ? 'Embrace the pain' : 'Embrace the darkness', sub:'+1 momentum'}]);
+    if (c === 'shake'){ mom(-1); meter(k, 1); } else mom(1);
+  } else if (r.res === 'weak') nar('You press on.');
+  else { mom(-1); nar(C[k] === 0 ? `You are at 0 ${k}. You mark ${isH ? 'wounded' : 'shaken'}: your maximum momentum drops by 1.` : 'It hits hard. -1 momentum.'); if (C[k] === 0){ C.momMax--; C.momReset = Math.max(0, C.momReset - 1); render(); } }
+}
+async function payPrice(obvious){
+  used.add('price');
+  showMove('pay_the_price');
+  const c = await choose([
+    {id:'obv', label:'Make the most obvious outcome happen', sub: obvious.label},
+    {id:'tbl', label:'Roll on the Pay the Price table', sub:'d100 on the official oracle'}]);
+  if (c === 'obv'){ await obvious.fn(); return; }
+  used.add('oracle');
+  const row = add('rollrow', '<span class="lbl">Pay the Price: roll d100</span>');
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  const e = document.createElement('div'); e.className = 'd100 ghost'; e.textContent = '?'; dice.appendChild(e);
+  await waitRoll('Pay the Price (d100)', 'Roll on the oracle');
+  const v = d(100); e.classList.remove('ghost'); await tumble(() => e.textContent = d(100)); e.textContent = v;
+  const r = DATA.ptp.find(x => v >= x[0] && v <= x[1]);
+  add('', `<span class="result n">${v}</span>`);
+  nar(`<em>"${esc(r[2])}"</em>`);
+  rule('Oracle results are prompts. You interpret them to fit the story. Here, the GM text below shows one way to read it.');
+  await obvious.fn();
+}
+async function askOracle(q, odds, threshold){
+  used.add('oracle'); showMove('ask_the_oracle');
+  const row = add('rollrow', `<span class="lbl">Ask the Oracle: "${q}" Odds: ${odds} (yes on ${threshold} or greater)</span>`);
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  const e = document.createElement('div'); e.className = 'd100 ghost'; e.textContent = '?'; dice.appendChild(e);
+  await waitRoll(`Ask the Oracle (d100, ${odds})`, 'Ask the oracle');
+  const v = d(100); e.classList.remove('ghost'); await tumble(() => e.textContent = d(100)); e.textContent = v;
+  const yes = v >= threshold; const s = document.createElement('span'); s.className = 'result ' + (yes ? 'ok' : 'bad'); s.textContent = `${v}: ${yes ? 'yes' : 'no'}`; row.appendChild(s);
+  return yes;
+}
+
+/* ---------- sheet ---------- */
+function render(){
+  if (!C) return;
+  $('#sumName').textContent = C.name;
+  $('#sumMini').textContent = `Momentum ${C.momentum > 0 ? '+' : ''}${C.momentum} · Health ${C.health} · Spirit ${C.spirit} · Supply ${C.supply}`;
+  const m = (label, v) => `<div class="meter"><b>${label}</b>${[0,1,2,3,4,5].map(i => `<span class="${i===v?'on':''}">${i}</span>`).join('')}</div>`;
+  $('#sheetBody').innerHTML = `
+    <div class="statrow">${['edge','heart','iron','shadow','wits'].map(s => `<div><b>${C.stats[s]}</b><small>${s}</small></div>`).join('')}</div>
+    <div>${m('Health', C.health)}${m('Spirit', C.spirit)}${m('Supply', C.supply)}</div>
+    <div class="mom"><b>${C.momentum > 0 ? '+' : ''}${C.momentum}</b><span>momentum · max ${C.momMax} · reset +${C.momReset}</span></div>
+    <div><div class="sec"><span>Vow</span><span>dangerous</span></div>${vow.text ? `<div class="sh-label">${esc(vow.text)}</div><div class="sh-track">${ticksHTML(vow.ticks)}</div>` : '<div class="sh-label">Not sworn yet</div>'}</div>
+    ${journey.on ? `<div><div class="sec"><span>Journey</span><span>dangerous</span></div><div class="sh-label">Across the Sallow Fen</div><div class="sh-track">${ticksHTML(journey.ticks)}</div></div>` : ''}
+    ${foe.on ? `<div><div class="sec"><span>Foe</span><span>dangerous</span></div><div class="sh-label">Reed-wight${C.initiative ? ' · you have initiative' : ' · it has initiative'}</div><div class="sh-track">${ticksHTML(foe.ticks)}</div></div>` : ''}
+    <div><div class="sec"><span>Assets</span><span>CC BY</span></div><ul class="assets">${C.assets.map(a => `<li title="${esc(ASSET_TXT[a])}"><span>${a}</span></li>`).join('')}</ul></div>
+    ${toll ? `<div><div class="sec"><span>The Rising Toll</span><span>${toll}/10</span></div><div class="sh-track">${ticksHTML(toll*4)}</div></div>` : ''}`;
+}
+
+/* ---------- the adventure ---------- */
+async function start(){
+  $('#sceneName').textContent = 'Before you begin';
+  nar('<strong>Ironsworn</strong> is a game of perilous quests in a dark fantasy land called the Ironlands. You play a hero who swears iron vows, and the dice and oracles stand in for a game master. It\'s built to be played solo, which makes it perfect for this.');
+  rule('Most moves are action rolls: a d6 plus one of your stats, compared against two d10 "challenge dice." Beat both for a strong hit, one for a weak hit, neither for a miss.');
+  nar('Choose who walks into the fen.');
+  const pick = await choose(Object.entries(PCS).map(([k,p]) => ({id:k, label:`${p.name}, ${p.title}`, sub:`${['edge','heart','iron','shadow','wits'].map(s => s[0].toUpperCase()+s.slice(1)+' '+p.stats[s]).join(' · ')} · ${p.assets.join(', ')}`, say:`I'll play ${p.name}.`})));
+  const P = PCS[pick];
+  C = {...P, key:pick, stats:{...P.stats}, health:5, spirit:5, supply:5, momentum:2, momMax:10, momReset:2, initiative:false, lantern:false};
+  render();
+  nar(esc(P.blurb));
+  rule('Every Ironsworn hero has five stats (always 3, 2, 2, 1, 1), three meters (health, spirit, supply), momentum, and three assets: special abilities. Hover an asset on your sheet to read it.');
+  await cont('Begin Act One');
+  await s1();
+}
+
+async function s1(){
+  scene(1, 'The Third Toll');
+  nar('You\'re on the chapel walkway in Fernmere, a village on stilts above black water, when it happens. Old Toll, the village bell, swings on its own. No hand on the rope. Three slow notes roll out over the fen, and a heartbeat later, from the dark south, three answering notes come back. Muffled. Wrong. Like a bell rung inside a drowned throat.');
+  nar('Then the shouting starts. At the ferry landing, <strong>Elder Hrefna Sallow</strong> kneels at the water\'s edge holding an empty pair of boots.');
+  npc('Hrefna', '"Bram. The ferryman\'s boy. He walked straight off the landing like someone called his name. He didn\'t sink. He <em>walked</em>. South, toward the old chapel. Bring him back. Swear it."');
+  nar('Everyone in Fernmere knows the old chapel: the Hallow of Merewyn, swallowed by the fen forty years ago. No one goes there.');
+  const c = await choose([
+    {id:'iron', label:'Grip your blade and swear on its iron', say:'"Upon this iron, I swear it. I will find Bram Hollin and bring him home."'},
+    {id:'hand', label:'Take her hands and swear', say:'"I\'ll find him, Hrefna. I swear on iron, I\'ll bring him home."'},
+  ]);
+  vow.text = 'Find Bram Hollin and bring him home'; render();
+  rule('A vow is the heart of Ironsworn. You give it a rank (this one is dangerous) and a 10-box progress track. Each milestone fills part of it.');
+  const adds = C.bond ? [[1,'bond with Fernmere']] : [];
+  const r = await actionRoll({move:'swear_an_iron_vow', label:'Swear an Iron Vow', stat:'heart', adds});
+  used.add('vow');
+  if (r.res === 'strong'){ mom(2); nar('Hrefna presses a fen-map scratched on bark into your hand. The way south is clear. <strong>+2 momentum.</strong>'); C.map = true; }
+  else if (r.res === 'weak'){ mom(1); nar('Hrefna can only point the way he walked. More questions than answers. <strong>+1 momentum.</strong>'); }
+  else { mom(-2); nar('Frightened villagers blame the ferryman\'s family and won\'t lend you a punt. You set out on foot through the reeds. <strong>-2 momentum.</strong>'); }
+  await cont('Head south');
+  await s2();
+}
+
+const FEN_SIGHTS = [[10,'A heron standing on a drowned cart, watching you.'],[20,'An abandoned eel-trap with something still moving in it.'],[30,'Bram\'s bare footprints, crossing water too deep to wade.'],[40,'A cairn of white stones with an iron nail driven through the top.'],[50,'Mist so thick you hear your own breath echo.'],[60,'A peat-cutter\'s hut, door open, fire still warm.'],[70,'Bubbles rising in a line, heading south.'],[80,'A child\'s carved wooden bell floating in a pool.'],[90,'Reeds bent flat in a path, as if something tall walked here.'],[100,'Silence. Even the frogs have stopped.']];
+async function s2(){
+  scene(2, 'Into the Sallow Fen');
+  nar('South of Fernmere the fen is a maze of reed islands and channels that are knee-deep until they aren\'t. Mist sits on the water like wool. Bram\'s tracks walk in a perfectly straight line, as if he never once looked down.');
+  journey.on = true; render();
+  rule('Undertake a Journey: a dangerous journey marks 2 boxes per waypoint. Each roll is one leg of the trip. When you think you\'ve made enough progress, you try to Reach Your Destination.');
+  let first = true, causeway = false, legs = 0;
+  while (true){
+    const adds = [];
+    if (first && C.bond) adds.push([1,'setting off from Fernmere']);
+    const r = await actionRoll({move: legs === 0 ? 'undertake_a_journey' : null, label:'Undertake a Journey', stat:'wits', adds});
+    used.add('journey'); legs++; first = false;
+    if (r.res === 'strong'){
+      if (C.assets.includes('Wayfinder')){ mom(1); rule('Wayfinder: +1 momentum on a strong hit.'); }
+      const c = await choose([{id:'res', label:'Make good use of your resources', sub:'Mark progress'},{id:'speed', label:'Move at speed', sub:'Mark progress, +1 momentum, -1 supply'}]);
+      markProgress(journey); if (c === 'speed'){ mom(1); meter('supply', -1); }
+      await waypoint();
+    } else if (r.res === 'weak'){
+      markProgress(journey); meter('supply', -1); nar('You reach a waypoint, but the mud eats your food and soaks your gear. <strong>-1 supply.</strong>');
+      await waypoint();
+      if (!causeway){ causeway = true; await s2a(); }
+    } else {
+      if (!causeway){ causeway = true; nar('You\'re waylaid.'); await s2a(true); }
+      else await payPrice({label:'You lose the trail and wander: -1 supply and -1 momentum', fn: async () => { meter('supply', -1); mom(-1); nar('You lose the trail for an hour of cold wading. <strong>-1 supply, -1 momentum.</strong>'); }});
+    }
+    showTrack('Journey', journey);
+    if (Math.floor(journey.ticks/4) >= 4 || legs >= 5){
+      const c = legs >= 5 ? 'go' : await choose([{id:'go', label:'Push on to the old chapel', sub:`Reach Your Destination with ${Math.floor(journey.ticks/4)} progress`},{id:'more', label:'Keep travelling', sub:'Another leg: more progress, more risk'}]);
+      if (c === 'go') break;
+    }
+  }
+  await s3();
+}
+async function waypoint(){
+  const row = add('rollrow', '<span class="lbl">Fen Sights oracle: what\'s at this waypoint? (d100)</span>');
+  const dice = document.createElement('div'); dice.className = 'dice'; row.appendChild(dice);
+  const e = document.createElement('div'); e.className = 'd100 ghost'; e.textContent = '?'; dice.appendChild(e);
+  await waitRoll('Fen Sights (d100)', 'Roll on the Fen Sights oracle');
+  const v = d(100); e.classList.remove('ghost'); await tumble(() => e.textContent = d(100)); e.textContent = v;
+  const s = FEN_SIGHTS.find(x => v <= x[0]); nar(`<em>${s[1]}</em>`); used.add('oracle');
+}
+async function s2a(fromMiss){
+  add('', '<div class="scenebreak" style="font-size:20px"><small>Scene 2a</small>The Sinking Causeway</div>');
+  nar('A causeway of old split logs crosses the widest channel. Halfway over, the logs roll under your feet and the whole thing starts sliding sideways into the black.');
+  const opts = [
+    {id:'edge', label:'Leap for the far bank', sub:'Face Danger +edge', say:'I jump for it!'},
+    {id:'iron', label:'Haul yourself along the logs', sub:'Face Danger +iron', say:'I grab the logs and drag myself across.'},
+    {id:'wits', label:'Read which logs are still pinned', sub:'Face Danger +wits', say:'I look for the logs that aren\'t moving.'},
+  ];
+  if (C.assets.includes('Shield-Bearer')) opts.push({id:'shield', label:'Drop your shield flat and ride it across', sub:'Face Danger +iron, Shield-Bearer +1', say:'I throw my shield down and kneel on it.'});
+  if (C.assets.includes('Raven (Cinder)')) opts.push({id:'raven', label:'Send Cinder ahead to find the safe logs', sub:'Face Danger +shadow, Raven +1', say:'Cinder, show me the way.'});
+  const c = await choose(opts);
+  const stat = c === 'shield' ? 'iron' : c === 'raven' ? 'shadow' : c;
+  const adds = [];
+  if (C.assets.includes('Waterborn')) adds.push([1,'Waterborn']);
+  if (c === 'shield') adds.push([1,'Shield-Bearer']);
+  if (c === 'raven') adds.push([1,'Raven']);
+  const r = await actionRoll({move:'face_danger', label:'Face Danger', stat, adds});
+  used.add('face');
+  if (r.res !== 'miss' && (C.assets.includes('Waterborn') || c === 'raven')){ mom(1); rule(`${c === 'raven' ? 'Raven' : 'Waterborn'}: +1 momentum on a hit.`); }
+  if (r.res === 'strong'){ mom(1); nar('You make it across as the causeway slides away behind you. <strong>+1 momentum.</strong>'); if (fromMiss) markProgress(journey); }
+  else if (r.res === 'weak'){
+    const ch = await choose([{id:'m', label:'Delayed: -1 momentum'},{id:'h', label:'Tired or hurt: Endure Harm (1)'},{id:'sp', label:'Afraid: Endure Stress (1)'},{id:'su', label:'Sacrifice resources: -1 supply'}]);
+    if (ch === 'm') mom(-1); else if (ch === 'su') meter('supply', -1);
+    else if (ch === 'h') await endure('harm', 1, 'You crack your shin on a rolling log.');
+    else await endure('stress', 1, 'The black water under the logs looks back at you.');
+  } else {
+    await payPrice({label:'You go under: Endure Harm (1 harm)', fn: async () => { await endure('harm', 1, 'You go under. The water is so cold it hurts. You come up gasping, but something down there brushed your leg.'); C.brushed = true; }});
+  }
+}
+
+async function s3(){
+  scene(3, 'The Reed-Wight');
+  nar('The reeds ahead sway against the wind. Then they stand up.');
+  nar('A <strong>reed-wight</strong> unfolds from the marsh: a tall, starved shape of bundled rushes and black mud, a drowned man\'s skull for a head, two eel-lights glowing in the sockets. Bram\'s lantern hangs from its belt like a trophy.');
+  foe.on = true; render();
+  const opts = [
+    {id:'face', label:'Face it head-on', sub:'Enter the Fray +heart', say:'I step into its path. "Where is he?"'},
+    {id:'sneak', label:'Creep into position and strike first', sub:'Enter the Fray +shadow', say:'I sink into the reeds and circle it.'},
+    {id:'past', label:'Slip past it without a fight', sub:'Face Danger +shadow. You won\'t get the lantern', say:'Not worth it. I slip by.'},
+  ];
+  if (C.assets.includes('Ward')) opts.unshift({id:'ward', label:'Walk a circle of salt first', sub:'Ward ritual +wits, then Enter the Fray', say:'I scatter salt in a wide ring and wait.'});
+  let c = await choose(opts);
+  if (c === 'past'){
+    const r = await actionRoll({move:'face_danger', label:'Face Danger (slip past)', stat:'shadow'});
+    if (r.res !== 'miss'){ if (r.res === 'strong') mom(1); else meter('supply', -1); nar('You ease through the reeds as it turns the wrong way. The lantern stays on its belt.'); foe.on = false; render(); return s4(); }
+    nar('A reed snaps under your heel. Its skull swivels. It has you.');
+    c = 'ambushed';
+  }
+  if (c === 'ward'){
+    used.add('asset');
+    const r = await actionRoll({label:'Ward ritual', stat:'wits'});
+    if (r.res !== 'miss'){ C.ward = r.res === 'strong' ? 2 : 1; nar(r.res === 'strong' ? 'The salt glows faintly. The wight hesitates at the line. Your ward will hurt it more and reward you when it crosses.' : 'Your ward holds, barely. When it first crosses, you\'ll feel it.'); }
+    else nar('The wind scatters your salt. The circle never closes.');
+    c = 'face';
+  }
+  const stat = c === 'face' ? 'heart' : c === 'sneak' ? 'shadow' : 'wits';
+  rule('Combat in Ironsworn is about initiative. With it, you Strike. Without it, you Clash. The reed-wight is a dangerous foe: each harm you inflict marks 2 boxes on its track, and it hits you for 2 harm.');
+  const r = await actionRoll({move:'enter_the_fray', label:'Enter the Fray', stat});
+  used.add('combat');
+  if (r.res === 'strong'){ mom(2); C.initiative = true; nar('You have the measure of it. <strong>+2 momentum, and you have initiative.</strong>'); }
+  else if (r.res === 'weak'){ const ch = await choose([{id:'m', label:'Bolster your position: +2 momentum'},{id:'i', label:'Prepare to act: take initiative'}]); if (ch === 'm'){ mom(2); C.initiative = false; } else C.initiative = true; }
+  else { C.initiative = false; await payPrice({label:'It lashes you with mud-heavy reeds: Endure Harm (2)', fn: async () => endure('harm', 2, 'It moves faster than anything made of reeds should. A lash of mud-heavy rushes catches you across the chest.')}); }
+  render();
+  if (C.ward){ mom(1); rule(`Ward: when the foe first crosses the boundary, take +1 momentum.`); }
+  await fight();
+}
+async function fight(){
+  let firstHarm = true; let rounds = 0;
+  while (true){
+    rounds++;
+    showTrack('Reed-wight', foe);
+    const close = !C.ranged;
+    const opts = [];
+    if (C.initiative){
+      opts.push({id:'strike', label: C.ranged ? 'Strike: loose an arrow' : 'Strike: attack in close quarters', sub:`+${C.ranged ? 'edge' : 'iron'} ${C.ranged ? C.stats.edge : C.stats.iron}. Strong hit: +1 harm and keep initiative`, say: C.ranged ? 'I draw and loose.' : 'I go for it.'});
+      if (C.assets.includes('Archer')) opts.push({id:'aim', label:'Take a moment to aim', sub:'Secure an Advantage +wits, Archer +1', say:'I steady my breath and aim.'});
+      if (C.assets.includes('Raven (Cinder)')) opts.push({id:'raven', label:'Send Cinder at its eyes', sub:'Secure an Advantage +shadow, Raven +1', say:'Cinder, go!'});
+      if (C.assets.includes('Hound (Gristle)')) opts.push({id:'hound', label:'Send Gristle to drag it down', sub:'Secure an Advantage +heart', say:'Gristle, take it!'});
+    } else {
+      opts.push({id:'clash', label: C.ranged ? 'Clash: shoot as it advances' : 'Clash: fight back as it attacks', sub:`+${C.ranged ? 'edge' : 'iron'} ${C.ranged ? C.stats.edge : C.stats.iron}. Strong hit: harm and seize initiative`, say: C.ranged ? 'I shoot as it comes.' : 'I meet it blade to reed.'});
+    }
+    if (C.endReady){ opts.unshift({id:'end', label:'End the Fight', sub:`Progress roll: ${Math.floor(foe.ticks/4)} boxes vs two challenge dice`, cls:'primary', say:'This ends now.'}); }
+    const c = await choose(opts);
+    if (c === 'end'){ C.endReady = false; const won = await endFight(); if (won !== null) return s4(won); continue; }
+    if (c === 'aim' || c === 'raven' || c === 'hound'){
+      used.add('asset');
+      const stat = c === 'aim' ? 'wits' : c === 'raven' ? 'shadow' : 'heart';
+      const adds = c === 'hound' ? [] : [[1, c === 'aim' ? 'Archer' : 'Raven']];
+      const r = await actionRoll({move: rounds === 1 ? 'secure_an_advantage' : null, label:'Secure an Advantage', stat, adds});
+      if (r.res === 'strong'){ const g = c === 'aim' ? 3 : c === 'raven' ? 3 : 2; mom(g); nar(c === 'aim' ? 'You have the shot lined up. ' : c === 'raven' ? 'Cinder shrieks into its eye-lights and it reels. ' : 'Gristle hits it low and it staggers. '); rule(`Strong hit: prepare to act, +2 momentum${g > 2 ? ', plus +1 from your asset' : ''}.`); C.endReady = true; }
+      else if (r.res === 'weak'){ mom(c === 'hound' ? 1 : 2); nar('A brief edge, quickly gone.'); C.initiative = false; }
+      else { C.initiative = false; await payPrice({label:'It strikes while you\'re exposed: Endure Harm (2)', fn: () => endure('harm', 2, 'It finds you while your guard is down. Wet rushes cinch around your throat.')}); }
+      render(); continue;
+    }
+    const strike = c === 'strike';
+    const stat = C.ranged ? 'edge' : 'iron';
+    const r = await actionRoll({move: (strike && !used.has('strikeShown')) ? 'strike' : (!strike && !used.has('clashShown')) ? 'clash' : null, label: strike ? 'Strike' : 'Clash', stat});
+    used.add(strike ? 'strikeShown' : 'clashShown');
+    let harm = 1;
+    const sword = r.burned && C.assets.includes('Swordmaster');
+    if (sword){ harm += 2; rule('Swordmaster: you burned momentum on Strike or Clash, so inflict +2 harm.'); }
+    if (C.ward && firstHarm && r.res !== 'miss' && C.ward === 2){ harm += 1; rule('Ward: the first time you inflict harm within the boundary, +1 harm.'); }
+    if (strike){
+      if (r.res === 'strong'){ harm += 1; inflict(harm, firstHarm); firstHarm = false; C.initiative = true; nar('A clean, heavy hit. Rushes and mud spray. You keep the initiative.'); C.endReady = true; }
+      else if (r.res === 'weak'){ inflict(harm, firstHarm); firstHarm = false; C.initiative = false; nar('You hit it, but it twists away and comes at you.'); }
+      else { C.initiative = false; await payPrice({label:'Its counterblow lands: Endure Harm (2)', fn: () => endure('harm', 2, 'Your attack goes wide. A fist of reeds and stone hits you like a club.')}); }
+    } else {
+      if (r.res === 'strong'){
+        const ch = await choose([{id:'m', label:'Bolster your position: +1 momentum'},{id:'h', label:'Find an opening: +1 harm'}]);
+        if (ch === 'h') harm += 1; else mom(1);
+        if (!C.ranged && C.assets.includes('Shield-Bearer')){ mom(1); rule('Shield-Bearer: Clash in close quarters, +1 momentum on a strong hit.'); }
+        inflict(harm, firstHarm); firstHarm = false; C.initiative = true; nar('You turn its attack aside and hit back hard. You take the initiative.'); C.endReady = true;
+      } else if (r.res === 'weak'){ inflict(harm, firstHarm); firstHarm = false; C.initiative = false; await payPrice({label:'You trade blows: Endure Harm (2)', fn: () => endure('harm', 2, 'You both land a blow. Its blow is heavier.')}); }
+      else { C.initiative = false; await payPrice({label:'Outmatched: Endure Harm (2)', fn: () => endure('harm', 2, 'It drives you back into the water and holds you there.')}); }
+    }
+    render();
+    if (C.health === 0){ nar('You\'re barely standing. In the full game, you\'d now risk Face Death on any more harm. In this demo, the wight hesitates, and you get one last chance.'); C.endReady = true; C.initiative = true; }
+    if (rounds > 12){ C.endReady = true; }
+  }
+}
+function inflict(harm, first){ markProgress(foe, harm); add('', `<span class="result n">${harm} harm · ${harm*2} boxes</span>`); used.add('harmFoe'); }
+async function endFight(){
+  const r = await progressRoll({move:'end_the_fight', label:'End the Fight', tr:foe});
+  if (r.res === 'strong'){ nar('The reed-wight collapses into a sodden heap of rushes. The skull rolls into the water and sinks without a sound. You take <strong>Bram\'s lantern</strong>. The glass is cold, but there\'s still oil in it.'); C.lantern = true; return true; }
+  if (r.res === 'weak'){
+    nar('It falls. But not cleanly. Choose one:');
+    const c = await choose([
+      {id:'h', label:'It\'s worse than you thought', sub:'Endure Harm (2)'},
+      {id:'s', label:'You are overcome', sub:'Endure Stress (2)'},
+      {id:'t', label:'Your victory is short-lived', sub:'The bell rings. Mark the Rising Toll'},
+    ]);
+    if (c === 'h') await endure('harm', 2, 'Its last lash opens a cut along your ribs.');
+    else if (c === 's') await endure('stress', 2, 'As it dies, the skull whispers Bram\'s name in a voice that isn\'t its own.');
+    else { toll++; render(); nar('As it falls, the bell rings once beneath the fen. The <strong>Rising Toll</strong> marks one box. Something is getting closer to claiming Bram.'); used.add('toll'); }
+    C.lantern = true; nar('You take Bram\'s lantern from its belt.'); return true;
+  }
+  nar('You\'ve lost this fight. The wight sinks back into the reeds, taking the lantern with it.');
+  await payPrice({label:'Endure Harm (2) as it goes', fn: () => endure('harm', 2, 'It rakes you as it goes.')});
+  return false;
+}
+
+async function s4(won){
+  foe.on = false; render();
+  if (C.assets.includes('Herbalist') && C.health < 5 && C.supply > 0){
+    const c = await choose([{id:'heal', label:'Treat your wounds with herbs', sub:'Heal, Herbalist +2', say:'I crush sweet-gale and moss into a poultice.'},{id:'no', label:'Press on', say:false}]);
+    if (c === 'heal'){
+      used.add('asset');
+      const lower = C.stats.wits <= C.stats.iron ? 'wits' : 'iron';
+      const r = await actionRoll({move:'heal', label:`Heal yourself (+${lower}, the lower of wits and iron)`, stat:lower, adds:[[2,'Herbalist']]});
+      if (r.res !== 'miss'){ meter('health', 2); if (r.res === 'weak') meter('supply', -1); nar('The poultice stings, then soothes. <strong>+2 health.</strong>'); }
+      else nar('Your hands shake too much to work the herbs. The wound stays open.');
+    }
+  }
+  scene(4, 'The Lantern on the Water');
+  nar('The fen opens into a wide, still mere. In the middle rises a broken stone stub: all that\'s left of the Hallow of Merewyn\'s bell-tower. A single line of bubbles rises beside it.');
+  const r = await progressRoll({move:'reach_your_destination', label:'Reach Your Destination', tr:journey});
+  used.add('dest');
+  if (r.res === 'strong'){ mom(1); nar('You arrive on a dry hummock with a clear view of the stump. <strong>+1 momentum.</strong>'); }
+  else if (r.res === 'weak'){ nar('The mist thickened. You\'ve come in on the wrong side, across deep water. You\'ll have to wade.'); meter('supply', -1); }
+  else { toll++; render(); used.add('toll'); nar('You\'ve been circling for hours. When you finally arrive, the bell has rung twice more. The <strong>Rising Toll</strong> marks one box.'); }
+  journey.on = false; render();
+  nar('On the shore, Bram\'s bare footprints walk into the water. They don\'t come out.');
+  const adds = [];
+  if (C.assets.includes('Hound (Gristle)')) adds.push([1,'Hound']);
+  if (C.assets.includes('Waterborn')) adds.push([1,'Waterborn']);
+  const g = await actionRoll({move:'gather_information', label:'Gather Information', stat:'wits', adds});
+  used.add('gather');
+  if (g.res !== 'miss' && adds.length){ mom(adds.length); rule(`${adds.map(a=>a[1]).join(' and ')}: +1 momentum on a hit.`); }
+  if (g.res === 'strong'){ mom(2); nar('The bubbles rise in rhythm, slow and steady, like breathing. Something down there is holding air. And there: a rope of braided reed-cord, tied to the tower stump, leading down. Someone has been visiting. <strong>+2 momentum.</strong>'); }
+  else if (g.res === 'weak'){ mom(1); nar('The bubbles rise in rhythm, like breathing. There\'s air down there. But how do you reach it? <strong>+1 momentum.</strong>'); }
+  else { await payPrice({label:'The bell rings: mark the Rising Toll', fn: async () => { toll++; render(); used.add('toll'); nar('The water shivers. The bell rings beneath you, so close you feel it in your teeth. The <strong>Rising Toll</strong> marks one box.'); }}); }
+  const alive = await askOracle('Is Bram still alive?', 'likely', 26);
+  nar(alive ? 'You hear it, faintly: a young man\'s voice under the water, singing a hymn no one in Fernmere has sung in forty years.' : 'Nothing. And then the singing starts anyway, in a voice that might be his. The fen isn\'t done with him, alive or not.');
+  rule('You survived the journey and found the place. That\'s a milestone. On a dangerous vow, Reach a Milestone marks 2 boxes.');
+  showMove('reach_a_milestone');
+  markProgress(vow); used.add('milestone');
+  showTrack('Your vow', vow);
+  nar('Below you, beneath the black water, the bell rings once.');
+  await cont('End of Act One');
+  await ending();
+}
+
+async function ending(){
+  $('#sceneName').textContent = 'End of Act One';
+  const ALL = [['action','Action rolls vs challenge dice'],['vow','Swear an Iron Vow'],['journey','Undertake a Journey'],['progress','Progress rolls'],['oracle','Oracles'],['combat','Combat and initiative'],['burn','Burning momentum'],['harm','Endure Harm'],['price','Pay the Price'],['milestone','Reach a Milestone'],['match','A match on the challenge dice'],['asset','Using an asset']];
+  const store = (window.RDL_STORE && window.RDL_STORE.products && window.RDL_STORE.products[PRODUCT_ID]) || {};
+  const live = !!store.checkout;
+  add('endcard', `
+    <h3>Act One complete.</h3>
+    <p style="margin:0">${esc(C.name)} stands at the edge of the mere with ${C.lantern ? 'Bram\'s lantern' : 'nothing but a cold trail'} and a vow ${Math.floor(vow.ticks/4)} boxes along. Somewhere beneath the water, the bell is still ringing. The story continues in the full adventure.</p>
+    <div class="product">
+      <div class="cov"><small>A solo adventure for Ironsworn</small>The Bell Beneath the Fen</div>
+      <div>
+        <strong style="font-family:var(--f-display);font-size:20px">The Bell Beneath the Fen: the complete adventure (PDF)</strong>
+        <ul>
+          <li>Acts Two and Three: the drowned chapel, Sigrun the eel-wife, the drowned faithful, and Merewyn, the Hollow Abbess</li>
+          <li>Three endings, plus a failure ending, and three vows to keep playing</li>
+          <li>All three ready-to-play characters with full asset text</li>
+          <li>Four custom fen oracles and four new foes</li>
+          <li>The complete Ironsworn moves and core oracles, so you need nothing else to play</li>
+          <li>Printable character and track sheets · 35 pages</li>
+        </ul>
+        <div class="buy">
+          ${live ? `<a class="buybtn" href="${esc(store.checkout)}" target="_blank" rel="noopener">Buy the PDF · ${esc(store.price || '')}</a>` : `<span class="buybtn" aria-disabled="true">PDF coming soon${store.price ? ' · ' + esc(store.price) : ''}</span>`}
+          <small>${live ? 'Instant download. Secure checkout by Lemon Squeezy.' : 'The store opens soon.'}</small>
+        </div>
+      </div>
+    </div>
+    <ul class="learned">${ALL.map(([k,t]) => `<li class="${used.has(k)?'':'no'}">${t}</li>`).join('')}</ul>
+    <p class="fine">Ironsworn itself is free at <a href="https://www.ironswornrpg.com" target="_blank" rel="noopener">ironswornrpg.com</a>. This adventure is not an official Ironsworn product.</p>`);
+  const c = await choose([{id:'again', label:'Play Act One again', cls:'primary', say:false}]);
+  if (c === 'again') location.reload();
+}
+
+if (matchMedia('(max-width: 880px)').matches) $('#sheet').open = false;
+start();
+})();
+</script>
+</body>
+</html>
