@@ -1,0 +1,917 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Skellies: Clogged!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Alegreya:ital,wght@0,400;0,600;0,800;1,400&family=Courier+Prime:wght@400;700&display=swap">
+<style>
+/* Layout: yellow brick wall (the book's cover) behind an ink-bordered "game table":
+   a running session log on the left, a character sheet pinned on the right. Single deliberate look. */
+:root{
+  --yellow:#F6DE1E;
+  --yellow-deep:#E2C400;
+  --ink:#151310;
+  --paper:#FFFEF8;
+  --bone:#EDE8D6;
+  --blood:#B3261E;
+  --muted:#5C574B;
+  --f-display:"Pirata One", "UnifrakturCook", Georgia, serif;
+  --f-body:"Alegreya", Georgia, "Times New Roman", serif;
+  --f-mono:"Courier Prime", "Courier New", ui-monospace, monospace;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%}
+body{
+  margin:0;background-color:var(--yellow);color:var(--ink);
+  font-family:var(--f-body);font-size:17px;line-height:1.5;
+  background-image:
+    linear-gradient(var(--yellow-deep) 2px, transparent 2px),
+    linear-gradient(90deg, var(--yellow-deep) 2px, transparent 2px),
+    linear-gradient(90deg, var(--yellow-deep) 2px, transparent 2px);
+  background-size:100% 36px, 72px 72px, 72px 72px;
+  background-position:0 0, 0 0, 36px 36px;
+}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--blood);outline-offset:2px}
+
+.proto{background:var(--ink);color:var(--yellow);font-family:var(--f-mono);font-size:12.5px;letter-spacing:.04em;
+  padding-block:7px;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));
+  display:flex;gap:6px 16px;flex-wrap:wrap;justify-content:space-between}
+.proto b{color:var(--paper);font-weight:700}
+
+.wrap{max-width:1120px;margin:0 auto;padding-block:20px 60px;
+  padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px))}
+
+.masthead{display:flex;align-items:flex-end;justify-content:space-between;gap:10px 24px;flex-wrap:wrap;margin-bottom:18px}
+.masthead h1{font-family:var(--f-display);font-weight:400;font-size:clamp(52px, 9vw, 92px);line-height:.85;margin:0;letter-spacing:.01em}
+.masthead .tag{font-family:var(--f-display);font-size:clamp(20px,3vw,26px);margin:6px 0 0}
+.masthead .adv{font-family:var(--f-mono);font-size:13px;text-align:right;max-width:300px}
+.masthead .adv strong{display:block;font-family:var(--f-display);font-weight:400;font-size:30px;line-height:1}
+
+.table{display:grid;grid-template-columns:minmax(0,1fr) 310px;gap:20px;align-items:start}
+
+.story{background:var(--paper);border:3px solid var(--ink);box-shadow:6px 6px 0 var(--ink);min-width:0}
+.story-head{display:flex;justify-content:space-between;align-items:center;gap:10px;border-bottom:3px solid var(--ink);padding:8px 16px;background:var(--ink);color:var(--paper)}
+.story-head .scene{font-family:var(--f-display);font-size:24px;line-height:1.1}
+.toggle{font-family:var(--f-mono);font-size:12.5px;display:flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
+.toggle input{accent-color:var(--yellow)}
+
+#log{padding:18px 20px 6px;display:flex;flex-direction:column;gap:12px}
+.line{max-width:64ch}
+.gm{ }
+.gm .who{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:1px}
+.lich{border-left:5px solid var(--ink);padding-left:12px;font-style:italic}
+.lich .who{font-style:normal}
+.you{align-self:flex-end;background:var(--ink);color:var(--paper);padding:6px 12px;max-width:min(52ch,90%);font-weight:600}
+.you::before{content:"You: ";color:var(--yellow);font-family:var(--f-mono);font-weight:700;font-size:13px}
+.rule{font-family:var(--f-mono);font-size:13.5px;line-height:1.45;background:var(--bone);border:1px dashed var(--muted);padding:7px 10px;max-width:64ch}
+.rule::before{content:"RULE  ";font-weight:700;letter-spacing:.08em}
+body.norules .rule{display:none}
+.big{font-family:var(--f-display);font-size:34px;line-height:1.05;margin:6px 0 0}
+.result{font-family:var(--f-mono);font-weight:700;font-size:14px;letter-spacing:.06em;text-transform:uppercase}
+.result.ok{color:var(--ink);background:var(--yellow);padding:1px 6px}
+.result.bad{color:var(--paper);background:var(--blood);padding:1px 6px}
+.scenebreak{font-family:var(--f-display);font-size:28px;border-top:3px solid var(--ink);padding-top:10px;margin-top:8px}
+.scenebreak small{display:block;font-family:var(--f-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+
+.rollrow{display:flex;flex-direction:column;gap:6px;border:2px solid var(--ink);padding:8px 10px;max-width:64ch;background:var(--paper)}
+.rollrow .lbl{font-family:var(--f-mono);font-size:13px}
+.dice{display:flex;flex-wrap:wrap;gap:6px}
+.die{width:34px;height:34px;border:2px solid var(--ink);border-radius:6px;background:var(--paper);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:4px;flex:none}
+.die i{width:6px;height:6px;border-radius:50%;background:var(--ink);place-self:center;visibility:hidden}
+.die.six{background:var(--yellow);box-shadow:0 0 0 2px var(--yellow), 0 0 0 4px var(--ink)}
+.die.foe{background:var(--ink);border-color:var(--ink)}
+.die.foe i{background:var(--paper)}
+.die.foe.six{background:var(--blood);box-shadow:none}
+.die.tumble{animation:tumble .12s linear infinite}
+@keyframes tumble{50%{transform:rotate(14deg) translateY(-2px)}}
+.vs{font-family:var(--f-display);font-size:20px;align-self:center;padding:0 4px}
+
+#choices{position:sticky;bottom:0;background:var(--paper);border-top:3px solid var(--ink);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:10px}
+#choices:empty{display:none}
+.opt{flex:1 1 220px;text-align:left;border:2px solid var(--ink);background:var(--paper);padding:9px 12px;cursor:pointer;box-shadow:3px 3px 0 var(--ink);transition:transform .08s, box-shadow .08s}
+.opt:hover{background:var(--yellow)}
+.opt:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--ink)}
+.opt b{display:block;font-weight:800;line-height:1.25}
+.opt span{display:block;font-family:var(--f-mono);font-size:12.5px;color:var(--muted);margin-top:2px}
+.opt.primary{background:var(--ink);color:var(--paper)}
+.opt.primary span{color:var(--yellow)}
+.opt.primary:hover{background:#2c2822}
+.opt.goof{background:var(--yellow)}
+.opt:disabled{opacity:.45;cursor:not-allowed}
+
+/* Character sheet */
+.sheet{position:sticky;top:calc(12px + env(safe-area-inset-top,0px));background:var(--paper);border:3px solid var(--ink);box-shadow:6px 6px 0 var(--ink);min-width:0}
+.sheet summary{list-style:none;cursor:pointer;background:var(--ink);color:var(--paper);padding:8px 14px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:0 10px;align-items:baseline}
+.sheet summary::-webkit-details-marker{display:none}
+.sheet summary .nm{font-family:var(--f-display);font-size:24px;line-height:1.1;min-width:0}
+.sheet summary .mini{font-family:var(--f-mono);font-size:12px;color:var(--yellow);white-space:nowrap}
+.sheet-body{padding:12px 14px 14px;display:flex;flex-direction:column;gap:12px}
+.bg{font-size:14.5px;line-height:1.35}
+.bg b{font-weight:800}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{border:2px solid var(--ink);text-align:center;padding:4px 0 6px}
+.stat .k{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.stat .v{font-family:var(--f-display);font-size:42px;line-height:1}
+.stat .v small{font-size:18px;color:var(--blood)}
+.sec{font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;border-bottom:1.5px solid var(--ink);padding-bottom:2px;margin-bottom:6px;display:flex;justify-content:space-between}
+.bodywrap{display:grid;grid-template-columns:96px 1fr;gap:10px;align-items:center}
+.bodywrap svg{width:96px;height:auto}
+.bp{stroke:var(--ink);stroke-width:5;stroke-linecap:round;fill:none}
+.bp.head{fill:var(--paper)}
+.bp.hurt{stroke:var(--blood);stroke-dasharray:3 4}
+.bp.head.hurt{fill:#F6D3CF}
+.bp.lost{stroke:var(--bone);fill:none}
+.parts{list-style:none;margin:0;padding:0;font-size:14px;line-height:1.55}
+.parts li{display:flex;justify-content:space-between;gap:6px}
+.parts li.lost{color:var(--muted);text-decoration:line-through}
+.dots{letter-spacing:2px;font-size:13px}
+.inv{list-style:none;margin:0;padding:0;font-size:14px;line-height:1.4;display:flex;flex-direction:column;gap:3px}
+.inv li{display:flex;justify-content:space-between;gap:8px}
+.inv .tagx{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);white-space:nowrap}
+.valbar{height:14px;border:2px solid var(--ink);background:var(--paper);position:relative}
+.valbar i{position:absolute;inset:0 auto 0 0;background:var(--yellow);border-right:2px solid var(--ink);transition:width .5s}
+.vrow{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:12.5px;margin-top:3px}
+.tokens{display:flex;gap:8px;flex-wrap:wrap}
+.tok{font-family:var(--f-mono);font-size:12px;border:1.5px solid var(--ink);padding:2px 7px;border-radius:999px}
+.tok.on{background:var(--yellow);font-weight:700}
+.tok.cond{background:var(--blood);color:var(--paper);border-color:var(--blood)}
+.empty-sheet{font-style:italic;color:var(--muted);font-size:14.5px}
+
+/* End card */
+.endcard{border:3px solid var(--ink);background:var(--yellow);padding:16px 18px;display:flex;flex-direction:column;gap:10px;max-width:64ch}
+.endcard h3{font-family:var(--f-display);font-weight:400;font-size:34px;line-height:1;margin:0}
+.learned{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px 14px;font-size:14.5px}
+.learned li::before{content:"✓ ";font-weight:800}
+.learned li.no{color:var(--muted)}
+.learned li.no::before{content:"○ "}
+.buy{display:flex;flex-wrap:wrap;gap:10px}
+.buy a{display:inline-block;text-decoration:none;border:2px solid var(--ink);background:var(--ink);color:var(--paper);padding:9px 14px;font-weight:800;box-shadow:3px 3px 0 var(--paper)}
+.buy a.alt{background:var(--paper);color:var(--ink);box-shadow:3px 3px 0 var(--ink)}
+.fine{font-family:var(--f-mono);font-size:12px;line-height:1.45}
+
+.foot{font-family:var(--f-mono);font-size:12px;margin-top:22px;max-width:80ch}
+
+@media (max-width: 860px){
+  .table{grid-template-columns:minmax(0,1fr)}
+  .sheet{order:-1;top:env(safe-area-inset-top,0px);z-index:5;box-shadow:4px 4px 0 var(--ink)}
+  .sheet-body{max-height:60vh;overflow:auto}
+  .masthead .adv{text-align:left}
+  #log{padding:14px 14px 6px}
+}
+@media (prefers-reduced-motion: reduce){
+  .die.tumble{animation:none}
+  .valbar i{transition:none}
+}
+</style>
+</head>
+<body>
+
+<div class="proto"><span><a href="../../" style="color:inherit">← All demos</a> · <b>PROTOTYPE</b> · try-before-you-buy demo engine</span><span>Not affiliated with The Griffon's Saddlebag</span></div>
+
+<div class="wrap">
+  <header class="masthead">
+    <div>
+      <h1>Skellies</h1>
+      <p class="tag">Relax, you're already dead.</p>
+    </div>
+    <div class="adv"><strong>Clogged!</strong>A 15-minute solo intro adventure. Real rules, real dice, one very sad plumbing system.</div>
+  </header>
+
+  <div class="table">
+    <main class="story" aria-live="polite">
+      <div class="story-head">
+        <span class="scene" id="sceneName">Prologue</span>
+        <label class="toggle"><input type="checkbox" id="rulesToggle" checked> Show rules</label>
+      </div>
+      <div id="log"></div>
+      <div id="choices"></div>
+    </main>
+
+    <details class="sheet" id="sheet" open>
+      <summary><span class="nm" id="sumName">Character sheet</span><span class="mini" id="sumMini">not risen yet</span></summary>
+      <div class="sheet-body" id="sheetBody">
+        <p class="empty-sheet">Your skelly appears here once the lich raises you. Bones, Brains, body parts, loot, and how much your lich currently values you.</p>
+      </div>
+    </details>
+  </div>
+
+  <p class="foot">Rules, the Skald lich, and the "Clogged!" adventure are adapted from <em>Skellies</em> by Griffin Macaulay &amp; John Webb (Criir / The Griffon's Saddlebag), licensed CC BY-SA 4.0. This demo text is shared under the same license. Skellies is a trademark of The Griffon's Saddlebag B.V. The solo version scales the rat encounter down for one player.</p>
+</div>
+
+<script>
+(() => {
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const $ = s => document.querySelector(s);
+const logEl = $('#log'), choicesEl = $('#choices');
+const d6 = () => 1 + Math.floor(Math.random()*6);
+const d3 = () => Math.ceil(d6()/2);
+const sleep = ms => new Promise(r => setTimeout(r, reduced ? 0 : ms));
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+$('#rulesToggle').addEventListener('change', e => document.body.classList.toggle('norules', !e.target.checked));
+try { if (localStorage.getItem('sk-rules') === 'off') { $('#rulesToggle').checked = false; document.body.classList.add('norules'); } } catch(e){}
+$('#rulesToggle').addEventListener('change', e => { try { localStorage.setItem('sk-rules', e.target.checked ? 'on' : 'off'); } catch(err){} });
+
+/* ---------- data ---------- */
+const BACKGROUNDS = {
+ 11:{bg:'Alchemist',bones:2,brains:4,inv:['2 vials of poison','Stack of parchment'],weapon:{name:'vial of poison (thrown)',stat:'brains',hands:1,ranged:true}},
+ 12:{bg:'Apothecary',bones:2,brains:4,inv:['Potion of growth & shrinking'],weapon:{name:'iron ladle',stat:'bones',hands:1}},
+ 13:{bg:'Bard',bones:2,brains:3,inv:['Luscious wig'],weapon:{name:'lute (swung)',stat:'bones',hands:1},theater:true},
+ 21:{bg:'Blacksmith',bones:3,brains:3,inv:['10 nails'],weapon:{name:'hammer',stat:'bones',hands:1}},
+ 22:{bg:'Court Jester',bones:3,brains:3,inv:['Bell-covered hat'],weapon:{name:'juggling balls (thrown)',stat:'brains',hands:1,ranged:true}},
+ 23:{bg:'Farmer',bones:3,brains:2,inv:['Pouch of seeds'],weapon:{name:'wooden pitchfork',stat:'bones',hands:2}},
+ 31:{bg:'Fisher',bones:3,brains:3,inv:['50ft of rope','Set of shiny lures'],weapon:{name:'fishing pole',stat:'bones',hands:1}},
+ 32:{bg:'Hunter',bones:3,brains:3,inv:['Hooded cloak'],weapon:{name:'bow',stat:'brains',hands:2,ranged:true}},
+ 33:{bg:'Innkeeper',bones:2,brains:3,inv:['Barrel of ale','A ledger'],weapon:{name:'iron mug',stat:'bones',hands:1}},
+ 41:{bg:'Jailer',bones:4,brains:2,inv:['Set of shackles'],weapon:{name:'greataxe',stat:'bones',hands:2}},
+ 42:{bg:'Knight',bones:3,brains:3,inv:[],weapon:{name:'longsword (two hands)',stat:'bones',hands:2},armor:{name:'Chain shirt',dots:3}},
+ 43:{bg:'Merchant',bones:2,brains:3,inv:['Wooden chest'],weapon:{name:'pouch of coins (swung)',stat:'bones',hands:1}},
+ 51:{bg:'Miner',bones:3,brains:2,inv:['Headlamp','Small lump of gold'],weapon:{name:'old pickaxe',stat:'bones',hands:2}},
+ 52:{bg:'Priest',bones:2,brains:4,inv:['Staff of Light (no Dark)'],weapon:{name:'priestly staff',stat:'bones',hands:1}},
+ 53:{bg:'Scribe',bones:2,brains:4,inv:['Ink bottle','Blank book'],weapon:{name:'very pointy quill',stat:'bones',hands:1}},
+ 61:{bg:'Soothsayer',bones:2,brains:4,inv:['Twiggy wand of levitation'],weapon:{name:'twiggy wand (poked)',stat:'bones',hands:1}},
+ 62:{bg:'Warrior',bones:4,brains:2,inv:[],weapon:{name:'battleaxe',stat:'bones',hands:1},armor:{name:'Battered buckler',dots:1}},
+ 63:{bg:'Wizard',bones:2,brains:4,inv:[],weapon:{name:'charred staff of fire',stat:'brains',hands:1,ranged:true,uses:2}},
+};
+const FEATURES = {
+ 11:'One eye socket is larger. Inquisitive!',12:'Some colorful mold grew on you.',13:'Your joints are loose. Percussive!',
+ 21:'Your chin is truly enormous.',22:'Pebbles rattle in your skull. Maraca!',23:'Your skull cracks look a little rude.',
+ 31:'Your skull is oddly shiny and polished.',32:'There is still an arrow in your skull.',33:'You really do have two left feet.',
+ 41:'Your chest is a little indented. Smoosh.',42:'Wow, you broke a lot of bones before.',43:'You have gold teeth. Fancy!',
+ 51:'You were impaled once, by something big.',52:'Lucky! A scrap of flesh is left.',53:'Ink spilled on your bones. Tie-dye!',
+ 61:'Moss grew into a perfect mustache.',62:'Your spine is long. Is that a small tail?',63:'Your skull is full of glowy fungus.',
+};
+const AGES = ['', d=>`${d} seconds`, d=>`${d} days`, d=>`${d*3} days`, d=>`${d*2} months`, d=>`${d*2} years`, d=>`${d} centuries`];
+const NAMES = ['Rattles','Femur Jenkins','Sir Clackington','Marrowbeth','Tibia Turner','Patella Pete','Lady Ulna','Cranius Maximus','Knuckles McGee','Sternum Sue','Phalange Phil','Coccyx Carl'];
+const DEATHS = [
+ 'Challenged a goose to a duel. Lost. Twice.',
+ 'Ate a mushroom labeled "do not eat this mushroom".',
+ 'Fell into a well while wishing not to fall into a well.',
+ 'Tried to pet a bear that was clearly a different, angrier bear.',
+ 'Laughed so hard at a pun that you stopped.',
+ 'Volunteered to test the new catapult. From the inside.',
+ 'Was buried alive by an overly enthusiastic sandcastle.',
+ 'Sneezed during a very quiet sword fight.',
+ 'Insulted a wizard\'s hat. To the wizard. Wearing it.',
+];
+const PARTS = {torso:'Torso', larm:'Left arm', rarm:'Right arm', lleg:'Left leg', rleg:'Right leg', head:'Skull'};
+const PART_BY_ROLL = {1:'torso',2:'larm',3:'rarm',4:'lleg',5:'rleg',6:'head'};
+const FISTS = {name:'bony fists',stat:'bones',hands:0};
+
+const used = new Set();   // mechanics the visitor has experienced
+let C = null;             // current skelly
+let loot = [];            // treasure carried back to the lich
+let sceneTitle = 'Prologue';
+
+/* ---------- log + choices ---------- */
+function add(cls, html){
+  const d = document.createElement('div'); d.className = cls; d.innerHTML = html;
+  logEl.appendChild(d);
+  requestAnimationFrame(() => d.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'}));
+  return d;
+}
+const gm = h => add('line gm', `<span class="who">GM</span>${h}`);
+const lich = h => add('line lich', `<span class="who">Skald, the Immortal Bard</span>${h}`);
+const you = h => add('line you', h);
+const rule = h => add('rule', h);
+function scene(name, sub){ sceneTitle = name; $('#sceneName').textContent = name; add('scenebreak', `<small>${sub||''}</small>${name}`); }
+
+function choose(opts){
+  return new Promise(res => {
+    choicesEl.innerHTML = '';
+    opts.forEach(o => {
+      const b = document.createElement('button');
+      b.className = 'opt' + (o.cls ? ' ' + o.cls : '');
+      b.innerHTML = `<b>${o.label}</b>${o.sub ? `<span>${o.sub}</span>` : ''}`;
+      if (o.disabled) b.disabled = true;
+      b.addEventListener('click', () => {
+        choicesEl.innerHTML = '';
+        if (o.say !== false) you(o.say || o.label);
+        res(o.id);
+      });
+      choicesEl.appendChild(b);
+    });
+    const first = choicesEl.querySelector('button:not(:disabled)');
+    requestAnimationFrame(() => choicesEl.scrollIntoView({block:'nearest', behavior: reduced ? 'auto' : 'smooth'}));
+    if (first && matchMedia('(pointer:fine)').matches) first.focus({preventScroll:true});
+  });
+}
+const cont = (label='Continue') => choose([{id:'c',label,cls:'primary',say:false}]);
+
+/* ---------- dice ---------- */
+const PIPS = {1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function dieEl(v, foe){
+  const d = document.createElement('div'); d.className = 'die' + (foe ? ' foe' : '');
+  for (let i=0;i<9;i++) d.appendChild(document.createElement('i'));
+  setFace(d, v); return d;
+}
+function setFace(d, v){
+  [...d.children].forEach((p,i) => p.style.visibility = PIPS[v].includes(i) ? 'visible' : 'hidden');
+  d.setAttribute('aria-label', 'die showing ' + v);
+}
+async function rollDice(label, groups){
+  // groups: [{n, foe, sixes:true}] ; returns arrays of values per group
+  const row = add('rollrow', `<span class="lbl">${label}</span>`);
+  const wrap = document.createElement('div'); wrap.className = 'dice'; row.appendChild(wrap);
+  const out = []; const els = [];
+  groups.forEach((g, gi) => {
+    if (gi > 0) { const s = document.createElement('span'); s.className = 'vs'; s.textContent = 'vs'; wrap.appendChild(s); }
+    const vals = []; const ge = [];
+    for (let i=0;i<g.n;i++){ const v = d6(); vals.push(v); const e = dieEl(d6(), g.foe); e.classList.add('tumble'); wrap.appendChild(e); ge.push(e); }
+    out.push(vals); els.push(ge);
+  });
+  for (let t=0;t<6;t++){ await sleep(70); els.flat().forEach(e => setFace(e, d6())); }
+  els.forEach((ge, gi) => ge.forEach((e, i) => { e.classList.remove('tumble'); setFace(e, out[gi][i]); if (out[gi][i] === 6 && groups[gi].sixes !== false) e.classList.add('six'); }));
+  await sleep(250);
+  return {vals: out, row};
+}
+const sixes = a => a.filter(v => v === 6).length;
+function stamp(row, ok, text){ const s = document.createElement('span'); s.className = 'result ' + (ok ? 'ok' : 'bad'); s.textContent = text; row.appendChild(s); }
+
+/* ---------- character ---------- */
+function rollTable(){ return `${d6()}${d3()}`; }
+function newSkelly(code, featCode, name){
+  const B = BACKGROUNDS[code];
+  const a = d6(), ad = d6();
+  return {
+    name: name || pick(NAMES), code, bg:B.bg, bones:B.bones, brains:B.brains,
+    feature: FEATURES[featCode], age: AGES[a](ad),
+    inv:[...B.inv], weapon: B.weapon ? {...B.weapon, dots: B.weapon.uses || 3} : {...FISTS},
+    armor: B.armor ? {...B.armor} : null,
+    parts:{torso:2,larm:2,rarm:2,lleg:2,rleg:2,head:2}, conds:[],
+    value:0, level:0, insp:false, theater: !!B.theater, rewards:[]
+  };
+}
+const lostArms = () => ['larm','rarm'].filter(p => C.parts[p] === 0).length;
+const effBrains = () => C.parts.head === 0 ? Math.ceil(C.brains/2) : C.brains;
+const need = () => [15,30,45][C.level] || 45;
+
+function render(){
+  if (!C) return;
+  $('#sumName').textContent = C.name;
+  $('#sumMini').textContent = `Bones ${C.bones} · Brains ${effBrains()} · ${C.value}/${need()} value`;
+  const dots = n => '●'.repeat(n) + '○'.repeat(2-n);
+  const pc = p => C.parts[p] === 0 ? 'lost' : C.parts[p] === 1 ? 'hurt' : '';
+  const w = C.weapon;
+  $('#sheetBody').innerHTML = `
+    <div class="bg"><b>${esc(C.bg)}</b>, level ${C.level}. Dead for ${esc(C.age)}.<br>${esc(C.feature)}</div>
+    <div class="stats">
+      <div class="stat"><div class="k">Bones</div><div class="v">${C.bones}</div></div>
+      <div class="stat"><div class="k">Brains</div><div class="v">${effBrains()}${effBrains() !== C.brains ? `<small> /${C.brains}</small>` : ''}</div></div>
+    </div>
+    <div>
+      <div class="sec"><span>Value to your lich</span><span>Level ${C.level}</span></div>
+      <div class="valbar"><i style="width:${Math.min(100, C.value/need()*100)}%"></i></div>
+      <div class="vrow"><span>${C.value} value</span><span>${need()} to level up</span></div>
+    </div>
+    <div>
+      <div class="sec"><span>Body parts</span><span>2 hits each</span></div>
+      <div class="bodywrap">
+        <svg viewBox="0 0 100 150" aria-hidden="true">
+          <circle class="bp head ${pc('head')}" cx="50" cy="20" r="14"/>
+          <path class="bp ${pc('torso')}" d="M50 36 V92 M36 50 H64 M38 62 H62 M40 74 H60 M42 92 H58"/>
+          <path class="bp ${pc('larm')}" d="M36 46 L22 72 L18 98"/>
+          <path class="bp ${pc('rarm')}" d="M64 46 L78 72 L82 98"/>
+          <path class="bp ${pc('lleg')}" d="M44 94 L38 120 L36 144"/>
+          <path class="bp ${pc('rleg')}" d="M56 94 L62 120 L64 144"/>
+        </svg>
+        <ul class="parts">${Object.keys(PARTS).map(p => `<li class="${C.parts[p]===0?'lost':''}"><span>${PARTS[p]}</span><span class="dots">${dots(C.parts[p])}</span></li>`).join('')}</ul>
+      </div>
+    </div>
+    <div>
+      <div class="sec"><span>Inventory</span><span>uses</span></div>
+      <ul class="inv">
+        <li><span>${esc(w.name.charAt(0).toUpperCase()+w.name.slice(1))}</span><span class="tagx">${w.stat === 'bones' ? 'Bones' : 'Brains'}${w.hands ? ' +'+w.hands+'d6' : ''}${w.hands ? ' · '+'●'.repeat(w.dots) : ''}</span></li>
+        ${C.armor ? `<li><span>${esc(C.armor.name)}</span><span class="tagx">armor · ${'●'.repeat(C.armor.dots) || 'broken'}</span></li>` : ''}
+        ${C.inv.map(i => `<li><span>${esc(i)}</span><span class="tagx"></span></li>`).join('')}
+        ${loot.map(l => `<li><span>${esc(l.name)}</span><span class="tagx">loot · ${l.dice}d6</span></li>`).join('')}
+      </ul>
+    </div>
+    <div class="tokens">
+      <span class="tok ${C.insp ? 'on' : ''}">${C.insp ? '★ Inspiration' : '☆ No inspiration'}</span>
+      ${C.conds.map(c => `<span class="tok cond">${esc(c)}</span>`).join('')}
+      ${C.rewards.map(r => `<span class="tok">${esc(r)}</span>`).join('')}
+    </div>`;
+}
+
+/* ---------- checks ---------- */
+async function check({stat, trick=0, label, arms=false, weapon=null, bonus=0, bonusLabel='', why=''}){
+  used.add('check');
+  let base = stat === 'bones' ? C.bones : effBrains();
+  if (trick) used.add('trick');
+  if (C.insp){
+    const c = await choose([
+      {id:'roll', label:`Roll ${label}`, cls:'primary', say:false},
+      {id:'insp', label:'Spend Inspiration, then roll', sub:'Way Less Tricky: +2d6', say:'I spend my Inspiration!'}
+    ]);
+    if (c === 'insp'){ C.insp = false; trick += 2; used.add('insp'); render(); }
+  }
+  const parts = [`${stat === 'bones' ? 'Bones' : 'Brains'} ${base}`];
+  let n = base;
+  if (weapon && weapon.hands){ n += weapon.hands; parts.push(`+${weapon.hands} (${weapon.hands} hand${weapon.hands>1?'s':''} on ${weapon.name})`); }
+  if (bonus){ n += bonus; parts.push(`+${bonus} (${bonusLabel})`); }
+  if (trick){ n += trick; parts.push(`${trick>0?'+':'−'}${Math.abs(trick)} (${trick>=2?'Way Less':trick===1?'Less':trick===-1?'More':'Way More'} Tricky)`); }
+  const ap = (arms && stat === 'bones') ? lostArms() : 0;
+  if (ap){ n -= ap; parts.push(`−${ap} (missing arm)`); }
+  const desc = `${label}: ${parts.join(' ')} = <b>${Math.max(0,n)}d6</b>`;
+  if (n <= 0){
+    const r = add('rollrow', `<span class="lbl">${desc}</span>`);
+    stamp(r, false, 'No dice, no chance');
+    rule('Trickiness can shrink your pool to zero. Then only a Goof (or Inspiration) can save you.');
+    return {ok:false, s:0};
+  }
+  const {vals, row} = await rollDice(desc, [{n}]);
+  const s = sixes(vals[0]);
+  stamp(row, s > 0, s > 0 ? `Success · ${s} six${s>1?'es':''}` : 'Failure · no sixes');
+  return {ok: s > 0, s};
+}
+async function opposed({label, mine, theirs, foeName}){
+  used.add('opposed');
+  const {vals, row} = await rollDice(`${label}: your ${mine}d6 vs ${foeName}'s ${theirs}d6. More sixes wins; ties go to the defender.`, [{n:mine},{n:theirs,foe:true}]);
+  const a = sixes(vals[0]), b = sixes(vals[1]);
+  return {a, b, row};
+}
+
+/* ---------- body parts, hits, death ---------- */
+function goofPart(prefs){ return prefs.find(p => C.parts[p] > 0) || ['larm','rarm','lleg','rleg','head'].find(p => C.parts[p] > 0) || null; }
+async function losePart(p, how){
+  C.parts[p] = 0; used.add('parts');
+  if (p === 'torso'){
+    gm(`Your torso gives out. Every other bone you own flies off in a different direction. ${how||''}`);
+    rule('Lose your torso and all your parts are lost. In Skellies that just means you make a new skelly.');
+    render(); await respawn(); return;
+  }
+  if (p === 'larm' || p === 'rarm'){
+    const w = C.weapon;
+    if (w.hands === 2 || (w.hands === 1 && (p === 'rarm' || C.parts.rarm === 0))){
+      if (w.hands) gm(`The ${w.name} clatters away with the arm. You're down to ${C.parts.larm + C.parts.rarm > 0 ? 'one bony fist' : 'headbutts'}.`);
+      C.weapon = {...FISTS};
+    }
+    rule('Lost arm: you drop what it held, and Bones checks that use your arms roll 1 fewer die.');
+  }
+  if (p === 'lleg' || p === 'rleg') rule('Lost leg: you move half as far. Lose both and you hop, or drag yourself with dignity.');
+  if (p === 'head'){ if (!C.conds.includes('Confused')) C.conds.push('Confused'); rule('Lost skull: you are confused and roll half as many Brains dice (rounded up). You can still see and talk through it, wherever it rolled off to.'); }
+  render();
+}
+async function takeHit(source, {noArmor=false}={}){
+  const {vals, row} = await rollDice(`${source} hits you. Roll a d6 for the body part.`, [{n:1, sixes:false}]);
+  const p = PART_BY_ROLL[vals[0][0]];
+  stamp(row, false, PARTS[p]);
+  if (C.parts[p] === 0){ gm(`It hits right where your ${PARTS[p].toLowerCase()} used to be. Nothing happens. Lucky you!`); rule('A hit on a part you already lost does nothing.'); return; }
+  if (C.armor && C.armor.dots > 0 && !noArmor){
+    const c = await choose([
+      {id:'armor', label:`Take it on the ${C.armor.name.toLowerCase()}`, sub:`Mark 1 of ${C.armor.dots} armor usage`, say:`My ${C.armor.name.toLowerCase()} takes it!`},
+      {id:'bone', label:`Let the ${PARTS[p].toLowerCase()} take it`, sub:`${C.parts[p]} usage left on that part`}
+    ]);
+    if (c === 'armor'){
+      used.add('armor'); C.armor.dots--; render();
+      rule('Armor can take a hit for you. You choose after seeing which part got hit.');
+      if (C.armor.dots === 0) gm(`Your ${C.armor.name.toLowerCase()} is depleted. It falls apart with a sad clank.`);
+      return;
+    }
+  }
+  C.parts[p]--; used.add('parts'); render();
+  if (C.parts[p] === 0){ gm(`Your ${PARTS[p].toLowerCase()} pops off!`); await losePart(p); }
+  else { gm(`Crack. Your ${PARTS[p].toLowerCase()} is hanging on by a thread of necromancy.`); rule('No hit points here. Each body part has 2 usage dots. Mark one per hit; when both are marked, it falls off.'); }
+}
+async function respawn(){
+  await cont('Wait for Skald to notice');
+  lich(`"Ugh, <i>another</i> one scattered across my plumbing? Fine. FINE. Rise, and do try to keep your femurs about you this time."`);
+  const code = rollTable(), f = rollTable();
+  const old = C;
+  C = newSkelly(code, f);
+  C.level = old.level; C.value = old.value; C.rewards = old.rewards;
+  gm(`Skald's magic sweeps up a fresh pile of bones. Meet <b>${esc(C.name)}</b>, formerly a ${C.bg.toLowerCase()} (rolled ${code} on the Make-A-Skelly table). The soggy loot pile is still here.`);
+  rule('Death is a speed bump in Skellies. You roll up a new skelly and keep playing.');
+  render();
+}
+async function offerGoof({fail, goof, prefs}){
+  const p = goofPart(prefs);
+  if (!p) return false;
+  const c = await choose([
+    {id:'goof', label:'Goof it!', sub:`Auto-succeed, but lose your ${PARTS[p].toLowerCase()}`, cls:'goof', say:goof(PARTS[p].toLowerCase())},
+    {id:'fail', label:fail, say:false}
+  ]);
+  if (c !== 'goof') return false;
+  used.add('goof');
+  gm('Ha! The table loves it. That counts as a success.');
+  rule('Goof: when you fail, describe a silly failure that helps anyway. Here that means you automatically succeed but lose a body part.');
+  await losePart(p);
+  if (!C.insp){ C.insp = true; used.add('insp'); gm('That was so dumb it was brilliant. Take <b>Inspiration</b>.'); rule('Inspiration rewards great hijinks. Spend it to make any check Way Less Tricky (+2 dice) or gain 1d6 value.'); render(); }
+  return true;
+}
+
+/* ---------- attacks and combat ---------- */
+async function attack(target, {underwater=true}={}){
+  const w = C.weapon;
+  const r = await check({stat:w.stat, label:`Attack the ${target} with your ${w.name}`, arms:true, weapon:w});
+  let hits = r.s;
+  if (w.ranged && underwater && hits > 0){ hits--; rule('Underwater, ranged attacks score 1 fewer hit.'); }
+  if (w.hands) w.used = true;
+  return hits;
+}
+async function afterCombat(){
+  const w = C.weapon;
+  if (!w.used || !w.hands) return;
+  w.used = false;
+  used.add('usage');
+  const {vals, row} = await rollDice(`After combat: roll a d6 for your ${w.name}. On 1–3 it marks a usage.`, [{n:1, sixes:false}]);
+  if (vals[0][0] <= 3){
+    w.dots--; stamp(row, false, 'Usage marked');
+    if (w.dots <= 0){ gm(`Your ${w.name} finally gives up and falls apart. Fists it is.`); C.weapon = {...FISTS}; }
+  } else stamp(row, true, 'Holds up');
+  rule('Gear wears out. After each fight, roll for anything you used: 1–3 marks a usage dot. When all dots are marked, it is used up.');
+  render();
+}
+async function ratFight(count){
+  used.add('combat');
+  let rats = count;
+  const {vals, row} = await rollDice('Who goes first? GM rolls a d6: 1–3 enemies, 4–6 you.', [{n:1, sixes:false}]);
+  let yourTurn = vals[0][0] >= 4;
+  stamp(row, yourTurn, yourTurn ? 'You go first' : 'Rats go first');
+  rule('Combat goes in turns. On your turn you can move across a room and take one action, like an attack. Each six you roll is one hit.');
+  while (rats > 0){
+    if (yourTurn){
+      const c = await choose([
+        {id:'atk', label:`Swing your ${C.weapon.name}`, sub:`${C.weapon.stat === 'bones' ? 'Bones' : 'Brains'} ${C.weapon.stat==='bones'?C.bones:effBrains()} + ${C.weapon.hands}d6 for hands. Each six = 1 hit`, say:`I go for the nearest rat with my ${C.weapon.name}!`},
+        {id:'stomp', label:'Stomp the nearest rat', sub:`Bones ${C.bones}, no weapon`, say:'I stomp on it! With feeling!'}
+      ]);
+      let hits;
+      if (c === 'atk') hits = await attack('rat');
+      else { hits = (await check({stat:'bones', label:'Stomp the rat'})).s; }
+      if (hits > 0){
+        const k = Math.min(hits, rats); rats -= k;
+        gm(k === 1 ? `Splat. One giant rat sinks to the bottom. ${rats ? rats + ' left.' : ''}` : `${k} rats at once! A bony blur of pest control. ${rats ? rats + ' left.' : ''}`);
+        rule('Giant rats take 1 hit to defeat. Extra sixes carry over to the next rat.');
+      } else gm('Bubbles everywhere. You miss. The rats look smug, which is hard to do underwater.');
+      if (!rats) break;
+    }
+    // rats' turn
+    const {vals: rv, row: rrow} = await rollDice(`The ${rats} rat${rats>1?'s':''} gnaw (Bones 1 each, so 1d6 per rat).`, [{n:rats, foe:true}]);
+    const h = sixes(rv[0]);
+    stamp(rrow, h === 0, h ? `${h} hit${h>1?'s':''} on you` : 'All miss');
+    for (let i=0;i<h;i++) await takeHit('A giant rat');
+    yourTurn = true;
+  }
+  gm('The last rat floats belly-up. The pump station is yours.');
+  await afterCombat();
+}
+
+/* ---------- level up ---------- */
+const REWARDS = {
+  1:{art:'Rusted flute of charming', artTxt:'When played, nearby living creatures must make a Brains check or calm down for a few rounds.', bl:'Good Lungs', blTxt:'Your lungs grow back. +1d6 to checks to convince, charm, or threaten.'},
+  2:{art:'Ring of operatic screaming', artTxt:'Once a day it warns you, loudly, of a nearby trap or ambush.', bl:'Critical Eye', blTxt:'One magic eyeball. +1d6 to ranged attacks and to spot hidden things.'},
+  3:{art:'Ghostly critic\'s pen', artTxt:'It writes scathing reviews of enemies. Show one to a creature and it takes 1 hit.', bl:'Sing-a-Spell', blTxt:'Once a day, sing the song in your skull to cast a random spell. Fail and everyone boos you.'}
+};
+async function levelUp(double=false){
+  used.add('level');
+  C.level++; C.value = 0;
+  Object.keys(C.parts).forEach(p => C.parts[p] = 2);
+  C.conds = C.conds.filter(c => c !== 'Confused');
+  gm(`<p class="big">Level ${C.level}!</p>Skald waves a hand and every lost bone comes skittering home and snaps back into place.`);
+  rule('Leveling up restores all your body parts, raises Bones or Brains by 1 (max 5), and earns a reward from your lich. Your value resets to 0.');
+  render();
+  const c = await choose([
+    {id:'bones', label:'+1 Bones', sub:`${C.bones} → ${Math.min(5,C.bones+1)}. Stronger, sturdier, better at hitting`, disabled:C.bones>=5},
+    {id:'brains', label:'+1 Brains', sub:`${C.brains} → ${Math.min(5,C.brains+1)}. Cleverer, better at magic and talking`, disabled:C.brains>=5}
+  ]);
+  if (c === 'bones') C.bones = Math.min(5, C.bones+1); else C.brains = Math.min(5, C.brains+1);
+  render();
+  const rolls = double ? 2 : 1;
+  for (let i=0;i<rolls;i++){
+    const {vals, row} = await rollDice('Roll a d3 on Skald\'s Rewards table.', [{n:1, sixes:false}]);
+    const r = Math.ceil(vals[0][0]/2); const R = REWARDS[r];
+    stamp(row, true, `d3 = ${r}`);
+    const pickR = await choose([
+      {id:'art', label:`Artifact: ${R.art}`, sub:R.artTxt},
+      {id:'bl', label:`Dark Blessing: ${R.bl}`, sub:R.blTxt}
+    ]);
+    C.rewards.push(pickR === 'art' ? R.art : R.bl);
+    render();
+  }
+}
+
+/* ---------- the adventure ---------- */
+async function prologue(){
+  scene('Prologue', 'Congratulations, you\'re dead');
+  gm('Years of your life flash before you. Your flesh chills, and you relax into the welcoming oblivion of death.');
+  await sleep(500);
+  gm('Then your eyes open again. Well, sort of. You have no eyes. You are a <b>skeleton</b>, raised by a powerful lich, and you love that lich more than anything. Living people have gods and parents. You have one weirdo who does both jobs.');
+  rule('This is a demo of a pen-and-paper RPG. Normally a human Game Master narrates and you roll real dice. Here the page plays the GM, and every roll follows the book\'s rules.');
+  await cont('Make my skelly');
+  await createSkelly();
+}
+
+async function createSkelly(){
+  scene('Make-A-Skelly', 'Character creation');
+  rule('Skellies uses only six-sided dice. A "d63" means: roll a d6 for the tens and a d3 (half a d6, rounded up) for the ones. So results run 11 to 63.');
+  while (true){
+    const {vals, row} = await rollDice('Roll a d63 for your mortal background', [{n:1, sixes:false},{n:1, sixes:false}]);
+    row.querySelector('.vs').textContent = '&';
+    const code = `${vals[0][0]}${Math.ceil(vals[1][0]/2)}`;
+    stamp(row, true, `= ${code}`);
+    const {vals: fv, row: frow} = await rollDice('Roll another d63 for a distinguishing feature', [{n:1, sixes:false},{n:1, sixes:false}]);
+    frow.querySelector('.vs').textContent = '&';
+    const fcode = `${fv[0][0]}${Math.ceil(fv[1][0]/2)}`;
+    stamp(frow, true, `= ${fcode}`);
+    C = newSkelly(code, fcode);
+    render();
+    const B = BACKGROUNDS[code];
+    gm(`You were a <b>${B.bg.toLowerCase()}</b> in life. You rise with <b>Bones ${C.bones}</b> and <b>Brains ${C.brains}</b>, clutching your old ${C.weapon.name}${C.inv.length ? ' and ' + C.inv.map(i=>i.toLowerCase()).join(', ') : ''}. Distinguishing feature: ${C.feature.toLowerCase()} You've been dead for ${C.age}.`);
+    rule('Bones is strength and hardiness. Brains is cleverness, magic, and aim. To do anything risky, you roll that many d6. Any single six means success.');
+    const c = await choose([
+      {id:'keep', label:`Keep ${C.name}`, cls:'primary', say:`I'm ${C.name}. Let's go.`},
+      {id:'re', label:'Roll again', sub:'In the real game, the GM might let you', say:'Can I reroll?'}
+    ]);
+    if (c === 'keep') break;
+  }
+  gm('Before we start: a Skellies tradition. Tell the table how you died. Sillier is better.');
+  const ds = [...DEATHS].sort(() => Math.random()-.5).slice(0,3);
+  const d = await choose(ds.map((t,i) => ({id:i, label:t, say:`I died like this: ${t.toLowerCase()}`})));
+  C.insp = true; used.add('insp');
+  gm('Incredible. Truly a death for the ages. Take <b>Inspiration</b> for that.');
+  rule('Inspiration rewards good, silly play. Spend it to make one check Way Less Tricky (+2 dice). You can only hold one at a time.');
+  render();
+  await cont('Meet my lich');
+  await meetSkald();
+}
+
+async function meetSkald(){
+  scene('The Amphitheater', 'Skald\'s lair, a ruined castle');
+  gm('You clatter into a vast ruined amphitheater. Hundreds of ghosts sing in two pitches only, bass and soprano. Some of them look familiar. One of them is you.');
+  gm('Center stage, under a single spotlight he lit himself, stands your lich: <b>Skald, the Immortal Bard</b>. The reviews call him the greatest bard lich the world has ever feared.');
+  lich('"A NEW cast member! Welcome, welcome! Darling, the dress rehearsal is ruined. RUINED. The pipes beneath my castle are clogged, and I cannot dispose of corpses, treasure, or my rejected first drafts. You will dive in and unclog them."');
+  rule('Every Skellies game has a lich who gives you jobs. Do them well, bring back treasure, and the lich values you more. Earn enough value and you level up.');
+  lich('"Rules of my house. <b>Do</b> bring me theater: anything about music, dance, or fashion pleases me. <b>Don\'t</b> bring me garbage. And <b>do</b> sing when you speak to me. But not <i>too</i> well."');
+  const c = await choose([
+    {id:'a', label:'"Your Dreadfulness, I live to plunge."', say:'"Your Dreadfulness, I live to plunge."'},
+    {id:'b', label:'"Wait, what are the pipes used for?"', say:'"Wait, what are the pipes used for, exactly?"'},
+  ]);
+  if (c === 'b') lich('"Plot holes, mostly. Off you go!"'); else lich('"That\'s the spirit. Chop chop!"');
+  await cont('Dive into the pipes');
+  await chamber();
+}
+
+async function chamber(){
+  scene('1 · Sad Overflow Chamber', 'Clogged! · obstacle 1 of 3');
+  gm('The plumbing is completely flooded. Good thing skeletons don\'t breathe. You swim downward, slowly, through water the color of old soup.');
+  rule('Underwater, everyone moves at half speed and ranged attacks score 1 fewer hit.');
+  gm('You reach a big iron overflow chamber. It isn\'t draining. And is it... crying? Years of soaking in a lich\'s waste have made it sentient, and it is having an existential crisis. <i>"Is my only purpose to move murky water from one place to another?"</i>');
+  gm('(The answer is yes.)');
+  const c = await choose([
+    {id:'console', label:'Console it', sub:`Brains check, Way More Tricky (−2). You roll ${Math.max(0,effBrains()-2)}d6`, say:'"Hey. Hey. Moving murky water is a calling. You\'re basically a hero."'},
+    {id:'threat', label:'Intimidate it', sub:`Brains check, Way More Tricky (−2). You roll ${Math.max(0,effBrains()-2)}d6`, say:'"Drain, or I tell everyone you leak."'},
+    {id:'friend', label:'Offer to be its friend. Forever.', sub:'You\'re lost for good, but you instantly gain a level', say:'"What if... I stayed with you? Forever?"'}
+  ]);
+  if (c === 'friend') return befriend();
+  rule('Trickiness adds or removes dice. This chamber is deeply sad, so it\'s Way More Tricky: 2 fewer dice. With low Brains, that can mean no dice at all.');
+  const r = await check({stat:'brains', trick:-2, label: c === 'console' ? 'Console the chamber' : 'Intimidate the chamber'});
+  if (r.ok){
+    gm(c === 'console' ? 'The chamber sniffles. <i>"A... hero?"</i> It gurgles proudly and opens its valve.' : 'The chamber gasps. <i>"I do NOT leak!"</i> It drains furiously to prove it.');
+  } else {
+    gm('The chamber sobs harder. A tidal wave of self-pity slams you into the wall.');
+    rule('Each skelly gets one try at this. When you fail, you can turn it into a Goof.');
+    const g = await offerGoof({
+      fail:'Offer to be its friend forever instead',
+      goof: part => `My ${part} gets stuck in the valve and I yank it off. The chamber laughs so hard it forgets to be sad and opens up!`,
+      prefs:['larm','lleg','rleg']
+    });
+    if (!g) return befriend();
+  }
+  await chamberLoot();
+}
+async function chamberLoot(){
+  gm('Water rushes. Muck shifts. Something glints: a tarnished wedding band. And another. And a third. Not even real gold. Someone in this castle has a type.');
+  loot.push({name:'Tarnished wedding band', dice:1}, {name:'Tarnished wedding band', dice:1}, {name:'Tarnished wedding band', dice:1});
+  render();
+  rule('Treasure is worth value in d6s. You roll it when you present it to your lich. Each band is worth 1d6.');
+  await cont('Swim on');
+  await pump();
+}
+async function befriend(){
+  gm(`The chamber goes quiet. Then it wraps you in a damp, rusty hug. ${esc(C.name)} has a new home now, and they seem happy. The valve opens with a contented sigh.`);
+  rule('Offering yourself as its friend costs you this skelly for good. In return your next skelly immediately gains a level.');
+  await cont('Rise as a new skelly');
+  const old = C;
+  C = newSkelly(rollTable(), rollTable());
+  lich(`"A sacrifice for plumbing! How TRAGIC. How BEAUTIFUL. I'll write a ballad. You, new one, get down there."`);
+  gm(`Meet <b>${esc(C.name)}</b>, formerly a ${C.bg.toLowerCase()}, Bones ${C.bones}, Brains ${C.brains}.`);
+  render();
+  await levelUp();
+  await chamberLoot();
+}
+
+async function pump(){
+  scene('2 · Rusty Pump Station', 'Clogged! · obstacle 2 of 3');
+  gm('The gears of this pump station are rusted solid and coated in green slime. As you lean in for a closer look, the muck... moves.');
+  gm('Three <b>giant rats</b> burst out of the sludge, mutated amphibious by the probably toxic water. They want to chew on something. You are mostly something.');
+  rule('Giant rat: Bones 1, Brains 1, takes 1 hit to defeat. (The book has 4 rats for a group of skellies. This solo demo uses 3.)');
+  await cont('Fight!');
+  await ratFight(3);
+  await fixGears();
+}
+async function fixGears(){
+  gm('Now for those gears. They\'re rusted stiff, so you\'ll need to force them.');
+  while (true){
+    const r = await check({stat:'bones', trick:-1, arms:true, label:'Force the gears (Bones, More Tricky −1)'});
+    if (r.ok){ gm('With a horrible screech, the gears turn. The pump wheezes back to life!'); break; }
+    gm('The gears don\'t budge. Worse, all that clanging woke something up.');
+    const g = await offerGoof({
+      fail:'Fight the rat, then try again',
+      goof: part => `I jam my ${part} into the gears as a lever. It snaps off, but the gears start turning!`,
+      prefs:['lleg','rleg','larm']
+    });
+    if (g){ gm('The gears grind your bone into a fine powder and start turning. The pump wheezes back to life!'); break; }
+    gm('Another giant rat paddles out of the muck.');
+    rule('Failing to fix the gears summons another rat. That\'s the cost of failure here.');
+    await ratFight(1);
+  }
+  gm('Something tumbles out of the turning gears: a curiously shaped lump of rusted metal. In the right light, if you squint, it looks a bit like Skald.');
+  loot.push({name:'Rusted metal "sculpture"', dice:0, art:true});
+  render();
+  await cont('Swim deeper');
+  await ooze();
+}
+
+async function ooze(){
+  scene('3 · Overgrown Ooze', 'Clogged! · final obstacle');
+  gm('Last stretch of pipe. Heads up: <b>this is the final scene</b>. Use your Inspiration if you\'ve got it.');
+  rule('A good GM tells players when the last scene starts, so they can spend Inspiration and wrap up plans.');
+  gm('Wedged in the outflow pipe is an <b>Ooze Monstrosity</b>, grown huge on years of alchemical waste. Shiny junk floats inside its body, including a sword. It is stuck, and it is sulking.');
+  rule('Ooze Monstrosity: Bones 7, Brains 1, takes 8 hits to defeat. Brutally strong, famously dim. Think about which stat you want to test it on.');
+  let oozeHits = 8, angry = false, absorbed = false, sword = false, done = false, wriggles = 0;
+  while (!done){
+    if (absorbed){
+      const r = await (async () => { await choose([{id:'w', label:'Wriggle free', sub:`Bones check, ${C.bones}d6`, cls:'primary', say:'I wriggle! I squirm! I flail!'}]); return check({stat:'bones', label:'Wriggle out of the ooze'}); })();
+      if (r.ok){ absorbed = false; gm('You pop free with a noise nobody will ever forget.'); }
+      else {
+        wriggles++;
+        const g = await offerGoof({fail:'Stay stuck (take another hit)', goof: part => `I leave my ${part} inside as a decoy and swim off while it's distracted!`, prefs:['lleg','rleg','larm']});
+        if (g){ absorbed = false; gm('The ooze happily digests your decoy. You are free!'); }
+      }
+      if (absorbed){ gm('The ooze\'s digestive acid fizzes against your bones.'); await takeHit('Ooze acid', {noArmor:true}); rule('Absorbed creatures take 1 hit every round, and armor doesn\'t help.'); continue; }
+    } else {
+      const opts = [];
+      if (!sword) opts.push({id:'sword', label:'Pull the sword out of it', sub:`Bones check, ${Math.max(0,C.bones-lostArms())}d6. Win: 2 hits on the ooze. Lose: lose that arm`, say:'I reach in and grab the sword.'});
+      opts.push({id:'talk', label:'Convince it there\'s a buffet downstream', sub:`Opposed Brains: your ${effBrains()}d6 vs its 1d6`, say:'"Psst. Buddy. All-you-can-eat. Just down that pipe."'});
+      opts.push({id:'hack', label:`Hack at it with your ${C.weapon.name}`, sub:`It has ${oozeHits} hit${oozeHits>1?'s':''} left. Melee weapons can get stuck`, say:'I attack the ooze!'});
+      const c = await choose(opts);
+      if (c === 'sword'){
+        const r = await check({stat:'bones', arms:true, label:'Pull the sword'});
+        let got = r.ok;
+        if (!r.ok){
+          const g = await offerGoof({fail:'Accept it: the ooze keeps your arm', goof: part => `I brace my ${part} against the pipe for leverage. It snaps, but I fly backward holding the sword!`, prefs:['lleg','rleg']});
+          if (g) got = true; else { gm('The ooze slurps your arm right off, along with anything in it.'); await losePart(C.parts.rarm ? 'rarm' : 'larm'); }
+        }
+        if (got){
+          sword = true; oozeHits -= 2;
+          gm('You yank out a <b>frozen blade</b>, shredding the ooze from the inside (2 hits). Its acid gets you on the way out.');
+          await takeHit('Ooze acid');
+          loot.push({name:'Frozen blade', dice:1});
+          if (!C.weapon.hands){ C.weapon = {name:'frozen blade', stat:'bones', hands:1, dots:1}; gm('Your hands were empty anyway, so you wield it. It has one usage left.'); }
+          render();
+        }
+        angry = true;
+      } else if (c === 'talk'){
+        const {a, b, row} = await opposed({label:'Lure the ooze', mine:effBrains(), theirs:1, foeName:'the ooze'});
+        const win = a > b;
+        stamp(row, win, win ? `${a} vs ${b}: you win` : `${a} vs ${b}: ooze wins`);
+        rule('Opposed check: both sides roll their stat. Whoever rolls more sixes wins, and ties go to whoever is defending. Fighting a Bones 7 ooze is rough. Out-thinking a Brains 1 ooze is easier.');
+        if (win){ gm('The ooze\'s whole body perks up. <i>Buffet?</i> It squeezes itself out of the pipe with a tremendous SHLOOORP and wobbles away downstream, never to be seen again.'); done = true; break; }
+        gm('The ooze considers this. Then it decides <i>you</i> are the buffet.'); angry = true;
+      } else {
+        const w = C.weapon; const melee = !w.ranged && w.hands;
+        const hits = await attack('ooze');
+        if (hits){ oozeHits -= hits; gm(oozeHits > 0 ? `Squelch! ${hits} hit${hits>1?'s':''}. It has ${oozeHits} left.` : 'Squelch!'); }
+        else gm('Your attack bounces off the jiggling mass.');
+        if (melee && oozeHits > 0){
+          rule('Gelatinous Armor: hit the ooze with a melee weapon and you must make a Bones check (with the weapon) or lose it inside the ooze.');
+          const k = await check({stat:'bones', arms:true, weapon:w, label:`Keep hold of your ${w.name}`});
+          if (!k.ok){ gm(`The ooze swallows your ${w.name}. It floats inside, next to some other people's swords.`); C.weapon = {...FISTS}; render(); }
+        }
+        if (oozeHits <= 0){ gm('The ooze bursts like an overfilled water balloon. Gross. Victorious, but gross.'); done = true; break; }
+        angry = true;
+      }
+    }
+    if (!done && angry && !absorbed){
+      const {vals, row} = await rollDice('The ooze is stuck in the pipe. Does it lunge? (GM rolls d6: 4–6 it lunges)', [{n:1, foe:true, sixes:false}]);
+      if (vals[0][0] >= 4){
+        stamp(row, false, 'It lunges! Gobble attack');
+        const {a, b, row: r2} = await opposed({label:'Resist being gobbled (Bones)', mine:C.bones, theirs:7, foeName:'the ooze'});
+        if (b > a){ stamp(r2, false, `${a} vs ${b}: gobbled`); absorbed = true; gm('SHLUP. You are inside the ooze now. It\'s cozy, in the worst way.'); await takeHit('Ooze acid', {noArmor:true}); }
+        else { stamp(r2, true, `${a} vs ${b}: you dodge`); gm('You twist away as the ooze snaps shut on nothing.'); }
+      } else stamp(row, true, 'It just jiggles menacingly');
+    }
+  }
+  gm('Water rushes past you. Somewhere far above, a toilet that has not worked in four hundred years flushes triumphantly. Two more pieces of treasure wash loose from the muck.');
+  const TREAS = [
+    {name:'Sequined cape', dice:2, theater:true},
+    {name:'Lute with one string', dice:1, theater:true},
+    {name:'Scroll of Sleep', dice:1},
+    {name:'Rapier', dice:1},
+    {name:'Chain shirt', dice:2},
+    {name:'Wand of levitation', dice:2},
+  ];
+  for (let i=0;i<2;i++){
+    const {vals, row} = await rollDice(`Random treasure ${i+1}: roll a d6`, [{n:1, sixes:false}]);
+    const t = TREAS[vals[0][0]-1]; loot.push({...t}); stamp(row, true, t.name);
+  }
+  render();
+  await afterCombat();
+  await cont('Return to Skald');
+  await tribute();
+}
+
+async function tribute(){
+  scene('Curtain Call', 'Back in the Amphitheater');
+  used.add('value');
+  lich('"My pipes SING again! Now. What did you bring me?"');
+  rule(`Value is how much your lich appreciates you. Roll each treasure's dice and add it up. You need ${need()} value to reach level ${C.level+1}.`);
+  const c = await choose([
+    {id:'sing', label:'Sing your report', sub:'Skald\'s house rule: singing adds a die. Brains check +1d6', say:'♪ Oh Skald, the pipes were clogged, so clogged ♪'},
+    {id:'plain', label:'Just hand it over', say:'"Here you go, boss."'}
+  ]);
+  let headLost = false;
+  if (c === 'sing'){
+    const r = await check({stat:'brains', bonus:1, bonusLabel:'singing', label:'Sing to Skald'});
+    if (r.s >= 3){
+      gm('Your voice is <i>stunning</i>. Skald\'s smile freezes.');
+      lich('"What a GORGEOUS voice." <i>(He vaporizes your head in a fit of jealous rage.)</i> "Oops. Anyway!"');
+      rule('Skald\'s rule: sing too well (3+ sixes) and he vaporizes your skull. As an apology, you roll twice on his rewards table next time you level.');
+      if (C.parts.head) await losePart('head');
+      headLost = true;
+    } else if (r.ok){
+      C.value += d6(); lich('"Bravo! Adequate! I\'ll allow it." (Skald assigns your performance a bonus 1d6 value.)');
+    } else lich('"Please stop."');
+    render();
+  }
+  for (const l of loot){
+    await sleep(200);
+    if (l.art){
+      const {vals, row} = await rollDice('The rusted "sculpture". Skald squints. (d6: 1 hates it, 2–3 garbage, 4–6 art)', [{n:1, sixes:false}]);
+      const v = vals[0][0];
+      if (v === 1){ stamp(row, false, '0 value'); lich('"Is this... GARBAGE? In MY amphitheater?" (He hates it. 0 value, but you can keep it.)'); rule('Skald\'s Don\'t: bring him garbage, and there\'s a 1-in-6 chance he hates it and it\'s worth nothing.'); }
+      else if (v <= 3){ C.value += 1; stamp(row, false, '+1 value'); lich('"Garbage. Charming garbage. One value."'); }
+      else { const {vals: av, row: ar} = await rollDice('"It\'s ME! Avant-garde!" Art is worth 3d6', [{n:3, sixes:false}]); const s = av[0].reduce((a,b)=>a+b,0); C.value += s; stamp(ar, true, `+${s} value`); }
+      render(); continue;
+    }
+    const n = l.dice + (l.theater ? 1 : 0);
+    const {vals, row} = await rollDice(`${l.name}: ${l.dice}d6${l.theater ? ' +1d6 because Skald loves theater' : ''}`, [{n, sixes:false}]);
+    const s = vals[0].reduce((a,b)=>a+b,0);
+    C.value += s; stamp(row, true, `+${s} value`);
+    render();
+  }
+  loot = [];
+  render();
+  if (C.value >= need()){
+    lich(`"${C.value} value! You are a STAR. Kneel, my little understudy."`);
+    await cont('Level up');
+    await levelUp(headLost);
+  } else {
+    lich(`"${C.value}? Hm. A supporting role. Bring me more and we'll talk."`);
+    rule(`You needed ${need()} value. In a longer game you'd keep adventuring, and your value keeps building until you level.`);
+  }
+  await epilogue();
+}
+
+async function epilogue(){
+  scene('Fin', 'That was Skellies');
+  gm(`That's the end of the intro adventure. ${esc(C.name)} lives to clatter another day.`);
+  const ALL = [
+    ['check','Checks: roll Bones or Brains, any six wins'],
+    ['trick','Trickiness: harder tasks remove dice'],
+    ['goof','Goofs: fail in a funny way that helps'],
+    ['insp','Inspiration for great hijinks'],
+    ['opposed','Opposed checks against a monster'],
+    ['combat','Turn-based combat with hits'],
+    ['parts','Body parts instead of hit points'],
+    ['armor','Armor that takes hits for you'],
+    ['usage','Gear that wears out'],
+    ['value','Value: impressing your lich'],
+    ['level','Leveling up and lich rewards'],
+  ];
+  const card = add('endcard', `
+    <h3>You just played Skellies.</h3>
+    <p style="margin:0">The full game is a party RPG for a Game Master and friends with a handful of d6. It has rules for making your own lich and lair, dozens of intruders to defend against, spells, magic items, and more ways to lose your skull.</p>
+    <ul class="learned">${ALL.map(([k,t]) => `<li class="${used.has(k)?'':'no'}">${t}</li>`).join('')}</ul>
+    <div class="buy">
+      <a href="https://playskellies.com" target="_blank" rel="noopener">Get Skellies at playskellies.com</a>
+    </div>
+    <p class="fine">In the full product, this is where the store goes: the core book, print copies, and adventures, each sold through the publisher's own store or an authorized retailer.</p>`);
+  const c = await choose([{id:'again', label:'Play again with a new skelly', cls:'primary', say:false}]);
+  if (c === 'again'){ logEl.innerHTML = ''; used.clear(); loot = []; C = null; $('#sheetBody').innerHTML = '<p class="empty-sheet">Your skelly appears here once the lich raises you.</p>'; $('#sumName').textContent = 'Character sheet'; $('#sumMini').textContent = 'not risen yet'; prologue(); }
+}
+
+if (matchMedia('(max-width: 860px)').matches) $('#sheet').open = false;
+prologue();
+})();
+</script>
+</body>
+</html>
