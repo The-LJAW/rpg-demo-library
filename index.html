@@ -53,6 +53,17 @@ h2{font-family:var(--f-mono);font-size:13px;letter-spacing:.14em;text-transform:
 .how{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px;margin-top:44px;border-top:2px solid var(--ink);padding-top:24px}
 .how h3{font-family:var(--f-display);font-weight:400;font-size:26px;margin:0 0 4px}
 .how p{margin:0;color:var(--muted)}
+.shop{margin-top:44px}
+.shop-lede{max-width:70ch;color:var(--muted);margin:0 0 14px}
+.shop-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+.shop-item{display:flex;justify-content:space-between;align-items:center;gap:12px;border:2px solid var(--ink);background:#fff;padding:10px 12px;min-width:0}
+.shop-item b{display:block;font-size:15.5px;line-height:1.25}
+.shop-item small{display:block;color:var(--muted);font-size:13px}
+.shop-item .acts{display:flex;gap:6px;flex:none;align-items:center}
+.shop-item a,.shop-item span.soon-btn{font-family:var(--f-mono);font-size:12.5px;font-weight:700;text-decoration:none;padding:6px 10px;border:2px solid var(--ink);white-space:nowrap}
+.shop-item a{color:var(--ink)}
+.shop-item a.buy{background:var(--ink);color:var(--paper)}
+.shop-item span.soon-btn{border-color:var(--line);color:var(--muted)}
 footer{border-top:1px solid var(--line);padding-block:20px 32px;font-family:var(--f-mono);font-size:12.5px;color:var(--muted)}
 footer a{color:inherit}
 </style>
@@ -166,6 +177,13 @@ footer a{color:inherit}
     </a>
   </div>
 
+
+  <section class="shop" id="shop">
+    <h2>Full adventure PDFs</h2>
+    <p class="shop-lede">Every adventure demo is Act One. The PDF has the whole story: all three acts, every ending, ready-to-play characters, custom tables, a rules reference, and printable sheets.</p>
+    <div class="shop-list" id="shopList"></div>
+  </section>
+
   <section class="how">
     <div><h3>Pick a game</h3><p>Each demo is an intro adventure built from the game's own rules.</p></div>
     <div><h3>Play for 20 minutes</h3><p>The page is your Game Master. You make the choices and roll the dice.</p></div>
@@ -175,5 +193,17 @@ footer a{color:inherit}
 <footer>
   <div class="wrap">Demos are adapted under each game's own license, with credit to its creators. Skellies © The Griffon's Saddlebag B.V., used under CC BY-SA 4.0. Slugblaster is copyright © Mikey Hamm. Used with permission. RPG Demo Library is an independent work and not an official Slugblaster product. This work is based on Ironsworn (found at www.ironswornrpg.com), created by Shawn Tomkin, and licensed for our use under the Creative Commons Attribution 4.0 International license; not an official Ironsworn product. This prototype is not affiliated with any publisher. Full license credits for every game are in each demo's footer and in the project README. Pathfinder is a trademark of Paizo Inc.; Cypher System is a trademark of Monte Cook Games, LLC; Fate is a trademark of Evil Hat Productions, LLC; Blades in the Dark is a trademark of One Seven Design. None of these products are official or endorsed.</div>
 </footer>
+<script src="store.js"></script>
+<script>
+(function(){
+  var list=document.getElementById('shopList'); var P=(window.RDL_STORE&&window.RDL_STORE.products)||{};
+  var esc=function(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});};
+  list.innerHTML=Object.keys(P).map(function(k){var p=P[k];
+    return '<div class="shop-item"><div style="min-width:0"><b>'+esc(p.name)+'</b><small>'+esc(p.game)+(p.pages?' · '+p.pages+' pages':'')+'</small></div><div class="acts">'+
+      (p.demo?'<a href="'+esc(p.demo)+'">Demo</a>':'')+
+      (p.checkout?'<a class="buy" href="'+esc(p.checkout)+'" target="_blank" rel="noopener">Buy '+esc(p.price||'')+'</a>':'<span class="soon-btn">Soon · '+esc(p.price||'')+'</span>')+
+      '</div></div>';}).join('');
+})();
+</script>
 </body>
 </html>
